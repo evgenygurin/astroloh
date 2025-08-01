@@ -87,12 +87,44 @@ class ResponseFormatter:
     def format_horoscope_response(
         self, 
         zodiac_sign: YandexZodiacSign,
+        horoscope_data: Optional[Dict[str, Any]] = None,
         period: str = "день"
     ) -> YandexResponse:
         """Форматирует ответ с гороскопом."""
-        horoscope_text = self._generate_horoscope_text(zodiac_sign, period)
-        
-        text = f"Гороскоп для {zodiac_sign.value} на {period}:\n\n{horoscope_text}"
+        if horoscope_data:
+            # Используем персональный гороскоп
+            general_forecast = horoscope_data.get("general_forecast", "")
+            spheres = horoscope_data.get("spheres", {})
+            energy_level = horoscope_data.get("energy_level", {})
+            lucky_numbers = horoscope_data.get("lucky_numbers", [])
+            lucky_colors = horoscope_data.get("lucky_colors", [])
+            
+            text = f"Персональный гороскоп для {zodiac_sign.value} на {period}:\n\n"
+            text += f"{general_forecast}\n\n"
+            
+            if spheres:
+                text += "📊 По сферам жизни:\n"
+                for sphere, data in spheres.items():
+                    stars = "⭐" * data.get("rating", 3)
+                    sphere_names = {"love": "💕 Любовь", "career": "💼 Карьера", 
+                                   "health": "🏥 Здоровье", "finances": "💰 Финансы"}
+                    sphere_name = sphere_names.get(sphere, sphere.capitalize())
+                    text += f"{sphere_name} {stars}: {data.get('forecast', '')}\n"
+                
+                text += "\n"
+            
+            if energy_level:
+                text += f"⚡ Уровень энергии: {energy_level.get('level', 60)}% - {energy_level.get('description', '')}\n\n"
+            
+            if lucky_numbers:
+                text += f"🔢 Счастливые числа: {', '.join(map(str, lucky_numbers[:4]))}\n"
+            
+            if lucky_colors:
+                text += f"🎨 Счастливые цвета: {', '.join(lucky_colors)}"
+        else:
+            # Используем базовый гороскоп
+            horoscope_text = self._generate_horoscope_text(zodiac_sign, period)
+            text = f"Гороскоп для {zodiac_sign.value} на {period}:\n\n{horoscope_text}"
         
         buttons = [
             YandexButton(title="Другой период", payload={"action": "change_period"}),
@@ -110,12 +142,38 @@ class ResponseFormatter:
     def format_compatibility_response(
         self, 
         sign1: YandexZodiacSign,
-        sign2: YandexZodiacSign
+        sign2: YandexZodiacSign,
+        compatibility_data: Optional[Dict[str, Any]] = None
     ) -> YandexResponse:
         """Форматирует ответ о совместимости знаков."""
-        compatibility_text = self._generate_compatibility_text(sign1, sign2)
-        
-        text = f"Совместимость {sign1.value} и {sign2.value}:\n\n{compatibility_text}"
+        if compatibility_data:
+            # Используем расчетную совместимость
+            total_score = compatibility_data.get("total_score", 50)
+            description = compatibility_data.get("description", "")
+            element1 = compatibility_data.get("element1", "")
+            element2 = compatibility_data.get("element2", "")
+            
+            # Создаем визуальный рейтинг
+            stars = "⭐" * min(5, max(1, round(total_score / 20)))
+            hearts = "💕" if total_score >= 80 else "💗" if total_score >= 60 else "💛"
+            
+            text = f"Совместимость {sign1.value} и {sign2.value}:\n\n"
+            text += f"{hearts} Общий балл: {total_score}/100 {stars}\n"
+            text += f"📊 Оценка: {description}\n\n"
+            text += f"🔥 Элементы: {element1} + {element2}\n"
+            
+            if total_score >= 80:
+                text += "✨ Прекрасная пара! У вас много общего и отличные перспективы."
+            elif total_score >= 60:
+                text += "💫 Хорошая совместимость. Есть потенциал для гармоничных отношений."
+            elif total_score >= 40:
+                text += "⚖️ Умеренная совместимость. Потребуется работа над отношениями."
+            else:
+                text += "🔄 Сложная совместимость, но противоположности могут притягиваться."
+        else:
+            # Используем базовую совместимость
+            compatibility_text = self._generate_compatibility_text(sign1, sign2)
+            text = f"Совместимость {sign1.value} и {sign2.value}:\n\n{compatibility_text}"
         
         buttons = [
             YandexButton(title="Другая пара", payload={"action": "new_compatibility"}),
@@ -196,6 +254,105 @@ class ResponseFormatter:
             text=text,
             tts=text,
             end_session=True
+        )
+
+    def format_natal_chart_request_response(self) -> YandexResponse:
+        """Форматирует запрос данных для натальной карты."""
+        text = "Для составления натальной карты мне нужна ваша дата рождения. Назовите, пожалуйста, день, месяц и год рождения."
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=None,
+            end_session=False
+        )
+
+    def format_natal_chart_response(self, natal_chart_data: Dict[str, Any]) -> YandexResponse:
+        """Форматирует ответ с натальной картой."""
+        interpretation = natal_chart_data.get("interpretation", {})
+        chart_signature = natal_chart_data.get("chart_signature", {})
+        
+        text = "🌟 Ваша натальная карта:\n\n"
+        
+        # Основные характеристики личности
+        personality = interpretation.get("personality", {})
+        if personality:
+            text += f"👤 Личность: {personality.get('core_self', '')}\n"
+            text += f"🌙 Эмоции: {personality.get('emotional_nature', '')}\n\n"
+        
+        # Подпись карты
+        if chart_signature:
+            text += f"🔥 Доминирующий элемент: {chart_signature.get('dominant_element', '')}\n"
+            text += f"⚡ Доминирующее качество: {chart_signature.get('dominant_quality', '')}\n\n"
+        
+        # Жизненное предназначение
+        life_purpose = interpretation.get("life_purpose", "")
+        if life_purpose:
+            text += f"🎯 {life_purpose}\n\n"
+        
+        # Сильные стороны
+        strengths = interpretation.get("strengths", [])
+        if strengths:
+            text += "💪 Сильные стороны:\n"
+            for strength in strengths[:2]:
+                text += f"• {strength}\n"
+        
+        buttons = [
+            YandexButton(title="Подробнее", payload={"action": "detailed_chart"}),
+            YandexButton(title="Гороскоп", payload={"action": "horoscope"}),
+            YandexButton(title="Главное меню", payload={"action": "main_menu"})
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_lunar_calendar_response(self, lunar_info: Dict[str, Any]) -> YandexResponse:
+        """Форматирует ответ о лунном календаре."""
+        lunar_day = lunar_info.get("lunar_day", 1)
+        name = lunar_info.get("name", "")
+        description = lunar_info.get("description", "")
+        energy_level = lunar_info.get("energy_level", "")
+        moon_phase = lunar_info.get("moon_phase", {})
+        recommendations = lunar_info.get("recommendations", [])
+        
+        phase_name = moon_phase.get("phase_name", "")
+        illumination = moon_phase.get("illumination_percent", 50)
+        
+        # Определяем эмодзи для фазы Луны
+        phase_emoji = "🌑"  # Новолуние
+        if "Растущая" in phase_name:
+            phase_emoji = "🌓"
+        elif "Полнолуние" in phase_name:
+            phase_emoji = "🌕"
+        elif "Убывающая" in phase_name:
+            phase_emoji = "🌗"
+        
+        text = f"🌙 Лунный календарь на сегодня:\n\n"
+        text += f"📅 {lunar_day}-й лунный день - {name}\n"
+        text += f"{phase_emoji} Фаза: {phase_name} ({illumination}%)\n"
+        text += f"⚡ Энергия: {energy_level}\n\n"
+        text += f"📝 {description}\n\n"
+        
+        if recommendations:
+            text += "💡 Рекомендации:\n"
+            for rec in recommendations[:3]:
+                text += f"• {rec}\n"
+        
+        buttons = [
+            YandexButton(title="Другой день", payload={"action": "change_date"}),
+            YandexButton(title="Лучшие дни", payload={"action": "best_days"}),
+            YandexButton(title="Главное меню", payload={"action": "main_menu"})
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
         )
 
     def _get_zodiac_buttons(self) -> List[YandexButton]:
