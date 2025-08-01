@@ -205,3 +205,11 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Project specific
+# Swiss Ephemeris data files
+swisseph/
+
+# IDE specific
+.vscode/
+.idea/
