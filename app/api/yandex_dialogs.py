@@ -1,13 +1,17 @@
 """
 API роутер для интеграции с Яндекс.Диалогами.
 """
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
 from app.models.yandex_models import YandexRequestModel, YandexResponseModel
 from app.services.dialog_handler import dialog_handler
 from app.utils.error_handler import error_handler
+from app.core.database import get_database
+from app.services.user_manager import UserManager
+from app.services.gdpr_compliance import GDPRComplianceService
 
 
 logger = logging.getLogger(__name__)
@@ -15,7 +19,7 @@ router = APIRouter(prefix="/yandex", tags=["Yandex Dialogs"])
 
 
 @router.post("/webhook", response_model=YandexResponseModel)
-async def yandex_webhook(request: YandexRequestModel):
+async def yandex_webhook(request: YandexRequestModel, db: AsyncSession = Depends(get_database)):
     """
     Основной webhook для обработки запросов от Яндекс.Диалогов.
     
@@ -26,8 +30,14 @@ async def yandex_webhook(request: YandexRequestModel):
         # Логируем входящий запрос
         logger.info(f"Received request from user {request.session.user_id}")
         
-        # Обрабатываем запрос через основной обработчик диалогов
-        response = await dialog_handler.handle_request(request)
+        # Инициализируем менеджер пользователей с базой данных
+        user_manager = UserManager(db)
+        
+        # Получаем или создаем пользователя
+        user = await user_manager.get_or_create_user(request.session.user_id)
+        
+        # Обрабатываем запрос через основной обработчик диалогов с интеграцией БД
+        response = await dialog_handler.handle_request(request, db_session=db, user=user)
         
         # Логируем успешный ответ
         logger.info(f"Successfully processed request for user {request.session.user_id}")
