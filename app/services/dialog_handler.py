@@ -14,6 +14,10 @@ from app.models.yandex_models import (
 from app.services.intent_recognition import IntentRecognizer
 from app.services.session_manager import SessionManager
 from app.services.response_formatter import ResponseFormatter
+from app.services.horoscope_generator import HoroscopeGenerator, HoroscopePeriod
+from app.services.natal_chart import NatalChartCalculator
+from app.services.lunar_calendar import LunarCalendar
+from app.services.astrology_calculator import AstrologyCalculator
 from app.utils.error_handler import ErrorHandler, handle_skill_errors
 from app.utils.validators import (
     DateValidator, 
@@ -30,6 +34,10 @@ class DialogHandler:
         self.intent_recognizer = IntentRecognizer()
         self.session_manager = SessionManager()
         self.response_formatter = ResponseFormatter()
+        self.horoscope_generator = HoroscopeGenerator()
+        self.natal_chart_calculator = NatalChartCalculator()
+        self.lunar_calendar = LunarCalendar()
+        self.astro_calculator = AstrologyCalculator()
         self.error_handler = ErrorHandler()
         self.date_validator = DateValidator()
         self.time_validator = TimeValidator()
@@ -142,7 +150,14 @@ class DialogHandler:
                 user_context.zodiac_sign = zodiac_sign
                 self.session_manager.clear_awaiting_data(session, user_context)
                 
-                return self.response_formatter.format_horoscope_response(zodiac_sign)
+                # Генерируем персональный гороскоп
+                horoscope = self.horoscope_generator.generate_personalized_horoscope(
+                    zodiac_sign=zodiac_sign,
+                    birth_date=birth_date,
+                    period=HoroscopePeriod.DAILY
+                )
+                
+                return self.response_formatter.format_horoscope_response(zodiac_sign, horoscope)
         
         elif entities.get("dates"):
             birth_date_str = entities["dates"][0]
@@ -155,7 +170,14 @@ class DialogHandler:
                 user_context.zodiac_sign = zodiac_sign
                 self.session_manager.clear_awaiting_data(session, user_context)
                 
-                return self.response_formatter.format_horoscope_response(zodiac_sign)
+                # Генерируем персональный гороскоп
+                horoscope = self.horoscope_generator.generate_personalized_horoscope(
+                    zodiac_sign=zodiac_sign,
+                    birth_date=birth_date,
+                    period=HoroscopePeriod.DAILY
+                )
+                
+                return self.response_formatter.format_horoscope_response(zodiac_sign, horoscope)
         
         elif user_context.birth_date:
             # Используем сохраненную дату рождения
@@ -163,7 +185,14 @@ class DialogHandler:
             birth_date = date.fromisoformat(user_context.birth_date)
             zodiac_sign = self.date_validator.get_zodiac_sign_by_date(birth_date)
             
-            return self.response_formatter.format_horoscope_response(zodiac_sign)
+            # Генерируем персональный гороскоп
+            horoscope = self.horoscope_generator.generate_personalized_horoscope(
+                zodiac_sign=zodiac_sign,
+                birth_date=birth_date,
+                period=HoroscopePeriod.DAILY
+            )
+            
+            return self.response_formatter.format_horoscope_response(zodiac_sign, horoscope)
         
         # Если даты нет, запрашиваем её
         self.session_manager.set_awaiting_data(
@@ -189,7 +218,10 @@ class DialogHandler:
             user_context.partner_sign = sign2
             self.session_manager.clear_awaiting_data(session, user_context)
             
-            return self.response_formatter.format_compatibility_response(sign1, sign2)
+            # Вычисляем совместимость с деталями
+            compatibility = self.astro_calculator.calculate_compatibility_score(sign1, sign2)
+            
+            return self.response_formatter.format_compatibility_response(sign1, sign2, compatibility)
         
         # Если есть один знак
         elif len(zodiac_signs) == 1:
@@ -203,8 +235,13 @@ class DialogHandler:
                 user_context.partner_sign = zodiac_signs[0]
                 self.session_manager.clear_awaiting_data(session, user_context)
                 
-                return self.response_formatter.format_compatibility_response(
+                # Вычисляем совместимость с деталями
+                compatibility = self.astro_calculator.calculate_compatibility_score(
                     user_context.zodiac_sign, user_context.partner_sign
+                )
+                
+                return self.response_formatter.format_compatibility_response(
+                    user_context.zodiac_sign, user_context.partner_sign, compatibility
                 )
         
         # Если знаков нет, запрашиваем первый
@@ -224,8 +261,14 @@ class DialogHandler:
         # Если оба знака есть в контексте
         else:
             self.session_manager.clear_awaiting_data(session, user_context)
-            return self.response_formatter.format_compatibility_response(
+            
+            # Вычисляем совместимость с деталями
+            compatibility = self.astro_calculator.calculate_compatibility_score(
                 user_context.zodiac_sign, user_context.partner_sign
+            )
+            
+            return self.response_formatter.format_compatibility_response(
+                user_context.zodiac_sign, user_context.partner_sign, compatibility
             )
 
     async def _handle_natal_chart(
@@ -235,13 +278,43 @@ class DialogHandler:
         session
     ) -> Any:
         """Обрабатывает запрос натальной карты."""
-        # Пока что возвращаем заглушку
-        return self.response_formatter.format_error_response("general")
+        
+        # Проверяем наличие данных рождения
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.NATAL_CHART
+            )
+            return self.response_formatter.format_natal_chart_request_response()
+        
+        try:
+            # Парсим дату рождения
+            from datetime import date
+            birth_date = date.fromisoformat(user_context.birth_date)
+            
+            # Рассчитываем натальную карту
+            natal_chart = self.natal_chart_calculator.calculate_natal_chart(birth_date)
+            
+            return self.response_formatter.format_natal_chart_response(natal_chart)
+            
+        except Exception as e:
+            self.error_handler.log_error(f"Natal chart calculation error: {str(e)}")
+            return self.response_formatter.format_error_response("general")
 
     async def _handle_lunar_calendar(self, user_context: UserContext, session) -> Any:
         """Обрабатывает запрос лунного календаря."""
-        # Пока что возвращаем заглушку  
-        return self.response_formatter.format_error_response("general")
+        
+        try:
+            from datetime import datetime
+            
+            # Получаем информацию о сегодняшнем лунном дне
+            today = datetime.now()
+            lunar_info = self.lunar_calendar.get_lunar_day_info(today)
+            
+            return self.response_formatter.format_lunar_calendar_response(lunar_info)
+            
+        except Exception as e:
+            self.error_handler.log_error(f"Lunar calendar error: {str(e)}")
+            return self.response_formatter.format_error_response("general")
 
     async def _handle_advice(self, user_context: UserContext, session) -> Any:
         """Обрабатывает запрос астрологического совета."""
