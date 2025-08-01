@@ -1,20 +1,28 @@
 """
-Сервис управления сессиями пользователей.
+Сервис управления сессиями пользователей с интеграцией безопасного хранения.
 """
 import json
 from typing import Dict, Optional, Any
 from datetime import datetime, timedelta
 
 from app.models.yandex_models import UserContext, YandexSession, YandexIntent
+from app.services.user_manager import SessionManager as SecureSessionManager
 
 
 class SessionManager:
-    """Менеджер сессий пользователей."""
+    """
+    Менеджер сессий пользователей с поддержкой безопасного хранения.
     
-    def __init__(self):
-        # В продакшене это должно быть Redis или другое хранилище
+    Теперь интегрирован с базой данных для постоянного хранения сессий.
+    """
+    
+    def __init__(self, db_session=None):
+        # Для обратной совместимости сохраняем в памяти как fallback
         self._sessions: Dict[str, Dict[str, Any]] = {}
         self._session_timeout = timedelta(hours=1)
+        
+        # Новый безопасный менеджер сессий
+        self._secure_manager = SecureSessionManager(db_session) if db_session else None
 
     def get_user_context(self, session: YandexSession) -> UserContext:
         """Получает контекст пользователя из сессии."""

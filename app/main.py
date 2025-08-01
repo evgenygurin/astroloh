@@ -3,9 +3,13 @@
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
+import logging
 
 from app.api.yandex_dialogs import router as yandex_router
+from app.api.security import router as security_router
 from app.core.config import settings
+from app.core.database import init_database, close_database
 
 app = FastAPI(
     title="Astroloh - Навык Астролог для Яндекс Алисы",
@@ -26,6 +30,7 @@ app.add_middleware(
 
 # Подключение роутеров
 app.include_router(yandex_router, prefix="/api/v1")
+app.include_router(security_router, prefix="/api/v1")
 
 
 @app.get("/")
@@ -38,3 +43,31 @@ async def root():
 async def health_check():
     """Эндпоинт для проверки здоровья сервиса."""
     return {"status": "healthy"}
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Инициализация при запуске приложения."""
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    
+    try:
+        if settings.DATABASE_URL:
+            await init_database()
+            logger.info("Database initialized successfully")
+        else:
+            logger.warning("DATABASE_URL not configured, running without database")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Очистка при завершении приложения."""
+    logger = logging.getLogger(__name__)
+    
+    try:
+        await close_database()
+        logger.info("Database connections closed")
+    except Exception as e:
+        logger.error(f"Error closing database: {e}")
