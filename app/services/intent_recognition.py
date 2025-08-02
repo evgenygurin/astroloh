@@ -2,8 +2,10 @@
 Сервис распознавания интентов для Яндекс.Диалогов.
 """
 import re
-from typing import Dict, Any, Tuple, List, Optional
-from datetime import datetime
+import hashlib
+from typing import Dict, Any, Tuple, List, Optional, Set
+from datetime import datetime, date
+from collections import defaultdict
 
 from app.models.yandex_models import (
     YandexIntent, 
