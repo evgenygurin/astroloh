@@ -9,17 +9,18 @@ RUN apt-get update && apt-get install -y \
 # Создаем рабочую директорию
 WORKDIR /app
 
-# Копируем файлы зависимостей
+# Копируем файлы зависимостей, код приложения и конфигурацию для миграций
 COPY requirements.txt .
+COPY pyproject.toml .
+COPY alembic.ini .
+COPY migrations/ ./migrations/
+COPY app/ ./app/
 
 # Устанавливаем Python зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Создаем директорию для Swiss Ephemeris данных
 RUN mkdir -p /app/swisseph
-
-# Копируем код приложения
-COPY app/ ./app/
 
 # Создаем пользователя для безопасности
 RUN useradd --create-home --shell /bin/bash astroloh
