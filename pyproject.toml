@@ -10,6 +10,78 @@ authors = [{name = "evgenygurin", email = "evgenygurin@users.noreply.github.com"
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
+dependencies = [
+    # FastAPI и веб-сервер
+    "fastapi==0.104.1",
+    "uvicorn[standard]==0.24.0",
+    "pydantic==2.5.0",
+    "pydantic-settings==2.1.0",
+    
+    # База данных
+    "sqlalchemy==2.0.23",
+    "alembic==1.13.1",
+    "asyncpg==0.29.0",
+    "psycopg2-binary==2.9.9",
+    
+    # Шифрование и безопасность
+    "cryptography==42.0.8",
+    "python-jose[cryptography]==3.3.0",
+    "passlib[bcrypt]==1.7.4",
+    
+    # HTTP клиенты
+    "httpx==0.25.2",
+    "aiohttp==3.9.5",
+    
+    # Обработка данных
+    "python-dateutil==2.8.2",
+    "pytz==2023.3",
+    
+    # Логирование и мониторинг
+    "loguru==0.7.2",
+    
+    # Переменные окружения
+    "python-dotenv==1.0.0"
+]
+
+[project.optional-dependencies]
+# Полный набор астрологических библиотек (рекомендуется для Linux/Windows)
+full = [
+    "pyswisseph==2.10.3.2",
+    "skyfield==1.49",
+    "astropy==6.0.0"
+]
+
+# Альтернативы для macOS (без компиляции C)
+macos = [
+    "skyfield==1.49",
+    "astropy==6.0.0"
+]
+
+# Минимальный набор (только основные функции)
+minimal = [
+    "skyfield==1.49"
+]
+
+# Профессиональная астрономия (высокая точность)
+professional = [
+    "astropy==6.0.0",
+    "skyfield==1.49"
+]
+
+# Разработка и тестирование
+dev = [
+    "pytest==7.4.3",
+    "pytest-asyncio==0.21.1",
+    "pytest-cov==4.1.0",
+    "pytest-mock==3.12.0",
+    "pytest-xdist==3.5.0",
+    "black==23.11.0",
+    "isort==5.12.0",
+    "flake8==6.1.0",
+    "mypy==1.7.1",
+    "bandit==1.7.5",
+    "safety==2.3.5"
+]
 
 [tool.black]
 line-length = 88
