@@ -1,16 +1,18 @@
 """
 Тесты для валидаторов данных.
 """
-import pytest
 from datetime import date
-from app.utils.validators import DateValidator, ZodiacValidator, YandexRequestValidator
+
+import pytest
+
 from app.models.yandex_models import YandexZodiacSign
 from app.utils.error_handler import ValidationSkillError
+from app.utils.validators import DateValidator, YandexRequestValidator, ZodiacValidator
 
 
 class TestDateValidator:
     """Тесты для валидатора дат."""
-    
+
     def setup_method(self):
         """Настройка перед каждым тестом."""
         self.validator = DateValidator()
@@ -25,7 +27,7 @@ class TestDateValidator:
             ("1990.03.15", date(1990, 3, 15)),
             ("15.03.90", date(1990, 3, 15)),  # Предполагаем 20 век
         ]
-        
+
         for date_str, expected_date in test_cases:
             parsed_date = self.validator.parse_date_string(date_str)
             assert parsed_date == expected_date
@@ -36,43 +38,43 @@ class TestDateValidator:
             "не дата",
             "32.13.1990",  # Неверный день и месяц
             "abc.def.ghij",
-            ""
+            "",
         ]
-        
+
         for date_str in invalid_dates:
             parsed_date = self.validator.parse_date_string(date_str)
             assert parsed_date is None
 
     def test_validate_birth_date_valid(self):
         """Тест валидации корректных дат рождения."""
-        valid_dates = [
-            date(1990, 3, 15),
-            date(1980, 12, 31),
-            date(2000, 1, 1)
-        ]
-        
+        valid_dates = [date(1990, 3, 15), date(1980, 12, 31), date(2000, 1, 1)]
+
         for birth_date in valid_dates:
             assert self.validator.validate_birth_date(birth_date) is True
 
     def test_validate_birth_date_future(self):
         """Тест валидации будущих дат рождения."""
         from datetime import date, timedelta
+
         future_date = date.today() + timedelta(days=1)
-        
+
         with pytest.raises(ValidationSkillError):
             self.validator.validate_birth_date(future_date)
 
     def test_get_zodiac_sign_by_date(self):
         """Тест определения знака зодиака по дате."""
         test_cases = [
-            (date(1990, 3, 21), YandexZodiacSign.ARIES),    # Начало Овна
-            (date(1990, 4, 19), YandexZodiacSign.ARIES),    # Конец Овна
-            (date(1990, 4, 20), YandexZodiacSign.TAURUS),   # Начало Тельца
-            (date(1990, 5, 20), YandexZodiacSign.TAURUS),   # Конец Тельца
-            (date(1990, 12, 22), YandexZodiacSign.CAPRICORN), # Начало Козерога
+            (date(1990, 3, 21), YandexZodiacSign.ARIES),  # Начало Овна
+            (date(1990, 4, 19), YandexZodiacSign.ARIES),  # Конец Овна
+            (date(1990, 4, 20), YandexZodiacSign.TAURUS),  # Начало Тельца
+            (date(1990, 5, 20), YandexZodiacSign.TAURUS),  # Конец Тельца
+            (
+                date(1990, 12, 22),
+                YandexZodiacSign.CAPRICORN,
+            ),  # Начало Козерога
             (date(1990, 1, 19), YandexZodiacSign.CAPRICORN),  # Конец Козерога
         ]
-        
+
         for birth_date, expected_sign in test_cases:
             zodiac_sign = self.validator.get_zodiac_sign_by_date(birth_date)
             assert zodiac_sign == expected_sign
@@ -80,7 +82,7 @@ class TestDateValidator:
 
 class TestZodiacValidator:
     """Тесты для валидатора знаков зодиака."""
-    
+
     def setup_method(self):
         """Настройка перед каждым тестом."""
         self.validator = ZodiacValidator()
@@ -101,7 +103,7 @@ class TestZodiacValidator:
             ("водолей", YandexZodiacSign.AQUARIUS),
             ("рыбы", YandexZodiacSign.PISCES),
         ]
-        
+
         for sign_str, expected_sign in test_cases:
             parsed_sign = self.validator.parse_zodiac_sign(sign_str)
             assert parsed_sign == expected_sign
@@ -114,20 +116,15 @@ class TestZodiacValidator:
             ("gemini", YandexZodiacSign.GEMINI),
             ("leo", YandexZodiacSign.LEO),
         ]
-        
+
         for sign_str, expected_sign in test_cases:
             parsed_sign = self.validator.parse_zodiac_sign(sign_str)
             assert parsed_sign == expected_sign
 
     def test_parse_zodiac_sign_invalid(self):
         """Тест парсинга неверных знаков зодиака."""
-        invalid_signs = [
-            "неверный знак",
-            "123",
-            "",
-            "qwerty"
-        ]
-        
+        invalid_signs = ["неверный знак", "123", "", "qwerty"]
+
         for sign_str in invalid_signs:
             parsed_sign = self.validator.parse_zodiac_sign(sign_str)
             assert parsed_sign is None
@@ -140,7 +137,7 @@ class TestZodiacValidator:
 
 class TestYandexRequestValidator:
     """Тесты для валидатора запросов Яндекс.Диалогов."""
-    
+
     def setup_method(self):
         """Настройка перед каждым тестом."""
         self.validator = YandexRequestValidator()
@@ -151,9 +148,9 @@ class TestYandexRequestValidator:
             "meta": {"locale": "ru-RU"},
             "request": {"command": "привет"},
             "session": {"session_id": "test-session"},
-            "version": "1.0"
+            "version": "1.0",
         }
-        
+
         assert self.validator.validate_request_structure(valid_request) is True
 
     def test_validate_request_structure_missing_fields(self):
@@ -163,7 +160,7 @@ class TestYandexRequestValidator:
             "request": {"command": "привет"},
             # Отсутствует session и version
         }
-        
+
         with pytest.raises(ValidationSkillError):
             self.validator.validate_request_structure(invalid_request)
 
@@ -175,7 +172,7 @@ class TestYandexRequestValidator:
             ("  пробелы  ", "пробелы"),
             ("", ""),
         ]
-        
+
         for input_text, expected_output in test_cases:
             sanitized = self.validator.sanitize_user_input(input_text)
             assert sanitized == expected_output

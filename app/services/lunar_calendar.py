@@ -1,19 +1,19 @@
 """
 Сервис лунного календаря и лунных рекомендаций.
 """
-from datetime import datetime
-from typing import Dict, List, Any, Optional
 import calendar
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from app.services.astrology_calculator import AstrologyCalculator
 
 
 class LunarCalendar:
     """Калькулятор лунного календаря."""
-    
+
     def __init__(self):
         self.astro_calc = AstrologyCalculator()
-        
+
         # Описания лунных дней (1-30)
         self.lunar_day_descriptions = {
             1: {
@@ -23,28 +23,28 @@ class LunarCalendar:
                 "recommendations": [
                     "Планируйте новые проекты",
                     "Медитируйте и ставьте цели",
-                    "Избегайте активных действий"
-                ]
+                    "Избегайте активных действий",
+                ],
             },
             2: {
-                "name": "День роста", 
+                "name": "День роста",
                 "description": "Энергия начинает набирать силу",
                 "energy": "растущая",
                 "recommendations": [
                     "Начинайте осуществлять планы",
                     "Полезны дыхательные упражнения",
-                    "Хорошее время для изучения нового"
-                ]
+                    "Хорошее время для изучения нового",
+                ],
             },
             3: {
                 "name": "День борьбы",
-                "description": "День активности и преодоления препятствий", 
+                "description": "День активности и преодоления препятствий",
                 "energy": "активная",
                 "recommendations": [
                     "Проявляйте инициативу",
                     "Занимайтесь спортом",
-                    "Решайте сложные задачи"
-                ]
+                    "Решайте сложные задачи",
+                ],
             },
             4: {
                 "name": "День выбора",
@@ -53,8 +53,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Анализируйте ситуацию",
                     "Принимайте взвешенные решения",
-                    "Избегайте импульсивности"
-                ]
+                    "Избегайте импульсивности",
+                ],
             },
             5: {
                 "name": "День единения",
@@ -63,8 +63,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Следите за питанием",
                     "Практикуйте йогу",
-                    "Работайте с энергетическими центрами"
-                ]
+                    "Работайте с энергетическими центрами",
+                ],
             },
             6: {
                 "name": "День слова",
@@ -73,8 +73,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Активно общайтесь",
                     "Передавайте знания",
-                    "Изучайте языки"
-                ]
+                    "Изучайте языки",
+                ],
             },
             7: {
                 "name": "День ветра",
@@ -83,8 +83,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Будьте гибкими",
                     "Практикуйте дыхательные техники",
-                    "Избегайте жестких планов"
-                ]
+                    "Избегайте жестких планов",
+                ],
             },
             8: {
                 "name": "День преображения",
@@ -93,8 +93,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Очищайте тело и разум",
                     "Практикуйте детокс",
-                    "Освобождайтесь от ненужного"
-                ]
+                    "Освобождайтесь от ненужного",
+                ],
             },
             9: {
                 "name": "День обмана",
@@ -103,8 +103,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Будьте осторожны",
                     "Проверяйте информацию",
-                    "Избегайте важных решений"
-                ]
+                    "Избегайте важных решений",
+                ],
             },
             10: {
                 "name": "День традиций",
@@ -113,8 +113,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Общайтесь с семьей",
                     "Изучайте родословную",
-                    "Следуйте традициям"
-                ]
+                    "Следуйте традициям",
+                ],
             },
             11: {
                 "name": "День силы",
@@ -123,8 +123,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Занимайтесь спортом",
                     "Проявляйте силу воли",
-                    "Принимайте активные решения"
-                ]
+                    "Принимайте активные решения",
+                ],
             },
             12: {
                 "name": "День сердца",
@@ -133,8 +133,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Проявляйте сострадание",
                     "Работайте с сердечной чакрой",
-                    "Практикуйте прощение"
-                ]
+                    "Практикуйте прощение",
+                ],
             },
             13: {
                 "name": "День колеса",
@@ -143,8 +143,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Развивайте навыки",
                     "Изучайте новое",
-                    "Двигайтесь к целям"
-                ]
+                    "Двигайтесь к целям",
+                ],
             },
             14: {
                 "name": "День призыва",
@@ -153,8 +153,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Медитируйте",
                     "Практикуйте духовные техники",
-                    "Слушайте интуицию"
-                ]
+                    "Слушайте интуицию",
+                ],
             },
             15: {
                 "name": "День искушения",
@@ -163,8 +163,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Контролируйте желания",
                     "Укрепляйте силу воли",
-                    "Избегайте излишеств"
-                ]
+                    "Избегайте излишеств",
+                ],
             },
             16: {
                 "name": "День гармонии",
@@ -173,8 +173,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Ищите баланс",
                     "Практикуйте умеренность",
-                    "Наслаждайтесь красотой"
-                ]
+                    "Наслаждайтесь красотой",
+                ],
             },
             17: {
                 "name": "День радости",
@@ -183,8 +183,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Веселитесь и радуйтесь",
                     "Общайтесь с друзьями",
-                    "Празднуйте жизнь"
-                ]
+                    "Празднуйте жизнь",
+                ],
             },
             18: {
                 "name": "День зеркала",
@@ -193,8 +193,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Изучайте себя",
                     "Анализируйте поступки",
-                    "Работайте над собой"
-                ]
+                    "Работайте над собой",
+                ],
             },
             19: {
                 "name": "День паука",
@@ -203,8 +203,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Планируйте долгосрочно",
                     "Проявляйте терпение",
-                    "Плетите свою судьбу"
-                ]
+                    "Плетите свою судьбу",
+                ],
             },
             20: {
                 "name": "День орла",
@@ -213,8 +213,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Ставьте высокие цели",
                     "Смотрите широко",
-                    "Развивайте духовность"
-                ]
+                    "Развивайте духовность",
+                ],
             },
             21: {
                 "name": "День коня",
@@ -223,8 +223,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Будьте активны",
                     "Путешествуйте",
-                    "Проявляйте независимость"
-                ]
+                    "Проявляйте независимость",
+                ],
             },
             22: {
                 "name": "День мудрости",
@@ -233,8 +233,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Изучайте мудрость",
                     "Передавайте знания",
-                    "Развивайте интеллект"
-                ]
+                    "Развивайте интеллект",
+                ],
             },
             23: {
                 "name": "День крокодила",
@@ -243,8 +243,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Защищайте близких",
                     "Будьте осторожны",
-                    "Укрепляйте безопасность"
-                ]
+                    "Укрепляйте безопасность",
+                ],
             },
             24: {
                 "name": "День медведя",
@@ -253,8 +253,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Пробуждайте силы",
                     "Активизируйте энергию",
-                    "Выходите из спячки"
-                ]
+                    "Выходите из спячки",
+                ],
             },
             25: {
                 "name": "День черепахи",
@@ -263,8 +263,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Двигайтесь медленно но верно",
                     "Проявляйте устойчивость",
-                    "Накапливайте опыт"
-                ]
+                    "Накапливайте опыт",
+                ],
             },
             26: {
                 "name": "День жабы",
@@ -273,8 +273,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Очищайте организм",
                     "Обновляйте энергию",
-                    "Освобождайтесь от токсинов"
-                ]
+                    "Освобождайтесь от токсинов",
+                ],
             },
             27: {
                 "name": "День трезубца",
@@ -283,8 +283,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Проявляйте лидерство",
                     "Используйте власть мудро",
-                    "Направляйте энергию правильно"
-                ]
+                    "Направляйте энергию правильно",
+                ],
             },
             28: {
                 "name": "День лотоса",
@@ -293,8 +293,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Раскрывайте духовность",
                     "Практикуйте медитацию",
-                    "Стремитесь к просветлению"
-                ]
+                    "Стремитесь к просветлению",
+                ],
             },
             29: {
                 "name": "День осьминога",
@@ -303,8 +303,8 @@ class LunarCalendar:
                 "recommendations": [
                     "Избегайте сложностей",
                     "Будьте осторожны",
-                    "Не принимайте важных решений"
-                ]
+                    "Не принимайте важных решений",
+                ],
             },
             30: {
                 "name": "День лебедя",
@@ -313,11 +313,11 @@ class LunarCalendar:
                 "recommendations": [
                     "Завершайте дела",
                     "Наслаждайтесь красотой",
-                    "Готовьтесь к новому циклу"
-                ]
-            }
+                    "Готовьтесь к новому циклу",
+                ],
+            },
         }
-        
+
         # Активности по фазам Луны
         self.lunar_phase_activities = {
             "Новолуние": {
@@ -325,43 +325,45 @@ class LunarCalendar:
                 "health": "Детоксикация, начало диет, очищение",
                 "relationships": "Знакомства, новые контакты",
                 "creativity": "Зарождение идей, планирование творческих проектов",
-                "spiritual": "Медитация, постановка намерений"
+                "spiritual": "Медитация, постановка намерений",
             },
             "Растущая Луна": {
                 "business": "Активное развитие проектов, привлечение ресурсов",
                 "health": "Укрепление организма, набор мышечной массы",
                 "relationships": "Развитие отношений, укрепление связей",
                 "creativity": "Активное творчество, воплощение идей",
-                "spiritual": "Изучение, накопление знаний"
+                "spiritual": "Изучение, накопление знаний",
             },
             "Полнолуние": {
                 "business": "Завершение проектов, подведение итогов",
                 "health": "Максимальная активность, но осторожность с переутомлением",
                 "relationships": "Пик эмоций, важные разговоры",
                 "creativity": "Максимальное самовыражение, презентации",
-                "spiritual": "Мощные практики, энергетическая работа"
+                "spiritual": "Мощные практики, энергетическая работа",
             },
             "Убывающая Луна": {
                 "business": "Анализ результатов, оптимизация процессов",
                 "health": "Избавление от вредных привычек, снижение веса",
                 "relationships": "Работа над проблемами, прощение",
                 "creativity": "Редактирование, совершенствование работ",
-                "spiritual": "Освобождение, отпускание старого"
-            }
+                "spiritual": "Освобождение, отпускание старого",
+            },
         }
 
     def get_lunar_day_info(self, target_date: datetime) -> Dict[str, Any]:
         """Получает информацию о лунном дне."""
-        
+
         # Упрощенный расчет лунного дня
         # В реальности требуется точный расчет лунного календаря
         moon_phase = self.astro_calc.calculate_moon_phase(target_date)
-        
+
         # Приблизительный расчет лунного дня на основе фазы
         lunar_day = self._calculate_approximate_lunar_day(moon_phase["angle"])
-        
-        lunar_info = self.lunar_day_descriptions.get(lunar_day, self.lunar_day_descriptions[1])
-        
+
+        lunar_info = self.lunar_day_descriptions.get(
+            lunar_day, self.lunar_day_descriptions[1]
+        )
+
         return {
             "lunar_day": lunar_day,
             "name": lunar_info["name"],
@@ -370,9 +372,9 @@ class LunarCalendar:
             "recommendations": lunar_info["recommendations"],
             "moon_phase": moon_phase,
             "activities": self.lunar_phase_activities.get(
-                moon_phase["phase_name"], 
-                self.lunar_phase_activities["Новолуние"]
-            )
+                moon_phase["phase_name"],
+                self.lunar_phase_activities["Новолуние"],
+            ),
         }
 
     def _calculate_approximate_lunar_day(self, moon_angle: float) -> int:
@@ -382,57 +384,59 @@ class LunarCalendar:
         return max(1, min(30, lunar_day))
 
     def get_monthly_lunar_calendar(
-        self, 
-        year: int, 
-        month: int
+        self, year: int, month: int
     ) -> Dict[str, Any]:
         """Получает лунный календарь на месяц."""
-        
+
         # Получаем все дни месяца
         days_in_month = calendar.monthrange(year, month)[1]
         lunar_month = {}
-        
+
         for day in range(1, days_in_month + 1):
             target_date = datetime(year, month, day)
             lunar_info = self.get_lunar_day_info(target_date)
-            
+
             lunar_month[day] = {
                 "date": target_date.strftime("%Y-%m-%d"),
                 "lunar_day": lunar_info["lunar_day"],
                 "name": lunar_info["name"],
                 "energy": lunar_info["energy_level"],
                 "phase": lunar_info["moon_phase"]["phase_name"],
-                "recommendations": lunar_info["recommendations"][:2]  # Первые 2 рекомендации
+                "recommendations": lunar_info["recommendations"][
+                    :2
+                ],  # Первые 2 рекомендации
             }
-        
+
         # Находим ключевые дни месяца
         key_dates = self._find_key_lunar_dates(year, month)
-        
+
         return {
             "year": year,
             "month": month,
             "month_name": calendar.month_name[month],
             "lunar_days": lunar_month,
             "key_dates": key_dates,
-            "monthly_advice": self._get_monthly_advice(year, month)
+            "monthly_advice": self._get_monthly_advice(year, month),
         }
 
-    def _find_key_lunar_dates(self, year: int, month: int) -> Dict[str, List[int]]:
+    def _find_key_lunar_dates(
+        self, year: int, month: int
+    ) -> Dict[str, List[int]]:
         """Находит ключевые лунные даты в месяце."""
-        
+
         days_in_month = calendar.monthrange(year, month)[1]
         key_dates = {
             "new_moon": [],
             "full_moon": [],
             "first_quarter": [],
-            "last_quarter": []
+            "last_quarter": [],
         }
-        
+
         for day in range(1, days_in_month + 1):
             target_date = datetime(year, month, day)
             moon_phase = self.astro_calc.calculate_moon_phase(target_date)
             phase_name = moon_phase["phase_name"]
-            
+
             if "Новолуние" in phase_name:
                 key_dates["new_moon"].append(day)
             elif "Полнолуние" in phase_name:
@@ -441,58 +445,54 @@ class LunarCalendar:
                 key_dates["first_quarter"].append(day)
             elif "Последняя четверть" in phase_name:
                 key_dates["last_quarter"].append(day)
-        
+
         return key_dates
 
     def _get_monthly_advice(self, year: int, month: int) -> Dict[str, str]:
         """Получает советы на месяц."""
-        
+
         # Определяем сезон и даем соответствующие советы
         if month in [12, 1, 2]:
-            season = "winter"
             season_advice = "Время внутреннего развития и планирования"
         elif month in [3, 4, 5]:
-            season = "spring"
             season_advice = "Время новых начинаний и роста"
         elif month in [6, 7, 8]:
-            season = "summer"
             season_advice = "Время активности и самовыражения"
         else:
-            season = "autumn"
             season_advice = "Время сбора урожая и подготовки"
-        
+
         return {
             "general": season_advice,
             "health": "Следуйте лунным ритмам для поддержания здоровья",
             "relationships": "Используйте лунные фазы для гармонизации отношений",
-            "business": "Планируйте важные дела в соответствии с лунным календарем"
+            "business": "Планируйте важные дела в соответствии с лунным календарем",
         }
 
     def get_lunar_recommendations(
-        self, 
-        activity_type: str,
-        target_date: Optional[datetime] = None
+        self, activity_type: str, target_date: Optional[datetime] = None
     ) -> Dict[str, Any]:
         """Получает рекомендации для конкретной деятельности."""
-        
+
         if target_date is None:
             target_date = datetime.now()
-        
+
         lunar_info = self.get_lunar_day_info(target_date)
         phase_name = lunar_info["moon_phase"]["phase_name"]
-        
+
         # Получаем рекомендации по типу активности
         activities = lunar_info["activities"]
-        
+
         if activity_type in activities:
             specific_recommendation = activities[activity_type]
         else:
             specific_recommendation = "Следуйте общим лунным рекомендациям"
-        
+
         # Определяем благоприятность
         energy_level = lunar_info["energy_level"]
-        favorability = self._determine_favorability(activity_type, energy_level, phase_name)
-        
+        favorability = self._determine_favorability(
+            activity_type, energy_level, phase_name
+        )
+
         return {
             "date": target_date.strftime("%Y-%m-%d"),
             "lunar_day": lunar_info["lunar_day"],
@@ -502,53 +502,54 @@ class LunarCalendar:
             "recommendation": specific_recommendation,
             "favorability": favorability,
             "energy_level": energy_level,
-            "additional_advice": self._get_additional_advice(activity_type, lunar_info)
+            "additional_advice": self._get_additional_advice(
+                activity_type, lunar_info
+            ),
         }
 
     def _determine_favorability(
-        self, 
-        activity_type: str, 
-        energy_level: str, 
-        phase_name: str
+        self, activity_type: str, energy_level: str, phase_name: str
     ) -> Dict[str, Any]:
         """Определяет благоприятность для деятельности."""
-        
+
         # Базовая благоприятность по типу активности и фазе Луны
         favorability_matrix = {
             "business": {
                 "Новолуние": 4,
                 "Растущая Луна": 5,
                 "Полнолуние": 3,
-                "Убывающая Луна": 2
+                "Убывающая Луна": 2,
             },
             "health": {
                 "Новолуние": 5,
                 "Растущая Луна": 4,
                 "Полнолуние": 2,
-                "Убывающая Луна": 5
+                "Убывающая Луна": 5,
             },
             "relationships": {
                 "Новолуние": 4,
                 "Растущая Луна": 5,
                 "Полнолуние": 5,
-                "Убывающая Луна": 3
+                "Убывающая Луна": 3,
             },
             "creativity": {
                 "Новолуние": 3,
                 "Растущая Луна": 5,
                 "Полнолуние": 5,
-                "Убывающая Луна": 2
+                "Убывающая Луна": 2,
             },
             "spiritual": {
                 "Новолуние": 5,
                 "Растущая Луна": 4,
                 "Полнолуние": 5,
-                "Убывающая Луна": 4
-            }
+                "Убывающая Луна": 4,
+            },
         }
-        
-        base_score = favorability_matrix.get(activity_type, {}).get(phase_name, 3)
-        
+
+        base_score = favorability_matrix.get(activity_type, {}).get(
+            phase_name, 3
+        )
+
         # Корректируем по уровню энергии
         energy_modifiers = {
             "низкая": -1,
@@ -556,36 +557,36 @@ class LunarCalendar:
             "умеренная": 0,
             "активная": 1,
             "высокая": 1,
-            "духовная": 0
+            "духовная": 0,
         }
-        
+
         modifier = energy_modifiers.get(energy_level, 0)
         final_score = max(1, min(5, base_score + modifier))
-        
+
         favorability_descriptions = {
             1: "Неблагоприятное время",
-            2: "Малоблагоприятное время", 
+            2: "Малоблагоприятное время",
             3: "Нейтральное время",
             4: "Благоприятное время",
-            5: "Очень благоприятное время"
+            5: "Очень благоприятное время",
         }
-        
+
         return {
             "score": final_score,
             "description": favorability_descriptions[final_score],
-            "recommendation": "Действуйте" if final_score >= 4 else "Подождите лучшего времени"
+            "recommendation": "Действуйте"
+            if final_score >= 4
+            else "Подождите лучшего времени",
         }
 
     def _get_additional_advice(
-        self, 
-        activity_type: str, 
-        lunar_info: Dict[str, Any]
+        self, activity_type: str, lunar_info: Dict[str, Any]
     ) -> str:
         """Получает дополнительные советы."""
-        
+
         lunar_day = lunar_info["lunar_day"]
         energy_level = lunar_info["energy_level"]
-        
+
         # Специфические советы по дням
         special_advice = {
             1: "Идеальный день для планирования",
@@ -594,49 +595,52 @@ class LunarCalendar:
             14: "Доверьтесь интуиции",
             15: "Избегайте излишеств",
             19: "Проявите терпение",
-            29: "Избегайте сложных дел"
+            29: "Избегайте сложных дел",
         }
-        
+
         if lunar_day in special_advice:
             return special_advice[lunar_day]
-        
+
         # Общие советы по уровню энергии
         energy_advice = {
             "низкая": "Время для отдыха и планирования",
             "растущая": "Постепенно увеличивайте активность",
             "активная": "Время для решительных действий",
             "высокая": "Используйте энергию максимально",
-            "духовная": "Сосредоточьтесь на внутреннем развитии"
+            "духовная": "Сосредоточьтесь на внутреннем развитии",
         }
-        
+
         return energy_advice.get(energy_level, "Следуйте своей интуиции")
 
     def get_best_days_for_activity(
-        self, 
-        activity_type: str,
-        year: int,
-        month: int
+        self, activity_type: str, year: int, month: int
     ) -> List[Dict[str, Any]]:
         """Находит лучшие дни месяца для определенной деятельности."""
-        
+
         days_in_month = calendar.monthrange(year, month)[1]
         best_days = []
-        
+
         for day in range(1, days_in_month + 1):
             target_date = datetime(year, month, day)
-            recommendations = self.get_lunar_recommendations(activity_type, target_date)
-            
+            recommendations = self.get_lunar_recommendations(
+                activity_type, target_date
+            )
+
             if recommendations["favorability"]["score"] >= 4:
-                best_days.append({
-                    "date": target_date.strftime("%Y-%m-%d"),
-                    "day": day,
-                    "score": recommendations["favorability"]["score"],
-                    "description": recommendations["favorability"]["description"],
-                    "lunar_day": recommendations["lunar_day"],
-                    "moon_phase": recommendations["moon_phase"]
-                })
-        
+                best_days.append(
+                    {
+                        "date": target_date.strftime("%Y-%m-%d"),
+                        "day": day,
+                        "score": recommendations["favorability"]["score"],
+                        "description": recommendations["favorability"][
+                            "description"
+                        ],
+                        "lunar_day": recommendations["lunar_day"],
+                        "moon_phase": recommendations["moon_phase"],
+                    }
+                )
+
         # Сортируем по убыванию благоприятности
         best_days.sort(key=lambda x: x["score"], reverse=True)
-        
+
         return best_days[:10]  # Возвращаем топ-10 дней

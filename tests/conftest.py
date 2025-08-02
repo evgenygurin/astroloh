@@ -1,12 +1,13 @@
 """
 Pytest configuration and shared fixtures.
 """
-import pytest
 import asyncio
 import os
 import secrets
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 # Set test environment variables
 os.environ["ENVIRONMENT"] = "testing"
@@ -38,8 +39,12 @@ async def mock_database():
 @pytest.fixture
 def mock_yandex_request():
     """Create a mock Yandex request."""
-    from app.models.yandex_models import YandexRequestModel, YandexSession, YandexRequestData
-    
+    from app.models.yandex_models import (
+        YandexRequestData,
+        YandexRequestModel,
+        YandexSession,
+    )
+
     return YandexRequestModel(
         meta=MagicMock(),
         request=YandexRequestData(
@@ -47,7 +52,7 @@ def mock_yandex_request():
             original_utterance="тест",
             type="SimpleUtterance",
             markup=MagicMock(),
-            payload={}
+            payload={},
         ),
         session=YandexSession(
             message_id=1,
@@ -56,9 +61,9 @@ def mock_yandex_request():
             user_id="test_user",
             user={"user_id": "test_user"},
             application=MagicMock(),
-            new=False
+            new=False,
         ),
-        version="1.0"
+        version="1.0",
     )
 
 
@@ -82,8 +87,8 @@ def sample_birth_data():
         "birth_location": {
             "latitude": 55.7558,
             "longitude": 37.6176,
-            "name": "Moscow"
-        }
+            "name": "Moscow",
+        },
     }
 
 
@@ -98,7 +103,7 @@ def sample_horoscope_data():
         "finances": "Избегайте крупных трат",
         "lucky_numbers": [7, 14, 21],
         "lucky_color": "синий",
-        "energy_level": 75
+        "energy_level": 75,
     }
 
 
@@ -110,7 +115,7 @@ def sample_compatibility_data():
         "description": "Отличная совместимость!",
         "strengths": ["понимание", "гармония", "общие интересы"],
         "challenges": ["разные темпераменты", "различные подходы к жизни"],
-        "advice": "Больше общайтесь и учитесь идти на компромиссы"
+        "advice": "Больше общайтесь и учитесь идти на компромиссы",
     }
 
 
@@ -121,21 +126,31 @@ def sample_natal_chart():
         "planets": {
             "sun": {"sign": "taurus", "house": 2, "longitude": 54.5},
             "moon": {"sign": "scorpio", "house": 8, "longitude": 234.5},
-            "mercury": {"sign": "gemini", "house": 3, "longitude": 64.5}
+            "mercury": {"sign": "gemini", "house": 3, "longitude": 64.5},
         },
         "houses": {
             "1": {"cusp": 0, "sign": "aries"},
             "2": {"cusp": 30, "sign": "taurus"},
-            "3": {"cusp": 60, "sign": "gemini"}
+            "3": {"cusp": 60, "sign": "gemini"},
         },
         "aspects": [
-            {"planet1": "sun", "planet2": "moon", "type": "opposition", "orb": 1.2},
-            {"planet1": "sun", "planet2": "mercury", "type": "conjunction", "orb": 0.8}
+            {
+                "planet1": "sun",
+                "planet2": "moon",
+                "type": "opposition",
+                "orb": 1.2,
+            },
+            {
+                "planet1": "sun",
+                "planet2": "mercury",
+                "type": "conjunction",
+                "orb": 0.8,
+            },
         ],
         "chart_signature": {
             "dominant_element": "earth",
-            "dominant_quality": "fixed"
-        }
+            "dominant_quality": "fixed",
+        },
     }
 
 
@@ -143,7 +158,7 @@ def sample_natal_chart():
 def mock_encryption_service():
     """Mock encryption service."""
     from unittest.mock import MagicMock
-    
+
     service = MagicMock()
     service.encrypt.return_value = b"encrypted_data"
     service.decrypt.return_value = "decrypted_data"
@@ -156,17 +171,17 @@ def mock_encryption_service():
 def mock_astrology_calculator():
     """Mock astrology calculator."""
     from app.models.yandex_models import YandexZodiacSign
-    
+
     calculator = MagicMock()
     calculator.get_zodiac_sign_by_date.return_value = YandexZodiacSign.LEO
     calculator.calculate_compatibility.return_value = {
         "score": 85,
-        "description": "Отличная совместимость!"
+        "description": "Отличная совместимость!",
     }
     calculator.calculate_moon_phase.return_value = {
         "phase": "Full Moon",
         "illumination": 100,
-        "energy_level": 90
+        "energy_level": 90,
     }
     return calculator
 
@@ -178,11 +193,11 @@ def mock_horoscope_generator():
     generator.generate_horoscope.return_value = {
         "prediction": "Отличный день для новых начинаний!",
         "lucky_numbers": [7, 14, 21],
-        "lucky_color": "синий"
+        "lucky_color": "синий",
     }
     generator.generate_personal_horoscope.return_value = {
         "prediction": "Персональный прогноз",
-        "energy_level": 75
+        "energy_level": 75,
     }
     return generator
 
@@ -203,17 +218,22 @@ def clear_caches():
     """Clear all caches before each test."""
     # Import all services that have caches
     try:
-        from app.services.intent_recognition import IntentRecognitionService
-        IntentRecognitionService._cache.clear()
+        from app.services.intent_recognition import IntentRecognizer
+
+        # Clear intent recognizer caches if they exist
+        recognizer = IntentRecognizer()
+        recognizer.clear_cache()
     except (ImportError, AttributeError):
         pass
-    
+
     yield
-    
+
     # Clear caches after test
     try:
-        from app.services.intent_recognition import IntentRecognitionService
-        IntentRecognitionService._cache.clear()
+        from app.services.intent_recognition import IntentRecognizer
+
+        recognizer = IntentRecognizer()
+        recognizer.clear_cache()
     except (ImportError, AttributeError):
         pass
 
@@ -225,7 +245,7 @@ def test_config():
         "database_url": "sqlite:///:memory:",
         "secret_key": secrets.token_urlsafe(32),
         "encryption_key": secrets.token_urlsafe(32),
-        "environment": "testing"
+        "environment": "testing",
     }
 
 

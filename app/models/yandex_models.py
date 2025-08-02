@@ -2,18 +2,21 @@
 Модели данных для интеграции с Яндекс.Диалогами.
 """
 from enum import Enum
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 
 class YandexRequestType(str, Enum):
     """Типы запросов от Яндекс.Диалогов."""
+
     SIMPLE_UTTERANCE = "SimpleUtterance"
     BUTTON_PRESSED = "ButtonPressed"
 
 
 class YandexIntent(str, Enum):
     """Поддерживаемые интенты навыка."""
+
     GREET = "greet"
     HOROSCOPE = "horoscope"
     COMPATIBILITY = "compatibility"
@@ -26,6 +29,7 @@ class YandexIntent(str, Enum):
 
 class YandexZodiacSign(str, Enum):
     """Знаки зодиака."""
+
     ARIES = "овен"
     TAURUS = "телец"
     GEMINI = "близнецы"
@@ -42,6 +46,7 @@ class YandexZodiacSign(str, Enum):
 
 class YandexButton(BaseModel):
     """Кнопка в интерфейсе Алисы."""
+
     title: str
     payload: Optional[Dict[str, Any]] = None
     url: Optional[str] = None
@@ -50,6 +55,7 @@ class YandexButton(BaseModel):
 
 class YandexCard(BaseModel):
     """Карточка в интерфейсе Алисы."""
+
     type: str = "BigImage"
     image_id: Optional[str] = None
     title: Optional[str] = None
@@ -59,6 +65,7 @@ class YandexCard(BaseModel):
 
 class YandexRequestMeta(BaseModel):
     """Метаданные запроса."""
+
     locale: str
     timezone: str
     client_id: str
@@ -67,6 +74,7 @@ class YandexRequestMeta(BaseModel):
 
 class YandexRequestData(BaseModel):
     """Данные запроса пользователя."""
+
     command: str
     original_utterance: str
     type: YandexRequestType
@@ -77,6 +85,7 @@ class YandexRequestData(BaseModel):
 
 class YandexSession(BaseModel):
     """Данные сессии."""
+
     message_id: int
     session_id: str
     skill_id: str
@@ -88,6 +97,7 @@ class YandexSession(BaseModel):
 
 class YandexRequestModel(BaseModel):
     """Полная модель запроса от Яндекс.Диалогов."""
+
     meta: YandexRequestMeta
     request: YandexRequestData
     session: YandexSession
@@ -96,6 +106,7 @@ class YandexRequestModel(BaseModel):
 
 class YandexResponse(BaseModel):
     """Ответ для Яндекс.Диалогов."""
+
     text: str
     tts: Optional[str] = None
     card: Optional[YandexCard] = None
@@ -106,6 +117,7 @@ class YandexResponse(BaseModel):
 
 class YandexResponseModel(BaseModel):
     """Полная модель ответа для Яндекс.Диалогов."""
+
     response: YandexResponse
     session: YandexSession
     version: str = "1.0"
@@ -113,8 +125,12 @@ class YandexResponseModel(BaseModel):
 
 class UserContext(BaseModel):
     """Контекст пользователя в сессии."""
+
+    user_id: Optional[str] = None
     intent: Optional[YandexIntent] = None
-    awaiting_data: Optional[str] = None  # Ожидаемые данные (дата рождения, знак и т.д.)
+    awaiting_data: Optional[
+        str
+    ] = None  # Ожидаемые данные (дата рождения, знак и т.д.)
     birth_date: Optional[str] = None
     birth_time: Optional[str] = None
     birth_place: Optional[str] = None
@@ -126,6 +142,7 @@ class UserContext(BaseModel):
 
 class ProcessedRequest(BaseModel):
     """Обработанный запрос с извлеченными данными."""
+
     intent: YandexIntent
     entities: Dict[str, Any] = Field(default_factory=dict)
     confidence: float = 0.0

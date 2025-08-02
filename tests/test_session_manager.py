@@ -2,13 +2,14 @@
 Тесты для менеджера сессий.
 """
 from datetime import datetime, timedelta
+
+from app.models.yandex_models import UserContext, YandexIntent, YandexSession
 from app.services.session_manager import SessionManager
-from app.models.yandex_models import UserContext, YandexSession, YandexIntent
 
 
 class TestSessionManager:
     """Тесты для класса SessionManager."""
-    
+
     def setup_method(self):
         """Настройка перед каждым тестом."""
         self.session_manager = SessionManager()
@@ -17,7 +18,7 @@ class TestSessionManager:
             session_id="test-session-123",
             skill_id="test-skill",
             user_id="test-user-456",
-            new=True
+            new=True,
         )
 
     def test_get_user_context_new_session(self):
@@ -34,13 +35,15 @@ class TestSessionManager:
         context = UserContext(
             intent=YandexIntent.HOROSCOPE,
             awaiting_data="birth_date",
-            conversation_step=1
+            conversation_step=1,
         )
-        
+
         self.session_manager.update_user_context(self.test_session, context)
-        
+
         # Получаем обновленный контекст
-        retrieved_context = self.session_manager.get_user_context(self.test_session)
+        retrieved_context = self.session_manager.get_user_context(
+            self.test_session
+        )
         assert retrieved_context.intent == YandexIntent.HOROSCOPE
         assert retrieved_context.awaiting_data == "birth_date"
         assert retrieved_context.conversation_step == 1
@@ -48,15 +51,14 @@ class TestSessionManager:
     def test_set_awaiting_data(self):
         """Тест установки ожидания данных."""
         context = UserContext()
-        
+
         self.session_manager.set_awaiting_data(
-            self.test_session, 
-            context, 
-            "birth_date", 
-            YandexIntent.HOROSCOPE
+            self.test_session, context, "birth_date", YandexIntent.HOROSCOPE
         )
-        
-        updated_context = self.session_manager.get_user_context(self.test_session)
+
+        updated_context = self.session_manager.get_user_context(
+            self.test_session
+        )
         assert updated_context.awaiting_data == "birth_date"
         assert updated_context.intent == YandexIntent.HOROSCOPE
         assert updated_context.conversation_step == 1
@@ -66,13 +68,15 @@ class TestSessionManager:
         context = UserContext(
             awaiting_data="birth_date",
             intent=YandexIntent.HOROSCOPE,
-            conversation_step=1
+            conversation_step=1,
         )
-        
+
         self.session_manager.update_user_context(self.test_session, context)
         self.session_manager.clear_awaiting_data(self.test_session, context)
-        
-        updated_context = self.session_manager.get_user_context(self.test_session)
+
+        updated_context = self.session_manager.get_user_context(
+            self.test_session
+        )
         assert updated_context.awaiting_data is None
         assert updated_context.conversation_step == 2
 
@@ -81,10 +85,10 @@ class TestSessionManager:
         # Создаем контекст
         context = UserContext(intent=YandexIntent.HOROSCOPE)
         self.session_manager.update_user_context(self.test_session, context)
-        
+
         # Очищаем контекст
         self.session_manager.clear_user_context(self.test_session)
-        
+
         # Проверяем, что контекст очищен
         new_context = self.session_manager.get_user_context(self.test_session)
         assert new_context.intent is None
@@ -93,22 +97,22 @@ class TestSessionManager:
         """Тест проверки новой сессии."""
         # Для новой сессии
         assert self.session_manager.is_new_session(self.test_session) is True
-        
+
         # После создания контекста сессия больше не новая
         context = UserContext()
         self.session_manager.update_user_context(self.test_session, context)
-        
+
         self.test_session.new = False
         assert self.session_manager.is_new_session(self.test_session) is False
 
     def test_get_active_sessions_count(self):
         """Тест подсчета активных сессий."""
         initial_count = self.session_manager.get_active_sessions_count()
-        
+
         # Добавляем сессию
         context = UserContext()
         self.session_manager.update_user_context(self.test_session, context)
-        
+
         new_count = self.session_manager.get_active_sessions_count()
         assert new_count == initial_count + 1
 
@@ -117,16 +121,18 @@ class TestSessionManager:
         # Создаем сессию
         context = UserContext()
         self.session_manager.update_user_context(self.test_session, context)
-        
+
         # Имитируем устаревшую сессию, изменив время последней активности
-        session_key = f"{self.test_session.user_id}:{self.test_session.session_id}"
+        session_key = (
+            f"{self.test_session.user_id}:{self.test_session.session_id}"
+        )
         old_time = (datetime.utcnow() - timedelta(hours=2)).isoformat()
         self.session_manager._sessions[session_key]["last_activity"] = old_time
-        
+
         # Очищаем устаревшие сессии
         cleaned_count = self.session_manager.cleanup_expired_sessions()
         assert cleaned_count == 1
-        
+
         # Проверяем, что сессия удалена
         assert self.session_manager.get_active_sessions_count() == 0
 
@@ -135,7 +141,7 @@ class TestSessionManager:
         # Создаем контекст
         context = UserContext(intent=YandexIntent.ADVICE)
         self.session_manager.update_user_context(self.test_session, context)
-        
+
         # Получаем историю
         history = self.session_manager.get_session_history(self.test_session)
         assert history is not None

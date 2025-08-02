@@ -1,14 +1,15 @@
 """
 Основной модуль FastAPI приложения для навыка "Астролог" Яндекс Алисы.
 """
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-from app.api.yandex_dialogs import router as yandex_router
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.api.security import router as security_router
+from app.api.yandex_dialogs import router as yandex_router
 from app.core.config import settings
-from app.core.database import init_database, close_database
+from app.core.database import close_database, init_database
 
 app = FastAPI(
     title="Astroloh - Навык Астролог для Яндекс Алисы",
@@ -35,17 +36,18 @@ app.include_router(security_router, prefix="/api/v1")
 @app.get("/")
 async def root():
     """Корневой эндпоинт для проверки работы API."""
-    return {"message": "Астролог навык для Яндекс Алисы работает!"}
+    return {"message": "Astroloh - Астролог навык для Яндекс Алисы работает!"}
 
 
 @app.get("/health")
 async def health_check():
     """Эндпоинт для проверки здоровья сервиса."""
     from datetime import datetime
+
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "version": "1.0.0"
+        "version": "1.0.0",
     }
 
 
@@ -54,13 +56,15 @@ async def startup_event():
     """Инициализация при запуске приложения."""
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    
+
     try:
         if settings.DATABASE_URL:
             await init_database()
             logger.info("Database initialized successfully")
         else:
-            logger.warning("DATABASE_URL not configured, running without database")
+            logger.warning(
+                "DATABASE_URL not configured, running without database"
+            )
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
 
@@ -69,7 +73,7 @@ async def startup_event():
 async def shutdown_event():
     """Очистка при завершении приложения."""
     logger = logging.getLogger(__name__)
-    
+
     try:
         await close_database()
         logger.info("Database connections closed")
