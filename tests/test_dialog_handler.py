@@ -155,8 +155,7 @@ class TestDialogHandler:
             # Mock intent recognition
             from app.models.yandex_models import ProcessedRequest, UserContext
             mock_processed_request = ProcessedRequest(
-                intent=
-                YandexIntent.COMPATIBILITY,
+                intent=YandexIntent.COMPATIBILITY,
                 entities={"sign1": "leo", "sign2": "libra"},
                 confidence=0.9,
                 raw_text="совместимость льва и весов",
@@ -290,9 +289,13 @@ class TestDialogHandler:
             # Mock intent recognition
             from app.models.yandex_models import ProcessedRequest, UserContext
             mock_processed_request = ProcessedRequest(
-                intent=
-                YandexIntent.LUNAR_CALENDAR, {"date": "today"}, 0.9
+                intent=YandexIntent.LUNAR_CALENDAR,
+                entities={"date": "today"},
+                confidence=0.9,
+                raw_text="лунный календарь на сегодня",
+                user_context=UserContext()
             )
+            self.dialog_handler.intent_recognizer.recognize_intent.return_value = mock_processed_request
             
             # Mock conversation processing  
             self.dialog_handler.conversation_manager.process_conversation.return_value = (
@@ -340,9 +343,13 @@ class TestDialogHandler:
             # Mock intent recognition
             from app.models.yandex_models import ProcessedRequest, UserContext
             mock_processed_request = ProcessedRequest(
-                intent=
-                YandexIntent.HELP, {}, 0.9
+                intent=YandexIntent.HELP,
+                entities={},
+                confidence=0.9,
+                raw_text="помощь",
+                user_context=UserContext()
             )
+            self.dialog_handler.intent_recognizer.recognize_intent.return_value = mock_processed_request
             
             # Mock conversation processing  
             self.dialog_handler.conversation_manager.process_conversation.return_value = (
