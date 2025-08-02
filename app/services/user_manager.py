@@ -1,10 +1,12 @@
 """
 User management and session security system.
 """
+from __future__ import annotations
+
 import json
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -371,6 +373,259 @@ class UserManager:
             )
 
         return deleted_count
+
+    async def delete_user_data(self, user: User) -> None:
+        """
+        Delete user's sensitive data (clear encrypted fields).
+
+        Args:
+            user: User object to clear data from
+        """
+        user.encrypted_birth_date = None
+        user.encrypted_birth_time = None
+        user.encrypted_birth_location = None
+        user.encrypted_name = None
+        await self.db.commit()
+
+    async def update_last_accessed(self, user: User) -> None:
+        """
+        Update user's last accessed timestamp.
+
+        Args:
+            user: User object to update
+        """
+        user.last_accessed = datetime.utcnow()
+        await self.db.commit()
+
+    async def get_user_preferences(self, user: User) -> Dict[str, Any]:
+        """
+        Get user preferences as a dictionary.
+
+        Args:
+            user: User object
+
+        Returns:
+            Dictionary with user preferences
+        """
+        return {
+            "zodiac_sign": user.zodiac_sign,
+            "gender": user.gender,
+            "data_consent": user.data_consent,
+        }
+
+    async def set_user_consent(self, user: User, consent: bool) -> None:
+        """
+        Set user data consent.
+
+        Args:
+            user: User object
+            consent: Consent status
+        """
+        user.data_consent = consent
+        await self.db.commit()
+
+    async def get_users_for_cleanup(
+        self, days_threshold: int = 30
+    ) -> List[User]:
+        """
+        Get users that need data cleanup.
+
+        Args:
+            days_threshold: Days since last access threshold
+
+        Returns:
+            List of users for cleanup
+        """
+        cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+        result = await self.db.execute(
+            select(User).where(User.last_accessed < cutoff_date)
+        )
+        return result.scalars().all()
+
+    async def create_user_with_consent(
+        self, yandex_user_id: str, consent: bool = True
+    ) -> User:
+        """
+        Create a new user with specified consent.
+
+        Args:
+            yandex_user_id: Yandex user ID
+            consent: Data consent status
+
+        Returns:
+            Created user object
+        """
+        user = User(
+            yandex_user_id=yandex_user_id,
+            data_consent=consent,
+            data_retention_days=365,
+        )
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    def _encrypt_data(self, data: str) -> bytes:
+        """
+        Encrypt data using the encryption service.
+
+        Args:
+            data: Data to encrypt
+
+        Returns:
+            Encrypted data
+        """
+        return self.data_protection.encryption.encrypt(data)
+
+    def _decrypt_data(self, encrypted_data: bytes) -> str:
+        """
+        Decrypt data using the encryption service.
+
+        Args:
+            encrypted_data: Data to decrypt
+
+        Returns:
+            Decrypted data
+        """
+        return self.data_protection.encryption.decrypt(encrypted_data)
+
+    async def get_user_statistics(self, user: User) -> Dict[str, Any]:
+        """
+        Get user statistics.
+
+        Args:
+            user: User object
+
+        Returns:
+            Dictionary with user statistics
+        """
+        now = datetime.utcnow()
+
+        # Calculate days since registration
+        days_since_registration = (
+            (now - user.created_at).days if user.created_at else 0
+        )
+
+        # Calculate days since last access
+        days_since_last_access = (
+            (now - user.last_accessed).days if user.last_accessed else 0
+        )
+
+        # Get total sessions count
+        result = await self.db.execute(
+            select(UserSession).where(UserSession.user_id == user.id)
+        )
+        total_sessions = len(result.scalars().all())
+
+        return {
+            "days_since_registration": days_since_registration,
+            "days_since_last_access": days_since_last_access,
+            "total_sessions": total_sessions,
+        }
+
+    async def is_user_active(
+        self, user: User, days_threshold: int = 30
+    ) -> bool:
+        """
+        Check if user is active based on last access.
+
+        Args:
+            user: User object
+            days_threshold: Threshold in days for activity
+
+        Returns:
+            True if user is active
+        """
+        if not user.last_accessed:
+            return False
+
+        cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+        return user.last_accessed > cutoff_date
+
+    async def get_user_by_id(self, user_id: str) -> Optional[User]:
+        """
+        Get user by Yandex user ID.
+
+        Args:
+            user_id: Yandex user ID
+
+        Returns:
+            User object or None
+        """
+        result = await self.db.execute(
+            select(User).where(User.yandex_user_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def update_user_gender(self, user: User, gender: str) -> None:
+        """
+        Update user gender.
+
+        Args:
+            user: User object
+            gender: Gender value
+        """
+        user.gender = gender
+        await self.db.commit()
+
+    async def update_user_zodiac_sign(
+        self, user: User, zodiac_sign: Any
+    ) -> None:
+        """
+        Update user zodiac sign.
+
+        Args:
+            user: User object
+            zodiac_sign: Zodiac sign value
+        """
+        user.zodiac_sign = str(zodiac_sign) if zodiac_sign else None
+        await self.db.commit()
+
+    async def create_user_with_full_data(
+        self, yandex_user_id: str, user_data: Dict[str, Any]
+    ) -> User:
+        """
+        Create user with full data set.
+
+        Args:
+            yandex_user_id: Yandex user ID
+            user_data: User data dictionary
+
+        Returns:
+            Created user object
+        """
+        user = User(
+            yandex_user_id=yandex_user_id,
+            zodiac_sign=str(user_data.get("zodiac_sign", "")),
+            gender=user_data.get("gender"),
+            data_consent=user_data.get("consent", False),
+            data_retention_days=user_data.get("retention_days", 365),
+        )
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def bulk_update_last_accessed(self, user_ids: List[str]) -> bool:
+        """
+        Update last accessed time for multiple users.
+
+        Args:
+            user_ids: List of Yandex user IDs
+
+        Returns:
+            True if operation was successful
+        """
+        try:
+            await self.db.execute(
+                update(User)
+                .where(User.yandex_user_id.in_(user_ids))
+                .values(last_accessed=datetime.utcnow())
+            )
+            await self.db.commit()
+            return True
+        except Exception:
+            return False
 
     def _update_user_info(self, user: User, user_info: Dict[str, Any]):
         """Обновление информации о пользователе."""

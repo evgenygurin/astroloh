@@ -36,7 +36,7 @@ class EncryptionService:
             self._key = self._derive_key_from_secret(settings.SECRET_KEY)
 
         # Ensure we have exactly 32 bytes for Fernet
-        key_bytes = self._key[:32].ljust(32, b'\0')
+        key_bytes = self._key[:32].ljust(32, b"\0")
         fernet_key = base64.urlsafe_b64encode(key_bytes)
         self._fernet = Fernet(fernet_key)
 

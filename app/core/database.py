@@ -54,13 +54,13 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 async def get_db_session_context() -> AsyncGenerator[AsyncSession, None]:
     """
     Context manager for database sessions.
-    
+
     Yields:
         AsyncSession: Database session
     """
     if not db_manager:
         await init_database()
-    
+
     async with db_manager.async_session() as session:
         yield session
 

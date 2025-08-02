@@ -42,7 +42,9 @@ class ResponseFormatter:
         )
 
     def format_personalized_birth_date_request(
-        self, user_returning: bool = False, suggestions: Optional[List[str]] = None
+        self,
+        user_returning: bool = False,
+        suggestions: Optional[List[str]] = None,
     ) -> YandexResponse:
         """Форматирует персонализированный запрос даты рождения."""
         if user_returning:
@@ -134,7 +136,9 @@ class ResponseFormatter:
         )
 
     def format_clarification_response(
-        self, recent_context: Optional[List[str]] = None, suggestions: Optional[List[str]] = None
+        self,
+        recent_context: Optional[List[str]] = None,
+        suggestions: Optional[List[str]] = None,
     ) -> YandexResponse:
         """Форматирует ответ для уточнения неясного запроса."""
 

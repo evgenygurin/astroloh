@@ -58,21 +58,24 @@ class TestUserManager:
     async def test_update_user_birth_data(self):
         """Test updating user birth data."""
         import uuid
+
         from app.services.encryption import data_protection
-        
+
         user_id = uuid.uuid4()
         birth_date = "1990-05-15"
         birth_time = "14:30:00"
         birth_location = "Moscow"
         zodiac_sign = "taurus"
 
-        with patch.object(data_protection, "encrypt_birth_data") as mock_encrypt:
+        with patch.object(
+            data_protection, "encrypt_birth_data"
+        ) as mock_encrypt:
             mock_encrypt.return_value = {
                 "encrypted_birth_date": b"encrypted_date",
                 "encrypted_birth_time": b"encrypted_time",
-                "encrypted_birth_location": b"encrypted_location"
+                "encrypted_birth_location": b"encrypted_location",
             }
-            
+
             # Mock database query
             mock_result = AsyncMock()
             mock_result.rowcount = 1
@@ -91,18 +94,21 @@ class TestUserManager:
     async def test_update_zodiac_via_birth_data(self):
         """Test updating zodiac sign via birth data update."""
         import uuid
+
         from app.services.encryption import data_protection
-        
+
         user_id = uuid.uuid4()
         zodiac_sign = "leo"
 
-        with patch.object(data_protection, "encrypt_birth_data") as mock_encrypt:
+        with patch.object(
+            data_protection, "encrypt_birth_data"
+        ) as mock_encrypt:
             mock_encrypt.return_value = {
                 "encrypted_birth_date": b"encrypted_date",
-                "encrypted_birth_time": b"encrypted_time", 
-                "encrypted_birth_location": b"encrypted_location"
+                "encrypted_birth_time": b"encrypted_time",
+                "encrypted_birth_location": b"encrypted_location",
             }
-            
+
             # Mock database query
             mock_result = AsyncMock()
             mock_result.rowcount = 1
@@ -119,8 +125,9 @@ class TestUserManager:
     async def test_get_user_birth_data_encrypted(self):
         """Test getting user birth data when encrypted."""
         import uuid
+
         from app.services.encryption import data_protection
-        
+
         user_id = uuid.uuid4()
         mock_user = MagicMock()
         mock_user.encrypted_birth_date = b"encrypted_date"
@@ -133,11 +140,17 @@ class TestUserManager:
         mock_result.scalar_one_or_none.return_value = mock_user
         self.mock_db.execute.return_value = mock_result
 
-        with patch.object(data_protection, "decrypt_birth_data") as mock_decrypt:
+        with patch.object(
+            data_protection, "decrypt_birth_data"
+        ) as mock_decrypt:
             mock_decrypt.return_value = {
                 "birth_date": "1990-05-15",
                 "birth_time": "14:30:00",
-                "birth_location": {"latitude": 55.7558, "longitude": 37.6176, "name": "Moscow"}
+                "birth_location": {
+                    "latitude": 55.7558,
+                    "longitude": 37.6176,
+                    "name": "Moscow",
+                },
             }
 
             birth_data = await self.user_manager.get_user_birth_data(user_id)
@@ -151,9 +164,9 @@ class TestUserManager:
     async def test_get_user_birth_data_not_encrypted(self):
         """Test getting user birth data when not encrypted."""
         import uuid
-        
+
         user_id = uuid.uuid4()
-        
+
         # Mock database query returning None (no user found)
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -237,9 +250,7 @@ class TestUserManager:
             None
         )
 
-        await self.user_manager.create_user_with_consent(
-            user_id, consent=True
-        )
+        await self.user_manager.create_user_with_consent(user_id, consent=True)
 
         assert self.mock_db.add.called
         assert self.mock_db.commit.called
@@ -390,9 +401,7 @@ class TestUserManager:
             "retention_days": 365,
         }
 
-        await self.user_manager.create_user_with_full_data(
-            user_id, user_data
-        )
+        await self.user_manager.create_user_with_full_data(user_id, user_data)
 
         assert self.mock_db.add.called
         assert self.mock_db.commit.called

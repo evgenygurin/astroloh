@@ -22,7 +22,7 @@ try:
 except ImportError as e:
     logging.warning(f"Swiss Ephemeris not available: {e}")
     import importlib.util
-    
+
     if importlib.util.find_spec("skyfield"):
         _astronomy_backend = "skyfield"
         logging.info("Using Skyfield backend for astronomical calculations")

@@ -379,19 +379,25 @@ class TestGDPRCompliance:
         mock_user.encrypted_name = b"encrypted_name"
 
         mock_db = AsyncMock()
-        
+
         # Setup mocks for three database queries
         mock_user_result = MagicMock()
         mock_user_result.scalar_one_or_none.return_value = mock_user
-        
+
         mock_count_result = MagicMock()
         mock_count_result.scalar.return_value = 5
-        
+
         mock_activity_result = MagicMock()
-        mock_activity_result.scalar_one_or_none.return_value = datetime.utcnow()
-        
+        mock_activity_result.scalar_one_or_none.return_value = (
+            datetime.utcnow()
+        )
+
         # Configure side_effect to return different results for each call
-        mock_db.execute.side_effect = [mock_user_result, mock_count_result, mock_activity_result]
+        mock_db.execute.side_effect = [
+            mock_user_result,
+            mock_count_result,
+            mock_activity_result,
+        ]
 
         service = GDPRComplianceService(mock_db)
         service.user_manager.get_user_birth_data = AsyncMock(
@@ -448,29 +454,29 @@ class TestGDPRCompliance:
     async def test_generate_compliance_report(self):
         """Test generating compliance report."""
         mock_db = AsyncMock()
-        
+
         # Setup mocks for four database queries
         mock_total_users = MagicMock()
         mock_total_users.scalar.return_value = 100
-        
+
         mock_consented_users = MagicMock()
         mock_consented_users.scalar.return_value = 80
-        
+
         mock_deletion_requests = MagicMock()
         mock_deletion_requests.scalar.return_value = 5
-        
+
         mock_security_events = MagicMock()
         mock_security_events.all.return_value = [
             ("data_access", 50),
             ("consent_update", 25),
         ]
-        
+
         # Configure side_effect to return different results for each call
         mock_db.execute.side_effect = [
-            mock_total_users, 
-            mock_consented_users, 
-            mock_deletion_requests, 
-            mock_security_events
+            mock_total_users,
+            mock_consented_users,
+            mock_deletion_requests,
+            mock_security_events,
         ]
 
         service = GDPRComplianceService(mock_db)
