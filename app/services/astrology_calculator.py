@@ -51,8 +51,8 @@ class AstrologyCalculator:
         if self.backend == "swisseph":
             try:
                 swe.set_ephe_path('/usr/share/swisseph')  # Путь к эфемеридам
-            except:
-                pass  # Игнорируем ошибки пути к эфемеридам
+            except Exception as e:
+                logging.debug(f"Could not set ephemeris path: {e}")  # Игнорируем ошибки пути к эфемеридам
             
             # Планеты для расчетов Swiss Ephemeris
             self.planets = {
@@ -69,9 +69,13 @@ class AstrologyCalculator:
             }
         elif self.backend == "skyfield":
             # Инициализация Skyfield
-            self.skyfield_loader = load
-            self.skyfield_ts = load.timescale()
-            self.skyfield_planets = load('de421.bsp')  # JPL planetary ephemeris
+            try:
+                self.skyfield_loader = load
+                self.skyfield_ts = load.timescale()
+                self.skyfield_planets = load('de421.bsp')  # JPL planetary ephemeris
+            except Exception as e:
+                logging.warning(f"Skyfield initialization warning: {e}")
+                # Продолжаем без эфемерид, функции будут использовать fallback
             
         elif self.backend == "astropy":
             # Astropy не требует особой инициализации
@@ -209,6 +213,14 @@ class AstrologyCalculator:
     def _calculate_positions_skyfield(self, birth_datetime: datetime, latitude: float, longitude: float) -> Dict[str, Dict[str, Any]]:
         """Вычисляет позиции планет с использованием Skyfield."""
         positions = {}
+        
+        # Проверяем, что Skyfield правильно инициализирован
+        if not hasattr(self, 'skyfield_ts') or not hasattr(self, 'skyfield_planets'):
+            logging.warning("Skyfield not properly initialized, using fallback positions")
+            for planet_name in self.planets_universal:
+                positions[planet_name] = self._get_fallback_position(planet_name)
+            return positions
+            
         try:
             t = self.skyfield_ts.from_datetime(birth_datetime.replace(tzinfo=pytz.UTC))
             
@@ -244,10 +256,12 @@ class AstrologyCalculator:
                         'degree_in_sign': degree_in_sign,
                         'sign_number': sign_num
                     }
-                except Exception:
+                except Exception as e:
+                    logging.debug(f"Skyfield calculation failed for {planet_name}: {e}")
                     positions[planet_name] = self._get_fallback_position(planet_name)
                     
-        except Exception:
+        except Exception as e:
+            logging.warning(f"Skyfield calculation failed: {e}, using fallback positions")
             # Fallback для всех планет
             for planet_name in self.planets_universal:
                 positions[planet_name] = self._get_fallback_position(planet_name)
@@ -330,49 +344,105 @@ class AstrologyCalculator:
         longitude: float = 37.6176
     ) -> Dict[int, Dict[str, Any]]:
         """Вычисляет астрологические дома."""
-        jd = self.calculate_julian_day(birth_datetime)
         houses = {}
         
-        try:
-            # Используем систему домов Placidus
-            cusps, ascmc = swe.houses(jd, latitude, longitude, b'P')
-            
-            for i in range(12):
-                house_num = i + 1
-                cusp_longitude = cusps[i]
+        if self.backend == "swisseph":
+            try:
+                jd = self.calculate_julian_day(birth_datetime)
+                # Используем систему домов Placidus
+                cusps, ascmc = swe.houses(jd, latitude, longitude, b'P')
                 
-                # Определяем знак зодиака куспида дома
-                sign_num = int(cusp_longitude / 30)
-                sign_name = self.zodiac_signs[sign_num]
-                degree_in_sign = cusp_longitude % 30
+                for i in range(12):
+                    house_num = i + 1
+                    cusp_longitude = cusps[i]
+                    
+                    # Определяем знак зодиака куспида дома
+                    sign_num = int(cusp_longitude / 30)
+                    sign_name = self.zodiac_signs[sign_num]
+                    degree_in_sign = cusp_longitude % 30
+                    
+                    houses[house_num] = {
+                        'cusp_longitude': cusp_longitude,
+                        'sign': sign_name,
+                        'degree_in_sign': degree_in_sign
+                    }
                 
-                houses[house_num] = {
-                    'cusp_longitude': cusp_longitude,
-                    'sign': sign_name,
-                    'degree_in_sign': degree_in_sign
+                # Добавляем важные точки
+                houses['ascendant'] = {
+                    'longitude': ascmc[0],
+                    'sign': self.zodiac_signs[int(ascmc[0] / 30)],
+                    'degree_in_sign': ascmc[0] % 30
                 }
-            
-            # Добавляем важные точки
-            houses['ascendant'] = {
-                'longitude': ascmc[0],
-                'sign': self.zodiac_signs[int(ascmc[0] / 30)],
-                'degree_in_sign': ascmc[0] % 30
-            }
-            
-            houses['midheaven'] = {
-                'longitude': ascmc[1],
-                'sign': self.zodiac_signs[int(ascmc[1] / 30)],
-                'degree_in_sign': ascmc[1] % 30
-            }
-            
-        except Exception as e:
-            # В случае ошибки создаем упрощенную систему домов
-            for i in range(12):
-                houses[i + 1] = {
-                    'cusp_longitude': i * 30,
-                    'sign': self.zodiac_signs[i],
-                    'degree_in_sign': 0
+                
+                houses['midheaven'] = {
+                    'longitude': ascmc[1],
+                    'sign': self.zodiac_signs[int(ascmc[1] / 30)],
+                    'degree_in_sign': ascmc[1] % 30
                 }
+                
+            except Exception as e:
+                logging.warning(f"Swiss Ephemeris houses calculation failed: {e}")
+                houses = self._calculate_fallback_houses(birth_datetime, latitude, longitude)
+                
+        elif self.backend == "skyfield":
+            # Skyfield не поддерживает расчет домов напрямую
+            logging.info("Houses calculation not supported with Skyfield backend, using approximation")
+            houses = self._calculate_fallback_houses(birth_datetime, latitude, longitude)
+            
+        elif self.backend == "astropy":
+            # Astropy не поддерживает расчет домов напрямую
+            logging.info("Houses calculation not supported with Astropy backend, using approximation")
+            houses = self._calculate_fallback_houses(birth_datetime, latitude, longitude)
+            
+        else:
+            # Fallback для случая, когда нет доступных бэкендов
+            logging.info("No astronomy backend available, using simplified houses calculation")
+            houses = self._calculate_fallback_houses(birth_datetime, latitude, longitude)
+        
+        return houses
+    
+    def _calculate_fallback_houses(
+        self, 
+        birth_datetime: datetime, 
+        latitude: float, 
+        longitude: float
+    ) -> Dict[int, Dict[str, Any]]:
+        """Создает упрощенную систему домов для fallback."""
+        houses = {}
+        
+        # Приблизительный расчет асцендента на основе времени и даты
+        hour_angle = (birth_datetime.hour + birth_datetime.minute / 60.0) * 15  # 15 градусов за час
+        approximate_ascendant = (hour_angle + longitude / 4) % 360  # Упрощенная формула
+        
+        # Создаем дома с равными 30-градусными интервалами от асцендента
+        for i in range(12):
+            house_num = i + 1
+            cusp_longitude = (approximate_ascendant + i * 30) % 360
+            
+            sign_num = int(cusp_longitude / 30)
+            sign_name = self.zodiac_signs[sign_num]
+            degree_in_sign = cusp_longitude % 30
+            
+            houses[house_num] = {
+                'cusp_longitude': cusp_longitude,
+                'sign': sign_name,
+                'degree_in_sign': degree_in_sign
+            }
+        
+        # Добавляем важные точки
+        houses['ascendant'] = {
+            'longitude': approximate_ascendant,
+            'sign': self.zodiac_signs[int(approximate_ascendant / 30)],
+            'degree_in_sign': approximate_ascendant % 30
+        }
+        
+        # Мидхевен приблизительно на 90 градусов от асцендента
+        midheaven = (approximate_ascendant + 90) % 360
+        houses['midheaven'] = {
+            'longitude': midheaven,
+            'sign': self.zodiac_signs[int(midheaven / 30)],
+            'degree_in_sign': midheaven % 30
+        }
         
         return houses
 
