@@ -11,16 +11,20 @@ asyncpg==0.29.0
 psycopg2-binary==2.9.9
 
 # Астрологические вычисления
-pyswisseph==2.10.3.2
+# Note: pyswisseph may have compilation issues on macOS
+# Use skyfield or astropy as alternatives if pyswisseph fails to install
+pyswisseph==2.10.3.2  # Primary astrology library
+skyfield==1.49         # Alternative astronomy library (more reliable on macOS)
+astropy==6.0.0         # Professional astronomy library (backup option)
 
 # Шифрование и безопасность
-cryptography==41.0.8
+cryptography==42.0.8  # Updated for security fixes
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 
 # HTTP клиенты
 httpx==0.25.2
-aiohttp==3.9.1
+aiohttp==3.9.5  # Updated for security fixes
 
 # Обработка данных
 python-dateutil==2.8.2
