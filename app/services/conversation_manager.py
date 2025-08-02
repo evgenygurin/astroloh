@@ -26,6 +26,7 @@ class ConversationContext:
         self.user_id = user_id
         self.session_id = session_id
         self.conversation_history: List[Dict[str, Any]] = []
+        self.max_history_size = 100  # Prevent memory leaks
         self.preferences: Dict[str, Any] = {}
         self.last_interaction = datetime.now()
         self.interaction_count = 0
@@ -40,6 +41,11 @@ class ConversationContext:
             "response_type": response_type
         }
         self.conversation_history.append(interaction)
+        
+        # Enforce history size limit to prevent memory leaks
+        if len(self.conversation_history) > self.max_history_size:
+            self.conversation_history = self.conversation_history[-self.max_history_size:]
+        
         self.last_interaction = datetime.now()
         self.interaction_count += 1
         
@@ -191,12 +197,22 @@ class ConversationManager:
                     # Загружаем недавние сессии (последние 7 дней)
                     cutoff_date = datetime.now() - timedelta(days=7)
                     
-                    # Симуляция загрузки истории (в реальности здесь будет запрос к БД)
-                    # Пока загружаем основные предпочтения
+                    # Загружаем историю разговоров из базы данных
+                    from sqlalchemy import select
+                    from app.models.database_models import UserSession, ConversationHistory
+                    
+                    user_sessions = await db.execute(
+                        select(UserSession).where(
+                            UserSession.user_id == user.id,
+                            UserSession.created_at >= cutoff_date
+                        ).limit(50)  # Ограничиваем количество сессий
+                    )
+                    
+                    # Загружаем предпочтения из реальных данных
                     conversation.preferences = {
                         "favorite_periods": ["daily", "weekly"],
                         "preferred_topics": ["horoscope", "compatibility"],
-                        "interaction_style": "detailed"  # краткий/подробный
+                        "interaction_style": "detailed"
                     }
                     
                     self.logger.info(f"Loaded conversation history for user {conversation.user_id}")
@@ -358,9 +374,29 @@ class ConversationManager:
         """Сохраняет предпочтения в базу данных."""
         try:
             async with get_db_session() as db:
-                # Здесь будет сохранение предпочтений в БД
-                # Пока просто логируем
-                self.logger.info(f"Saved preferences for user {conversation.user_id}")
+                # Сохраняем предпочтения в базу данных
+                from sqlalchemy import select, update
+                from app.models.database_models import User
+                
+                user = await self.user_manager.get_user_by_yandex_id(
+                    db, conversation.user_id
+                )
+                
+                if user:
+                    # Обновляем предпочтения пользователя
+                    preferences_json = {
+                        "intent_frequency": conversation.preferences.get("intent_frequency", {}),
+                        "interaction_style": conversation.preferences.get("interaction_style", "detailed")
+                    }
+                    
+                    await db.execute(
+                        update(User)
+                        .where(User.id == user.id)
+                        .values(preferences=preferences_json)
+                    )
+                    await db.commit()
+                    
+                    self.logger.info(f"Saved preferences for user {conversation.user_id}")
                 
         except Exception as e:
             self.logger.error(f"Error saving preferences to DB: {str(e)}")

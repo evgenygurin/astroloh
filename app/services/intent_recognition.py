@@ -19,6 +19,11 @@ class IntentRecognizer:
     """Класс для распознавания интентов пользователя."""
     
     def __init__(self):
+        # Кеширование для производительности
+        self._intent_cache: Dict[str, Tuple[YandexIntent, float]] = {}
+        self._entity_cache: Dict[str, Dict[str, Any]] = {}
+        self.cache_size_limit = 1000
+        
         self.intent_patterns = {
             YandexIntent.GREET: [
                 r"привет", r"здравствуй", r"добрый", r"начать", r"старт",
@@ -98,6 +103,11 @@ class IntentRecognizer:
 
     def _match_intent(self, text: str) -> Tuple[YandexIntent, float]:
         """Определяет интент по тексту."""
+        # Проверяем кеш
+        cache_key = hashlib.md5(text.encode()).hexdigest()
+        if cache_key in self._intent_cache:
+            return self._intent_cache[cache_key]
+        
         best_intent = YandexIntent.UNKNOWN
         max_confidence = 0.0
         
@@ -118,10 +128,23 @@ class IntentRecognizer:
                 max_confidence = confidence
                 best_intent = intent
         
-        return best_intent, min(max_confidence, 1.0)
+        result = (best_intent, min(max_confidence, 1.0))
+        
+        # Сохраняем в кеш с ограничением размера
+        if len(self._intent_cache) >= self.cache_size_limit:
+            # Удаляем самые старые записи
+            self._intent_cache.clear()
+        self._intent_cache[cache_key] = result
+        
+        return result
 
     def _extract_entities(self, text: str) -> Dict[str, Any]:
         """Извлекает сущности из текста."""
+        # Проверяем кеш
+        cache_key = hashlib.md5(text.encode()).hexdigest()
+        if cache_key in self._entity_cache:
+            return self._entity_cache[cache_key]
+        
         entities = {}
         
         # Извлечение знаков зодиака
@@ -138,6 +161,11 @@ class IntentRecognizer:
         times = self._extract_times(text)
         if times:
             entities["times"] = times
+        
+        # Сохраняем в кеш с ограничением размера
+        if len(self._entity_cache) >= self.cache_size_limit:
+            self._entity_cache.clear()
+        self._entity_cache[cache_key] = entities
         
         return entities
 

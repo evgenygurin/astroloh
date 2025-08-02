@@ -60,7 +60,8 @@ class ErrorContext:
         self.intent = intent
         self.dialog_state = dialog_state
         self.timestamp = datetime.now()
-        self.stack_trace = traceback.format_exc()
+        # Не сохраняем stack trace для безопасности
+        self.stack_trace = None
         self.recovery_attempts = 0
         self.resolved = False
 
@@ -70,6 +71,11 @@ class ErrorRecoveryManager:
     
     def __init__(self):
         self.error_history: List[ErrorContext] = []
+        # Ограничение для предотвращения DoS
+        from collections import defaultdict
+        self.error_counts = defaultdict(list)
+        self.max_errors_per_hour = 10
+        self.max_history_size = 1000
         self.recovery_strategies: Dict[ErrorType, callable] = {
             ErrorType.VALIDATION_ERROR: self._handle_validation_error,
             ErrorType.DATA_MISSING: self._handle_missing_data,
@@ -98,6 +104,11 @@ class ErrorRecoveryManager:
     ) -> Tuple[ErrorContext, YandexResponse]:
         """Обрабатывает ошибку и возвращает контекст ошибки и ответ для пользователя."""
         
+        # Проверяем ограничения по частоте ошибок
+        user_id = context.get("user_id") if context else "anonymous"
+        if self._check_rate_limit(user_id):
+            return self._create_rate_limit_response()
+        
         # Классифицируем ошибку
         error_type, severity = self._classify_error(error, context)
         
@@ -112,8 +123,10 @@ class ErrorRecoveryManager:
             dialog_state=context.get("dialog_state") if context else None
         )
         
-        # Сохраняем в истории
+        # Сохраняем в истории с ограничением размера
         self.error_history.append(error_context)
+        if len(self.error_history) > self.max_history_size:
+            self.error_history = self.error_history[-self.max_history_size:]
         
         # Логируем ошибку
         self._log_error(error_context)
@@ -540,3 +553,42 @@ class ErrorRecoveryManager:
         ])
         
         return suggestions[:4]  # Максимум 4 предложения
+    
+    def _check_rate_limit(self, user_id: str) -> bool:
+        """Проверяет ограничения по частоте ошибок для пользователя."""
+        now = datetime.now()
+        hour_ago = now - timedelta(hours=1)
+        
+        # Очищаем старые записи
+        self.error_counts[user_id] = [
+            timestamp for timestamp in self.error_counts[user_id]
+            if timestamp > hour_ago
+        ]
+        
+        # Проверяем лимит
+        if len(self.error_counts[user_id]) >= self.max_errors_per_hour:
+            return True
+        
+        # Добавляем текущую ошибку
+        self.error_counts[user_id].append(now)
+        return False
+    
+    def _create_rate_limit_response(self) -> Tuple[ErrorContext, YandexResponse]:
+        """Создает ответ при превышении лимита ошибок."""
+        error_context = ErrorContext(
+            error_type=ErrorType.SYSTEM_OVERLOAD,
+            severity=ErrorSeverity.HIGH,
+            message="Rate limit exceeded for user"
+        )
+        
+        response = YandexResponse(
+            text="Слишком много ошибок. Попробуйте позже или обратитесь к администратору.",
+            tts="Слишком много ошибок. Попробуйте позже.",
+            buttons=[
+                YandexButton(title="Позже", payload={"action": "try_later"}),
+                YandexButton(title="Завершить", payload={"action": "end"})
+            ],
+            end_session=True
+        )
+        
+        return error_context, response
