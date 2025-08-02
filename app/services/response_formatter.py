@@ -43,6 +43,131 @@ class ResponseFormatter:
             end_session=False
         )
 
+    def format_personalized_birth_date_request(
+        self, 
+        user_returning: bool = False, 
+        suggestions: List[str] = None
+    ) -> YandexResponse:
+        """Форматирует персонализированный запрос даты рождения."""
+        if user_returning:
+            text = "Напомните, пожалуйста, вашу дату рождения для точного гороскопа."
+        else:
+            text = "Для составления персонального гороскопа назовите дату вашего рождения."
+        
+        buttons = [
+            YandexButton(title="Пример: 15 марта 1990", payload={"action": "date_example"}),
+            YandexButton(title="Помощь", payload={"action": "help"})
+        ]
+        
+        if suggestions:
+            for suggestion in suggestions[:2]:
+                buttons.append(YandexButton(title=suggestion, payload={"action": "suggestion"}))
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_personalized_advice_response(
+        self, 
+        preferred_topics: List[str] = None, 
+        sentiment: str = "neutral",
+        suggestions: List[str] = None
+    ) -> YandexResponse:
+        """Форматирует персонализированный астрологический совет."""
+        
+        # Адаптируем совет к настроению пользователя
+        if sentiment == "positive":
+            advice_base = "Звёзды благоволят вам! "
+        elif sentiment == "negative":
+            advice_base = "Трудности временны, звёзды помогут найти выход. "
+        else:
+            advice_base = "Астрологический совет для вас: "
+        
+        # Адаптируем к предпочтениям
+        if preferred_topics:
+            if "horoscope" in preferred_topics:
+                advice = advice_base + "Сегодня особенно важно следить за знаками судьбы в повседневных делах."
+            elif "compatibility" in preferred_topics:
+                advice = advice_base + "В отношениях сейчас время для понимания и компромиссов."
+            else:
+                advice = advice_base + "Прислушайтесь к интуиции, она не подведёт."
+        else:
+            advice = advice_base + "Доверьтесь своему внутреннему голосу и следуйте зову сердца."
+        
+        buttons = [
+            YandexButton(title="Другой совет", payload={"action": "advice"}),
+            YandexButton(title="Мой гороскоп", payload={"action": "horoscope"})
+        ]
+        
+        if suggestions:
+            for suggestion in suggestions[:2]:
+                buttons.append(YandexButton(title=suggestion, payload={"action": "suggestion"}))
+        
+        return YandexResponse(
+            text=advice,
+            tts=self._add_tts_pauses(advice),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_clarification_response(
+        self, 
+        recent_context: List[str] = None, 
+        suggestions: List[str] = None
+    ) -> YandexResponse:
+        """Форматирует ответ для уточнения неясного запроса."""
+        
+        if recent_context:
+            text = "Я не совсем поняла ваш запрос. Возможно, вы хотели узнать что-то ещё?"
+        else:
+            text = "Извините, я не поняла ваш вопрос. Можете переформулировать или выбрать из предложений?"
+        
+        buttons = [
+            YandexButton(title="Мой гороскоп", payload={"action": "horoscope"}),
+            YandexButton(title="Совместимость", payload={"action": "compatibility"}),
+            YandexButton(title="Лунный календарь", payload={"action": "lunar"}),
+            YandexButton(title="Помощь", payload={"action": "help"})
+        ]
+        
+        if suggestions:
+            # Заменяем стандартные кнопки на персонализированные предложения
+            buttons = []
+            for suggestion in suggestions[:4]:
+                buttons.append(YandexButton(title=suggestion, payload={"action": "suggestion"}))
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_error_recovery_response(self, error_suggestions: List[str]) -> YandexResponse:
+        """Форматирует ответ для восстановления после ошибки."""
+        
+        text = "Произошла небольшая неполадка, но я готова помочь! Попробуйте один из вариантов:"
+        
+        buttons = []
+        for suggestion in error_suggestions[:4]:
+            buttons.append(YandexButton(title=suggestion, payload={"action": "recovery"}))
+        
+        # Добавляем базовые варианты если предложений мало
+        if len(buttons) < 3:
+            buttons.extend([
+                YandexButton(title="Начать сначала", payload={"action": "restart"}),
+                YandexButton(title="Помощь", payload={"action": "help"})
+            ])
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons[:4],  # Максимум 4 кнопки
+            end_session=False
+        )
+
     def format_horoscope_request_response(
         self, 
         has_birth_date: bool = False
