@@ -212,6 +212,10 @@ class ConversationManager:
         """Загружает историю разговоров из базы данных."""
         try:
             async with get_db_session_context() as db:
+                # Initialize UserManager if not already done
+                if self.user_manager is None:
+                    self.user_manager = UserManager(db)
+                
                 # Получаем пользователя
                 user = await self.user_manager.get_user_by_yandex_id(
                     db, conversation.user_id
@@ -224,7 +228,7 @@ class ConversationManager:
                     # Загружаем историю разговоров из базы данных
                     from sqlalchemy import select
 
-                    from app.models.database_models import UserSession
+                    from app.models.database import UserSession
 
                     await db.execute(
                         select(UserSession)
@@ -255,6 +259,10 @@ class ConversationManager:
         """Загружает предпочтения пользователя."""
         try:
             async with get_db_session_context() as db:
+                # Initialize UserManager if not already done
+                if self.user_manager is None:
+                    self.user_manager = UserManager(db)
+                
                 user = await self.user_manager.get_user_by_yandex_id(
                     db, conversation.user_id
                 )
@@ -439,10 +447,14 @@ class ConversationManager:
         """Сохраняет предпочтения в базу данных."""
         try:
             async with get_db_session_context() as db:
+                # Initialize UserManager if not already done
+                if self.user_manager is None:
+                    self.user_manager = UserManager(db)
+                
                 # Сохраняем предпочтения в базу данных
                 from sqlalchemy import update
 
-                from app.models.database_models import User
+                from app.models.database import User
 
                 user = await self.user_manager.get_user_by_yandex_id(
                     db, conversation.user_id

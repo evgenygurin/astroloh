@@ -116,10 +116,18 @@ class DialogHandler:
         # Получение контекста пользователя
         user_context = self.session_manager.get_user_context(request.session)
 
-        # Санитизация пользовательского ввода
-        clean_input = self.request_validator.sanitize_user_input(
-            request.request.original_utterance
-        )
+        # Обработка в зависимости от типа запроса
+        if request.request.type == "ButtonPressed":
+            # Для кнопок используем NLU токены или payload
+            if request.request.nlu and request.request.nlu.get("tokens"):
+                clean_input = " ".join(request.request.nlu["tokens"])
+            else:
+                clean_input = "помощь"  # Default для кнопок без токенов
+        else:
+            # Санитизация пользовательского ввода для обычных запросов
+            clean_input = self.request_validator.sanitize_user_input(
+                request.request.original_utterance or ""
+            )
 
         # Распознавание интента с расширенными возможностями
         processed_request = self.intent_recognizer.recognize_intent(

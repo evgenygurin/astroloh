@@ -75,8 +75,8 @@ class YandexRequestMeta(BaseModel):
 class YandexRequestData(BaseModel):
     """Данные запроса пользователя."""
 
-    command: str
-    original_utterance: str
+    command: Optional[str] = ""
+    original_utterance: Optional[str] = ""
     type: YandexRequestType
     markup: Optional[Dict[str, Any]] = None
     payload: Optional[Dict[str, Any]] = None
