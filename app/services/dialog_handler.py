@@ -164,11 +164,9 @@ class DialogHandler:
             self.logger.error(f"Error in conversation processing: {str(e)}")
 
             # Используем систему восстановления после ошибок (Stage 5)
-            (
-                error_context,
-                recovery_response,
-            ) = self.error_recovery_manager.handle_error(
+            recovery_response = await self.error_recovery_manager.handle_error(
                 e,
+                request,
                 {
                     "user_id": request.session.user_id,
                     "session_id": request.session.session_id,
@@ -332,9 +330,9 @@ class DialogHandler:
             )
 
             # Добавляем контекстные предложения
-            if hasattr(result, "buttons") and response_context.get(
-                "contextual_suggestions"
-            ):
+            if (hasattr(result, "buttons") and 
+                result.buttons is not None and 
+                response_context.get("contextual_suggestions")):
                 result.buttons.extend(
                     response_context["contextual_suggestions"][:2]
                 )

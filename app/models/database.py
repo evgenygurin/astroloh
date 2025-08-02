@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    JSON,
     LargeBinary,
     String,
     Text,
@@ -48,6 +49,9 @@ class User(Base):
     # Настройки приватности
     data_consent = Column(Boolean, default=False, nullable=False)
     data_retention_days = Column(Integer, default=365, nullable=False)
+    
+    # Пользовательские настройки и предпочтения (JSON)
+    preferences = Column(JSON, nullable=True)
 
     # Метаданные
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

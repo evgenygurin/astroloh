@@ -133,10 +133,6 @@ class ConversationManager:
         if self.db_session:
             self.user_manager = UserManager(self.db_session)
 
-    def _ensure_user_manager(self):
-        """Ensure UserManager is initialized for testing purposes."""
-        if self.user_manager is None and self.db_session:
-            self.user_manager = UserManager(self.db_session)
 
     async def process_conversation(
         self,
@@ -212,12 +208,11 @@ class ConversationManager:
         """Загружает историю разговоров из базы данных."""
         try:
             async with get_db_session_context() as db:
-                # Initialize UserManager if not already done
-                if self.user_manager is None:
-                    self.user_manager = UserManager(db)
+                # Initialize UserManager with the current session
+                user_manager = UserManager(db)
                 
                 # Получаем пользователя
-                user = await self.user_manager.get_user_by_yandex_id(
+                user = await user_manager.get_user_by_yandex_id(
                     db, conversation.user_id
                 )
 
@@ -259,34 +254,33 @@ class ConversationManager:
         """Загружает предпочтения пользователя."""
         try:
             async with get_db_session_context() as db:
-                # Initialize UserManager if not already done
-                if self.user_manager is None:
-                    self.user_manager = UserManager(db)
+                # Initialize UserManager with the current session
+                user_manager = UserManager(db)
                 
-                user = await self.user_manager.get_user_by_yandex_id(
+                user = await user_manager.get_user_by_yandex_id(
                     db, conversation.user_id
                 )
 
-                if user and user.birth_date:
+                if user and user.encrypted_birth_date:
                     # Добавляем постоянные данные пользователя в контекст
                     birth_date = self.encryption_service.decrypt_birth_date(
-                        user.birth_date
+                        user.encrypted_birth_date
                     )
                     conversation.preferences[
                         "birth_date"
                     ] = birth_date.isoformat()
 
-                    if user.birth_time:
+                    if user.encrypted_birth_time:
                         birth_time = (
                             self.encryption_service.decrypt_birth_time(
-                                user.birth_time
+                                user.encrypted_birth_time
                             )
                         )
                         conversation.preferences["birth_time"] = birth_time
 
-                    if user.birth_location:
+                    if user.encrypted_birth_location:
                         location = self.encryption_service.decrypt_location(
-                            user.birth_location
+                            user.encrypted_birth_location
                         )
                         conversation.preferences["birth_location"] = location
 
@@ -447,16 +441,15 @@ class ConversationManager:
         """Сохраняет предпочтения в базу данных."""
         try:
             async with get_db_session_context() as db:
-                # Initialize UserManager if not already done
-                if self.user_manager is None:
-                    self.user_manager = UserManager(db)
+                # Initialize UserManager with the current session
+                user_manager = UserManager(db)
                 
                 # Сохраняем предпочтения в базу данных
                 from sqlalchemy import update
 
                 from app.models.database import User
 
-                user = await self.user_manager.get_user_by_yandex_id(
+                user = await user_manager.get_user_by_yandex_id(
                     db, conversation.user_id
                 )
 
@@ -535,12 +528,10 @@ class ConversationManager:
         self, user_id: str, db_session
     ) -> ConversationContext:
         """Получает контекст разговора для пользователя."""
-        self._ensure_user_manager()
-        if self.db_session is None:
-            self.db_session = db_session
-            self.user_manager = UserManager(db_session)
+        # Create UserManager with the current session
+        user_manager = UserManager(db_session)
 
-        user = await self.user_manager.get_user_by_yandex_id(
+        user = await user_manager.get_user_by_yandex_id(
             db_session, user_id
         )
 
@@ -567,13 +558,11 @@ class ConversationManager:
         self, request, context, db_session
     ) -> None:
         """Обновляет контекст разговора."""
-        self._ensure_user_manager()
-        if self.db_session is None:
-            self.db_session = db_session
-            self.user_manager = UserManager(db_session)
+        # Create UserManager with the current session
+        user_manager = UserManager(db_session)
 
         user_id = request.session.user_id
-        await self.user_manager.update_user_interaction(
+        await user_manager.update_user_interaction(
             db_session, user_id, context
         )
 
