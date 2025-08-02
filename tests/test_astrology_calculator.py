@@ -192,3 +192,123 @@ class TestAstrologyCalculator:
         
         assert isinstance(opposite_compatibility['total_score'], (int, float))
         assert 0 <= opposite_compatibility['total_score'] <= 100
+
+    def test_backend_info(self):
+        """Тест получения информации о бэкенде."""
+        backend_info = self.calculator.get_backend_info()
+        
+        assert 'backend' in backend_info
+        assert 'available_backends' in backend_info
+        assert 'capabilities' in backend_info
+        
+        assert isinstance(backend_info['available_backends'], list)
+        assert isinstance(backend_info['capabilities'], dict)
+        
+        # Проверяем, что хотя бы один бэкенд доступен или это fallback
+        available_backends = backend_info['available_backends']
+        current_backend = backend_info['backend']
+        
+        if current_backend:
+            assert current_backend in available_backends
+        
+        # Проверяем структуру capabilities
+        capabilities = backend_info['capabilities']
+        expected_caps = ['planet_positions', 'moon_phases', 'houses', 'aspects', 'high_precision']
+        for cap in expected_caps:
+            assert cap in capabilities
+            assert isinstance(capabilities[cap], bool)
+
+    def test_backend_fallback(self):
+        """Тест fallback при недоступности астрономических библиотек."""
+        # Этот тест проверяет, что приложение не падает при отсутствии библиотек
+        birth_date = datetime(1990, 6, 15, 12, 0)
+        
+        # Тестируем основные функции
+        try:
+            positions = self.calculator.calculate_planet_positions(birth_date)
+            assert isinstance(positions, dict)
+            assert len(positions) > 0
+            
+            moon_phase = self.calculator.calculate_moon_phase(birth_date)
+            assert isinstance(moon_phase, dict)
+            assert 'phase_name' in moon_phase
+            
+            jd = self.calculator.calculate_julian_day(birth_date)
+            assert isinstance(jd, float)
+            
+        except Exception as e:
+            pytest.fail(f"Backend fallback failed: {e}")
+
+    @pytest.mark.parametrize("backend_name", ["swisseph", "skyfield", "astropy", None])
+    def test_backend_compatibility(self, backend_name, monkeypatch):
+        """Тест совместимости с разными бэкендами."""
+        # Имитируем доступность только определенного бэкенда
+        def mock_backend_availability(backend):
+            if backend == backend_name:
+                return True
+            return False
+        
+        # Создаем новый калькулятор для каждого теста
+        from app.services import astrology_calculator
+        
+        # Сохраняем оригинальное значение
+        original_backend = astrology_calculator._astronomy_backend
+        
+        try:
+            # Устанавливаем тестируемый бэкенд
+            astrology_calculator._astronomy_backend = backend_name
+            
+            calc = AstrologyCalculator()
+            birth_date = datetime(1990, 6, 15, 12, 0)
+            
+            # Тестируем, что основные функции работают
+            positions = calc.calculate_planet_positions(birth_date)
+            assert isinstance(positions, dict)
+            
+            moon_phase = calc.calculate_moon_phase(birth_date)
+            assert isinstance(moon_phase, dict)
+            
+            backend_info = calc.get_backend_info()
+            assert backend_info['backend'] == backend_name
+            
+        finally:
+            # Восстанавливаем оригинальное значение
+            astrology_calculator._astronomy_backend = original_backend
+
+    def test_planet_position_consistency(self):
+        """Тест согласованности позиций планет между вызовами."""
+        birth_date = datetime(1990, 6, 15, 12, 0)
+        
+        # Вызываем дважды и проверяем согласованность
+        positions1 = self.calculator.calculate_planet_positions(birth_date)
+        positions2 = self.calculator.calculate_planet_positions(birth_date)
+        
+        assert positions1.keys() == positions2.keys()
+        
+        for planet in positions1:
+            # Позиции должны быть одинаковыми для одной и той же даты
+            assert positions1[planet]['longitude'] == positions2[planet]['longitude']
+            assert positions1[planet]['sign'] == positions2[planet]['sign']
+
+    def test_fallback_positions_valid(self):
+        """Тест корректности fallback позиций планет."""
+        # Создаем калькулятор без астрономических библиотек
+        from app.services import astrology_calculator
+        original_backend = astrology_calculator._astronomy_backend
+        
+        try:
+            astrology_calculator._astronomy_backend = None
+            calc = AstrologyCalculator()
+            
+            birth_date = datetime(1990, 6, 15, 12, 0)
+            positions = calc.calculate_planet_positions(birth_date)
+            
+            # Проверяем, что fallback позиции корректны
+            for planet, pos in positions.items():
+                assert 0 <= pos['longitude'] <= 360
+                assert 0 <= pos['degree_in_sign'] <= 30
+                assert pos['sign'] in calc.zodiac_signs
+                assert 0 <= pos['sign_number'] <= 11
+                
+        finally:
+            astrology_calculator._astronomy_backend = original_backend

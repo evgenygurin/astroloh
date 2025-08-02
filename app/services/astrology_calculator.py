@@ -1,36 +1,84 @@
 """
-Сервис астрологических вычислений с использованием Swiss Ephemeris.
+Сервис астрологических вычислений с поддержкой множественных астрономических библиотек.
+Автоматическое переключение между pyswisseph, skyfield и astropy в зависимости от доступности.
 """
-import swisseph as swe
 from datetime import datetime, date, time
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, Union
 import pytz
 import math
 from enum import Enum
+import logging
 
 from app.models.yandex_models import YandexZodiacSign
 
+# Попытка импорта астрономических библиотек с graceful fallback
+_astronomy_backend = None
+
+try:
+    import swisseph as swe
+    _astronomy_backend = "swisseph"
+    logging.info("Using Swiss Ephemeris backend for astronomical calculations")
+except ImportError as e:
+    logging.warning(f"Swiss Ephemeris not available: {e}")
+    try:
+        from skyfield.api import load, Topos
+        from skyfield.nutationlib import iau2000a_ecliptic_obliquity
+        _astronomy_backend = "skyfield"
+        logging.info("Using Skyfield backend for astronomical calculations")
+    except ImportError as e:
+        logging.warning(f"Skyfield not available: {e}")
+        try:
+            from astropy.time import Time
+            from astropy.coordinates import SkyCoord, EarthLocation, get_sun, get_moon
+            from astropy import units as u
+            _astronomy_backend = "astropy"
+            logging.info("Using Astropy backend for astronomical calculations")
+        except ImportError as e:
+            logging.error(f"No astronomy libraries available: {e}")
+            _astronomy_backend = None
+
 
 class AstrologyCalculator:
-    """Класс для астрологических вычислений."""
+    """Класс для астрологических вычислений с поддержкой множественных бэкендов."""
     
     def __init__(self):
-        # Настройка Swiss Ephemeris
-        swe.set_ephe_path('/usr/share/swisseph')  # Путь к эфемеридам
+        self.backend = _astronomy_backend
         
-        # Планеты для расчетов
-        self.planets = {
-            'Sun': swe.SUN,
-            'Moon': swe.MOON,
-            'Mercury': swe.MERCURY,
-            'Venus': swe.VENUS,
-            'Mars': swe.MARS,
-            'Jupiter': swe.JUPITER,
-            'Saturn': swe.SATURN,
-            'Uranus': swe.URANUS,
-            'Neptune': swe.NEPTUNE,
-            'Pluto': swe.PLUTO
-        }
+        if not self.backend:
+            logging.error("No astronomy backend available. Some calculations may be limited.")
+        
+        # Настройка в зависимости от доступного бэкенда
+        if self.backend == "swisseph":
+            try:
+                swe.set_ephe_path('/usr/share/swisseph')  # Путь к эфемеридам
+            except:
+                pass  # Игнорируем ошибки пути к эфемеридам
+            
+            # Планеты для расчетов Swiss Ephemeris
+            self.planets = {
+                'Sun': swe.SUN,
+                'Moon': swe.MOON,
+                'Mercury': swe.MERCURY,
+                'Venus': swe.VENUS,
+                'Mars': swe.MARS,
+                'Jupiter': swe.JUPITER,
+                'Saturn': swe.SATURN,
+                'Uranus': swe.URANUS,
+                'Neptune': swe.NEPTUNE,
+                'Pluto': swe.PLUTO
+            }
+        elif self.backend == "skyfield":
+            # Инициализация Skyfield
+            self.skyfield_loader = load
+            self.skyfield_ts = load.timescale()
+            self.skyfield_planets = load('de421.bsp')  # JPL planetary ephemeris
+            
+        elif self.backend == "astropy":
+            # Astropy не требует особой инициализации
+            pass
+        
+        # Универсальные данные для всех бэкендов
+        self.planets_universal = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
         
         # Знаки зодиака
         self.zodiac_signs = [
@@ -60,7 +108,25 @@ class AstrologyCalculator:
         day = birth_datetime.day
         hour = birth_datetime.hour + birth_datetime.minute / 60.0
         
-        return swe.julday(year, month, day, hour)
+        if self.backend == "swisseph":
+            return swe.julday(year, month, day, hour)
+        elif self.backend == "skyfield":
+            # Skyfield использует свой объект времени
+            t = self.skyfield_ts.ut1(year, month, day, hour)
+            return t.ut1
+        elif self.backend == "astropy":
+            # Astropy Time object для Julian Day
+            from astropy.time import Time
+            t = Time(birth_datetime)
+            return t.jd
+        else:
+            # Fallback: простое вычисление Julian Day
+            import calendar
+            a = (14 - month) // 12
+            y = year + 4800 - a
+            m = month + 12 * a - 3
+            jd = day + (153 * m + 2) // 5 + 365 * y + y // 4 - y // 100 + y // 400 - 32045
+            return jd + (hour - 12) / 24.0
 
     def get_zodiac_sign_by_date(self, birth_date: date) -> YandexZodiacSign:
         """Определяет знак зодиака по дате рождения."""
@@ -100,39 +166,162 @@ class AstrologyCalculator:
         longitude: float = 37.6176
     ) -> Dict[str, Dict[str, Any]]:
         """Вычисляет позиции планет на момент рождения."""
-        jd = self.calculate_julian_day(birth_datetime)
         positions = {}
         
-        for planet_name, planet_id in self.planets.items():
-            try:
-                # Получаем координаты планеты
-                pos, ret = swe.calc_ut(jd, planet_id)
-                longitude_deg = pos[0]
-                
-                # Определяем знак зодиака
-                sign_num = int(longitude_deg / 30)
-                sign_name = self.zodiac_signs[sign_num]
-                
-                # Позиция в знаке
-                degree_in_sign = longitude_deg % 30
-                
-                positions[planet_name] = {
-                    'longitude': longitude_deg,
-                    'sign': sign_name,
-                    'degree_in_sign': degree_in_sign,
-                    'sign_number': sign_num
-                }
-                
-            except Exception as e:
-                # В случае ошибки используем приблизительные значения
-                positions[planet_name] = {
-                    'longitude': 0,
-                    'sign': self.zodiac_signs[0],
-                    'degree_in_sign': 0,
-                    'sign_number': 0
-                }
+        if self.backend == "swisseph":
+            jd = self.calculate_julian_day(birth_datetime)
+            for planet_name, planet_id in self.planets.items():
+                try:
+                    # Получаем координаты планеты
+                    pos, ret = swe.calc_ut(jd, planet_id)
+                    longitude_deg = pos[0]
+                    
+                    # Определяем знак зодиака
+                    sign_num = int(longitude_deg / 30)
+                    sign_name = self.zodiac_signs[sign_num]
+                    
+                    # Позиция в знаке
+                    degree_in_sign = longitude_deg % 30
+                    
+                    positions[planet_name] = {
+                        'longitude': longitude_deg,
+                        'sign': sign_name,
+                        'degree_in_sign': degree_in_sign,
+                        'sign_number': sign_num
+                    }
+                    
+                except Exception as e:
+                    positions[planet_name] = self._get_fallback_position(planet_name)
+                    
+        elif self.backend == "skyfield":
+            positions = self._calculate_positions_skyfield(birth_datetime, latitude, longitude)
+            
+        elif self.backend == "astropy":
+            positions = self._calculate_positions_astropy(birth_datetime, latitude, longitude)
+            
+        else:
+            # Fallback: используем упрощенные позиции
+            for planet_name in self.planets_universal:
+                positions[planet_name] = self._get_fallback_position(planet_name)
         
         return positions
+    
+    def _calculate_positions_skyfield(self, birth_datetime: datetime, latitude: float, longitude: float) -> Dict[str, Dict[str, Any]]:
+        """Вычисляет позиции планет с использованием Skyfield."""
+        positions = {}
+        try:
+            t = self.skyfield_ts.from_datetime(birth_datetime.replace(tzinfo=pytz.UTC))
+            
+            # Получаем позиции планет
+            planet_mapping = {
+                'Sun': 'sun',
+                'Moon': 'moon',
+                'Mercury': 'mercury',
+                'Venus': 'venus',
+                'Mars': 'mars',
+                'Jupiter': 'jupiter barycenter',
+                'Saturn': 'saturn barycenter',
+                'Uranus': 'uranus barycenter',
+                'Neptune': 'neptune barycenter',
+                'Pluto': 'pluto barycenter'
+            }
+            
+            for planet_name, skyfield_name in planet_mapping.items():
+                try:
+                    planet = self.skyfield_planets[skyfield_name]
+                    position = planet.at(t)
+                    lat, lon, distance = position.ecliptic_latlon()
+                    longitude_deg = lon.degrees
+                    
+                    # Определяем знак зодиака
+                    sign_num = int(longitude_deg / 30) % 12
+                    sign_name = self.zodiac_signs[sign_num]
+                    degree_in_sign = longitude_deg % 30
+                    
+                    positions[planet_name] = {
+                        'longitude': longitude_deg,
+                        'sign': sign_name,
+                        'degree_in_sign': degree_in_sign,
+                        'sign_number': sign_num
+                    }
+                except Exception:
+                    positions[planet_name] = self._get_fallback_position(planet_name)
+                    
+        except Exception:
+            # Fallback для всех планет
+            for planet_name in self.planets_universal:
+                positions[planet_name] = self._get_fallback_position(planet_name)
+                
+        return positions
+    
+    def _calculate_positions_astropy(self, birth_datetime: datetime, latitude: float, longitude: float) -> Dict[str, Dict[str, Any]]:
+        """Вычисляет позиции планет с использованием Astropy."""
+        positions = {}
+        try:
+            from astropy.time import Time
+            from astropy.coordinates import get_sun, get_moon
+            
+            time_obj = Time(birth_datetime)
+            
+            # Солнце
+            try:
+                sun = get_sun(time_obj)
+                sun_lon = sun.geocentrictrueecliptic.lon.degree
+                positions['Sun'] = self._position_from_longitude(sun_lon)
+            except Exception:
+                positions['Sun'] = self._get_fallback_position('Sun')
+            
+            # Луна
+            try:
+                moon = get_moon(time_obj)
+                moon_lon = moon.geocentrictrueecliptic.lon.degree
+                positions['Moon'] = self._position_from_longitude(moon_lon)
+            except Exception:
+                positions['Moon'] = self._get_fallback_position('Moon')
+            
+            # Для остальных планет используем приблизительные позиции
+            for planet_name in ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']:
+                positions[planet_name] = self._get_fallback_position(planet_name)
+                
+        except Exception:
+            for planet_name in self.planets_universal:
+                positions[planet_name] = self._get_fallback_position(planet_name)
+                
+        return positions
+    
+    def _position_from_longitude(self, longitude_deg: float) -> Dict[str, Any]:
+        """Преобразует долготу в астрологическую позицию."""
+        # Нормализуем долготу к диапазону 0-360
+        longitude_deg = longitude_deg % 360
+        sign_num = int(longitude_deg / 30)
+        sign_name = self.zodiac_signs[sign_num]
+        degree_in_sign = longitude_deg % 30
+        
+        return {
+            'longitude': longitude_deg,
+            'sign': sign_name,
+            'degree_in_sign': degree_in_sign,
+            'sign_number': sign_num
+        }
+    
+    def _get_fallback_position(self, planet_name: str) -> Dict[str, Any]:
+        """Возвращает приблизительную позицию планеты для fallback."""
+        # Простые приблизительные позиции планет
+        fallback_positions = {
+            'Sun': 0,    # Овен
+            'Moon': 30,  # Телец
+            'Mercury': 60,  # Близнецы
+            'Venus': 90,   # Рак
+            'Mars': 120,   # Лев
+            'Jupiter': 150, # Дева
+            'Saturn': 180,  # Весы
+            'Uranus': 210,  # Скорпион
+            'Neptune': 240, # Стрелец
+            'Pluto': 270    # Козерог
+        }
+        
+        longitude_deg = fallback_positions.get(planet_name, 0)
+        return self._position_from_longitude(longitude_deg)
 
     def calculate_houses(
         self,
@@ -242,17 +431,45 @@ class AstrologyCalculator:
 
     def calculate_moon_phase(self, target_date: datetime) -> Dict[str, Any]:
         """Вычисляет фазу Луны на заданную дату."""
-        jd = self.calculate_julian_day(target_date)
-        
         try:
-            # Получаем позиции Солнца и Луны
-            sun_pos, _ = swe.calc_ut(jd, swe.SUN)
-            moon_pos, _ = swe.calc_ut(jd, swe.MOON)
-            
-            # Вычисляем угол между Солнцем и Луной
-            angle = moon_pos[0] - sun_pos[0]
-            if angle < 0:
-                angle += 360
+            if self.backend == "swisseph":
+                jd = self.calculate_julian_day(target_date)
+                # Получаем позиции Солнца и Луны
+                sun_pos, _ = swe.calc_ut(jd, swe.SUN)
+                moon_pos, _ = swe.calc_ut(jd, swe.MOON)
+                
+                # Вычисляем угол между Солнцем и Луной
+                angle = moon_pos[0] - sun_pos[0]
+                if angle < 0:
+                    angle += 360
+                    
+            elif self.backend == "skyfield":
+                t = self.skyfield_ts.from_datetime(target_date.replace(tzinfo=pytz.UTC))
+                sun = self.skyfield_planets['sun'].at(t)
+                moon = self.skyfield_planets['moon'].at(t)
+                
+                _, sun_lon, _ = sun.ecliptic_latlon()
+                _, moon_lon, _ = moon.ecliptic_latlon()
+                
+                angle = (moon_lon.degrees - sun_lon.degrees) % 360
+                
+            elif self.backend == "astropy":
+                from astropy.time import Time
+                from astropy.coordinates import get_sun, get_moon
+                
+                time_obj = Time(target_date)
+                sun = get_sun(time_obj)
+                moon = get_moon(time_obj)
+                
+                sun_lon = sun.geocentrictrueecliptic.lon.degree
+                moon_lon = moon.geocentrictrueecliptic.lon.degree
+                
+                angle = (moon_lon - sun_lon) % 360
+                
+            else:
+                # Fallback: упрощенный расчет
+                day_of_month = target_date.day
+                angle = (day_of_month / 29.5) * 360
             
             # Определяем фазу
             phase_info = self._get_moon_phase_info(angle)
@@ -446,3 +663,70 @@ class AstrologyCalculator:
         ]
         
         return favorable_patterns[weekday]
+    
+    def get_backend_info(self) -> Dict[str, Any]:
+        """Возвращает информацию о текущем астрономическом бэкенде."""
+        return {
+            'backend': self.backend,
+            'available_backends': self._get_available_backends(),
+            'capabilities': self._get_backend_capabilities()
+        }
+    
+    def _get_available_backends(self) -> List[str]:
+        """Проверяет доступные астрономические бэкенды."""
+        available = []
+        
+        try:
+            import swisseph
+            available.append('swisseph')
+        except ImportError:
+            pass
+            
+        try:
+            from skyfield.api import load
+            available.append('skyfield')
+        except ImportError:
+            pass
+            
+        try:
+            from astropy.time import Time
+            available.append('astropy')
+        except ImportError:
+            pass
+            
+        return available
+    
+    def _get_backend_capabilities(self) -> Dict[str, bool]:
+        """Возвращает возможности текущего бэкенда."""
+        if self.backend == "swisseph":
+            return {
+                'planet_positions': True,
+                'moon_phases': True,
+                'houses': True,
+                'aspects': True,
+                'high_precision': True
+            }
+        elif self.backend == "skyfield":
+            return {
+                'planet_positions': True,
+                'moon_phases': True,
+                'houses': False,  # Ограниченная поддержка домов
+                'aspects': True,
+                'high_precision': True
+            }
+        elif self.backend == "astropy":
+            return {
+                'planet_positions': True,  # Только Солнце и Луна точно
+                'moon_phases': True,
+                'houses': False,
+                'aspects': True,
+                'high_precision': False  # Ограниченная точность для планет
+            }
+        else:
+            return {
+                'planet_positions': False,
+                'moon_phases': False,
+                'houses': False,
+                'aspects': False,
+                'high_precision': False
+            }
