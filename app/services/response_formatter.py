@@ -9,7 +9,7 @@ from app.models.yandex_models import YandexButton, YandexResponse, YandexZodiacS
 class ResponseFormatter:
     """Класс для форматирования ответов Алисы."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.welcome_messages = [
             "Привет! Я астролог Алисы. Я могу составить гороскоп, рассказать о совместимости знаков или дать астрологический совет.",
             "Добро пожаловать! Меня зовут Астролог. Я помогу вам с гороскопами, совместимостью и астрологическими советами.",
@@ -42,7 +42,7 @@ class ResponseFormatter:
         )
 
     def format_personalized_birth_date_request(
-        self, user_returning: bool = False, suggestions: List[str] = None
+        self, user_returning: bool = False, suggestions: Optional[List[str]] = None
     ) -> YandexResponse:
         """Форматирует персонализированный запрос даты рождения."""
         if user_returning:
@@ -75,9 +75,9 @@ class ResponseFormatter:
 
     def format_personalized_advice_response(
         self,
-        preferred_topics: List[str] = None,
+        preferred_topics: Optional[List[str]] = None,
         sentiment: str = "neutral",
-        suggestions: List[str] = None,
+        suggestions: Optional[List[str]] = None,
     ) -> YandexResponse:
         """Форматирует персонализированный астрологический совет."""
 
@@ -134,7 +134,7 @@ class ResponseFormatter:
         )
 
     def format_clarification_response(
-        self, recent_context: List[str] = None, suggestions: List[str] = None
+        self, recent_context: Optional[List[str]] = None, suggestions: Optional[List[str]] = None
     ) -> YandexResponse:
         """Форматирует ответ для уточнения неясного запроса."""
 

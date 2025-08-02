@@ -2,6 +2,7 @@
 API роутер для интеграции с Яндекс.Диалогами.
 """
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/yandex", tags=["Yandex Dialogs"])
 @router.post("/webhook", response_model=YandexResponseModel)
 async def yandex_webhook(
     request: YandexRequestModel, db: AsyncSession = Depends(get_database)
-):
+) -> YandexResponseModel:
     """
     Основной webhook для обработки запросов от Яндекс.Диалогов.
 
@@ -72,7 +73,7 @@ async def yandex_webhook(
 
 
 @router.get("/health")
-async def health_check():
+async def health_check() -> dict[str, Any]:
     """
     Эндпоинт проверки здоровья сервиса Яндекс.Диалогов.
     """
@@ -99,7 +100,7 @@ async def health_check():
 
 
 @router.post("/cleanup-sessions")
-async def cleanup_sessions():
+async def cleanup_sessions() -> dict[str, Any]:
     """
     Эндпоинт для принудительной очистки устаревших сессий.
     """

@@ -1,6 +1,7 @@
 """
 Database initialization and dependency injection.
 """
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,8 +49,6 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     async for session in get_database():
         yield session
 
-
-from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def get_db_session_context() -> AsyncGenerator[AsyncSession, None]:

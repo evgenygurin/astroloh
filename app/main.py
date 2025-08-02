@@ -34,13 +34,13 @@ app.include_router(security_router, prefix="/api/v1")
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     """Корневой эндпоинт для проверки работы API."""
     return {"message": "Astroloh - Астролог навык для Яндекс Алисы работает!"}
 
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """Эндпоинт для проверки здоровья сервиса."""
     from datetime import datetime
 
@@ -52,7 +52,7 @@ async def health_check():
 
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     """Инициализация при запуске приложения."""
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ async def startup_event():
 
 
 @app.on_event("shutdown")
-async def shutdown_event():
+async def shutdown_event() -> None:
     """Очистка при завершении приложения."""
     logger = logging.getLogger(__name__)
 

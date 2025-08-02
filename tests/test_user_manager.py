@@ -118,30 +118,48 @@ class TestUserManager:
     @pytest.mark.asyncio
     async def test_get_user_birth_data_encrypted(self):
         """Test getting user birth data when encrypted."""
+        import uuid
+        from app.services.encryption import data_protection
+        
+        user_id = uuid.uuid4()
         mock_user = MagicMock()
         mock_user.encrypted_birth_date = b"encrypted_date"
+        mock_user.encrypted_birth_time = b"encrypted_time"
         mock_user.encrypted_birth_location = b"encrypted_location"
+        mock_user.zodiac_sign = "taurus"
 
-        with patch.object(self.user_manager, "_decrypt_data") as mock_decrypt:
-            mock_decrypt.side_effect = [
-                "1990-05-15 14:30:00",
-                '{"latitude": 55.7558, "longitude": 37.6176, "name": "Moscow"}',
-            ]
+        # Mock database query
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_user
+        self.mock_db.execute.return_value = mock_result
 
-            birth_data = await self.user_manager.get_user_birth_data(mock_user)
+        with patch.object(data_protection, "decrypt_birth_data") as mock_decrypt:
+            mock_decrypt.return_value = {
+                "birth_date": "1990-05-15",
+                "birth_time": "14:30:00",
+                "birth_location": {"latitude": 55.7558, "longitude": 37.6176, "name": "Moscow"}
+            }
+
+            birth_data = await self.user_manager.get_user_birth_data(user_id)
 
             assert birth_data is not None
             assert "birth_date" in birth_data
             assert "birth_location" in birth_data
+            assert birth_data["zodiac_sign"] == "taurus"
 
     @pytest.mark.asyncio
     async def test_get_user_birth_data_not_encrypted(self):
         """Test getting user birth data when not encrypted."""
-        mock_user = MagicMock()
-        mock_user.encrypted_birth_date = None
-        mock_user.encrypted_birth_location = None
+        import uuid
+        
+        user_id = uuid.uuid4()
+        
+        # Mock database query returning None (no user found)
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        self.mock_db.execute.return_value = mock_result
 
-        birth_data = await self.user_manager.get_user_birth_data(mock_user)
+        birth_data = await self.user_manager.get_user_birth_data(user_id)
 
         assert birth_data is None
 

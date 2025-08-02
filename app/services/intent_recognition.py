@@ -16,7 +16,7 @@ from app.models.yandex_models import (
 class IntentRecognizer:
     """Класс для распознавания интентов пользователя."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Кеширование для производительности
         self._intent_cache: Dict[str, Tuple[YandexIntent, float]] = {}
         self._entity_cache: Dict[str, Dict[str, Any]] = {}
@@ -299,7 +299,7 @@ class IntentRecognizer:
         if cache_key in self._entity_cache:
             return self._entity_cache[cache_key]
 
-        entities = {}
+        entities: Dict[str, Any] = {}
 
         # Извлечение знаков зодиака
         zodiac_signs = self._extract_zodiac_signs(text)
@@ -492,7 +492,7 @@ class IntentRecognizer:
             "entity_cache_size": len(self._entity_cache),
         }
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """Очищает кеш."""
         self._intent_cache.clear()
         self._entity_cache.clear()
