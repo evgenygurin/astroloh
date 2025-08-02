@@ -77,6 +77,9 @@ class AstrologyCalculator:
         elif self.backend == "astropy":
             # Astropy не требует особой инициализации
             pass
+        else:
+            # Fallback: no specific backend configuration
+            self.planets = {}
         
         # Универсальные данные для всех бэкендов
         self.planets_universal = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
@@ -333,40 +336,49 @@ class AstrologyCalculator:
         jd = self.calculate_julian_day(birth_datetime)
         houses = {}
         
-        try:
-            # Используем систему домов Placidus
-            cusps, ascmc = swe.houses(jd, latitude, longitude, b'P')
-            
-            for i in range(12):
-                house_num = i + 1
-                cusp_longitude = cusps[i]
+        if self.backend == "swisseph":
+            try:
+                # Используем систему домов Placidus
+                cusps, ascmc = swe.houses(jd, latitude, longitude, b'P')
                 
-                # Определяем знак зодиака куспида дома
-                sign_num = int(cusp_longitude / 30)
-                sign_name = self.zodiac_signs[sign_num]
-                degree_in_sign = cusp_longitude % 30
+                for i in range(12):
+                    house_num = i + 1
+                    cusp_longitude = cusps[i]
+                    
+                    # Определяем знак зодиака куспида дома
+                    sign_num = int(cusp_longitude / 30)
+                    sign_name = self.zodiac_signs[sign_num]
+                    degree_in_sign = cusp_longitude % 30
+                    
+                    houses[house_num] = {
+                        'cusp_longitude': cusp_longitude,
+                        'sign': sign_name,
+                        'degree_in_sign': degree_in_sign
+                    }
                 
-                houses[house_num] = {
-                    'cusp_longitude': cusp_longitude,
-                    'sign': sign_name,
-                    'degree_in_sign': degree_in_sign
+                # Добавляем важные точки
+                houses['ascendant'] = {
+                    'longitude': ascmc[0],
+                    'sign': self.zodiac_signs[int(ascmc[0] / 30)],
+                    'degree_in_sign': ascmc[0] % 30
                 }
-            
-            # Добавляем важные точки
-            houses['ascendant'] = {
-                'longitude': ascmc[0],
-                'sign': self.zodiac_signs[int(ascmc[0] / 30)],
-                'degree_in_sign': ascmc[0] % 30
-            }
-            
-            houses['midheaven'] = {
-                'longitude': ascmc[1],
-                'sign': self.zodiac_signs[int(ascmc[1] / 30)],
-                'degree_in_sign': ascmc[1] % 30
-            }
-            
-        except Exception:
-            # В случае ошибки создаем упрощенную систему домов
+                
+                houses['midheaven'] = {
+                    'longitude': ascmc[1],
+                    'sign': self.zodiac_signs[int(ascmc[1] / 30)],
+                    'degree_in_sign': ascmc[1] % 30
+                }
+                
+            except Exception:
+                # В случае ошибки создаем упрощенную систему домов
+                for i in range(12):
+                    houses[i + 1] = {
+                        'cusp_longitude': i * 30,
+                        'sign': self.zodiac_signs[i],
+                        'degree_in_sign': 0
+                    }
+        else:
+            # Fallback: создаем упрощенную систему домов для не-swisseph бэкендов
             for i in range(12):
                 houses[i + 1] = {
                     'cusp_longitude': i * 30,

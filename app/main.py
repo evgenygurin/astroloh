@@ -41,7 +41,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Эндпоинт для проверки здоровья сервиса."""
-    return {"status": "healthy"}
+    from datetime import datetime
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0"
+    }
 
 
 @app.on_event("startup")
