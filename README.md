@@ -24,27 +24,31 @@
 ### С Docker
 
 1. Склонируйте репозиторий:
+
 ```bash
 git clone https://github.com/evgenygurin/astroloh.git
 cd astroloh
 ```
 
 2. Скопируйте и настройте переменные окружения:
+
 ```bash
 cp .env.example .env
 # Отредактируйте .env файл с вашими настройками
 ```
 
 3. Запустите с Docker Compose:
+
 ```bash
 docker-compose up --build
 ```
 
-4. Откройте http://localhost:8000/docs для просмотра API документации
+4. Откройте <http://localhost:8000/docs> для просмотра API документации
 
 ### Локальная разработка
 
 1. Создайте виртуальное окружение:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
@@ -55,26 +59,31 @@ venv\Scripts\activate  # Windows
 2. Установите зависимости:
 
 **Для Linux/Windows (полная установка с компиляцией):**
+
 ```bash
 pip install -e ".[full,dev]"
 ```
 
 **Для macOS (без компиляции C-библиотек):**
+
 ```bash
 pip install -e ".[macos,dev]"
 ```
 
 **Минимальная установка:**
+
 ```bash
 pip install -e ".[minimal,dev]"
 ```
 
 **Для совместимости с существующими скриптами:**
+
 ```bash
 pip install -r requirements.txt
 ```
 
 3. Запустите приложение:
+
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -88,6 +97,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - **astropy** - профессиональная астрономия (полнофункциональная)
 
 **Рекомендации по установке:**
+
 - **Linux/Windows**: используйте полную установку `[full]`
 - **macOS**: используйте `[macos]` для избежания проблем компиляции
 - **CI/Docker**: используйте `[minimal]` для быстрой установки
@@ -122,18 +132,21 @@ astroloh/
 ## Разработка
 
 ### Форматирование кода
+
 ```bash
 black app/ tests/
 isort app/ tests/
 ```
 
 ### Линтинг
+
 ```bash
 flake8 app/ tests/
 mypy app/
 ```
 
 ### Тестирование
+
 ```bash
 pytest
 ```
