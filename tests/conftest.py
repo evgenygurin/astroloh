@@ -4,14 +4,16 @@ Pytest configuration and shared fixtures.
 import pytest
 import asyncio
 import os
+import secrets
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 # Set test environment variables
 os.environ["ENVIRONMENT"] = "testing"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["SECRET_KEY"] = "test-secret-key-32-characters!!"
-os.environ["ENCRYPTION_KEY"] = "test-encryption-key-32-characters"
+# Generate secure random keys for testing
+os.environ["SECRET_KEY"] = secrets.token_urlsafe(32)
+os.environ["ENCRYPTION_KEY"] = secrets.token_urlsafe(32)
 
 
 @pytest.fixture
@@ -221,8 +223,8 @@ def test_config():
     """Test configuration."""
     return {
         "database_url": "sqlite:///:memory:",
-        "secret_key": "test-secret-key-32-characters!!",
-        "encryption_key": "test-encryption-key-32-characters",
+        "secret_key": secrets.token_urlsafe(32),
+        "encryption_key": secrets.token_urlsafe(32),
         "environment": "testing"
     }
 
