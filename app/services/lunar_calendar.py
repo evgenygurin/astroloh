@@ -1,10 +1,9 @@
 """
 Сервис лунного календаря и лунных рекомендаций.
 """
-from datetime import datetime, date, timedelta
-from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime
+from typing import Dict, List, Any, Optional
 import calendar
-import math
 
 from app.services.astrology_calculator import AstrologyCalculator
 

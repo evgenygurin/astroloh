@@ -3,14 +3,12 @@
 Интегрирует продвинутое управление диалогами, персонализацию и безопасное хранение данных.
 """
 from typing import Dict, Any
-import asyncio
 import logging
 
 from app.models.yandex_models import (
     YandexRequestModel, 
     YandexResponseModel, 
     YandexIntent,
-    YandexZodiacSign,
     ProcessedRequest,
     UserContext
 )
@@ -23,7 +21,6 @@ from app.services.lunar_calendar import LunarCalendar
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.dialog_flow_manager import DialogFlowManager, DialogState
 from app.services.conversation_manager import ConversationManager
-from app.services.user_manager import UserManager
 from app.utils.error_handler import ErrorHandler, handle_skill_errors
 from app.utils.validators import (
     DateValidator, 
@@ -49,7 +46,7 @@ class DialogHandler:
         # Расширенная функциональность Stage 5
         self.dialog_flow_manager = DialogFlowManager()
         self.conversation_manager = ConversationManager()
-        self.user_manager = UserManager()
+        self.user_manager = None  # Will be initialized when db_session is available
         
         # Система восстановления после ошибок
         from app.services.error_recovery import ErrorRecoveryManager
@@ -64,7 +61,38 @@ class DialogHandler:
         
         # Логирование
         self.logger = logging.getLogger(__name__)
-
+        
+    def extract_user_context(self, request: YandexRequestModel) -> Dict[str, Any]:
+        """
+        Извлекает пользовательский контекст из запроса.
+        
+        Args:
+            request: Запрос от Яндекс.Диалогов
+            
+        Returns:
+            Словарь с контекстом пользователя
+        """
+        return {
+            "user_id": request.session.user_id or "test_user",
+            "session_id": request.session.session_id,
+            "message_id": request.session.message_id
+        }
+    
+    def log_interaction(self, request: YandexRequestModel, response, intent: str, confidence: float):
+        """
+        Логирует взаимодействие пользователя с навыком.
+        
+        Args:
+            request: Запрос пользователя
+            response: Ответ навыка
+            intent: Распознанный интент
+            confidence: Уверенность в распознавании
+        """
+        self.logger.info(
+            f"User interaction: intent={intent}, confidence={confidence:.2f}, "
+            f"user_id={request.session.user_id}, session_id={request.session.session_id}"
+        )
+        
     @handle_skill_errors()
     async def handle_request(self, request: YandexRequestModel) -> YandexResponseModel:
         """Обрабатывает запрос от Яндекс.Диалогов с расширенной функциональностью."""
@@ -87,11 +115,16 @@ class DialogHandler:
         
         # Обработка в контексте разговора (Stage 5 enhancement)
         try:
-            dialog_state, response_context = await self.conversation_manager.process_conversation(
+            conversation_result = await self.conversation_manager.process_conversation(
                 user_id=request.session.user_id,
                 session_id=request.session.session_id,
                 processed_request=processed_request
             )
+            if isinstance(conversation_result, tuple) and len(conversation_result) == 2:
+                dialog_state, response_context = conversation_result
+            else:
+                dialog_state = DialogState.INITIAL
+                response_context = {}
             
             # Генерируем ответ с учетом состояния диалога и контекста
             response = await self._generate_contextual_response(

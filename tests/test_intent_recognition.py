@@ -1,7 +1,6 @@
 """
 Тесты для системы распознавания интентов.
 """
-import pytest
 from app.services.intent_recognition import IntentRecognizer
 from app.models.yandex_models import YandexIntent, YandexZodiacSign, UserContext
 

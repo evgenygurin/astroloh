@@ -4,14 +4,13 @@ User management and session security system.
 import uuid
 import json
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
 from app.models.database import User, UserSession, HoroscopeRequest, DataDeletionRequest, SecurityLog
 from app.services.encryption import data_protection, SecurityUtils, EncryptionError
-from app.core.config import settings
 
 
 class UserManager:
@@ -409,7 +408,7 @@ class SessionManager:
             update(UserSession)
             .where(
                 UserSession.user_id == user_id,
-                UserSession.is_active == True
+                UserSession.is_active
             )
             .values(is_active=False)
         )
@@ -443,7 +442,7 @@ class SessionManager:
             select(UserSession)
             .where(
                 UserSession.session_id == session_id,
-                UserSession.is_active == True
+                UserSession.is_active
             )
             .options(selectinload(UserSession.user))
         )
@@ -485,7 +484,7 @@ class SessionManager:
                 update(UserSession)
                 .where(
                     UserSession.session_id == session_id,
-                    UserSession.is_active == True
+                    UserSession.is_active
                 )
                 .values(**update_values)
             )
@@ -506,7 +505,7 @@ class SessionManager:
             update(UserSession)
             .where(
                 UserSession.expires_at < datetime.utcnow(),
-                UserSession.is_active == True
+                UserSession.is_active
             )
             .values(is_active=False)
         )

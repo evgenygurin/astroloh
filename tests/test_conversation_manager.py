@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.services.conversation_manager import ConversationManager
-from app.models.yandex_models import YandexRequest, YandexUser, YandexSession
 from app.models.database import User
 
 
@@ -22,7 +21,7 @@ class TestConversationManager:
         """Test getting conversation context for new user."""
         mock_db = AsyncMock()
         mock_user_manager = AsyncMock()
-        mock_user_manager.get_user.return_value = None
+        mock_user_manager.get_user_by_yandex_id.return_value = None
         
         with patch('app.services.conversation_manager.UserManager', return_value=mock_user_manager):
             context = await self.conversation_manager.get_conversation_context(
@@ -41,12 +40,14 @@ class TestConversationManager:
         mock_user_manager = AsyncMock()
         
         mock_user = User(
-            user_id="test_user_id",
-            conversation_count=5,
-            last_interaction=datetime.now(),
-            preferences={"theme": "dark"}
+            yandex_user_id="test_user_id",
+            zodiac_sign="leo"
         )
-        mock_user_manager.get_user.return_value = mock_user
+        # Set attributes manually since User doesn't have these in constructor
+        mock_user.conversation_count = 5
+        mock_user.last_interaction = datetime.now()
+        mock_user.preferences = {"theme": "dark"}
+        mock_user_manager.get_user_by_yandex_id.return_value = mock_user
         
         with patch('app.services.conversation_manager.UserManager', return_value=mock_user_manager):
             context = await self.conversation_manager.get_conversation_context(
@@ -64,20 +65,10 @@ class TestConversationManager:
         mock_db = AsyncMock()
         mock_user_manager = AsyncMock()
         
-        request = YandexRequest(
-            meta=MagicMock(),
-            request=MagicMock(),
-            session=YandexSession(
-                message_id=1,
-                session_id="test_session",
-                skill_id="test_skill",
-                user_id="test_user",
-                user=YandexUser(user_id="test_user"),
-                application=MagicMock(),
-                new=False
-            ),
-            version="1.0"
-        )
+        # Create a mock request with proper YandexSession structure
+        request = MagicMock()
+        request.session = MagicMock()
+        request.session.user_id = "test_user"
         
         context = MagicMock()
         context.conversation_count = 5

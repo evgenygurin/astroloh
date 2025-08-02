@@ -2,8 +2,8 @@
 Валидаторы данных для навыка Яндекс.Диалогов.
 """
 import re
-from datetime import datetime, date
-from typing import Optional, Tuple, List
+from datetime import date
+from typing import Optional, Tuple
 
 from app.models.yandex_models import YandexZodiacSign
 from app.utils.error_handler import ValidationSkillError

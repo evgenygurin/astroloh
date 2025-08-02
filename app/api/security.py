@@ -2,7 +2,7 @@
 Security and GDPR compliance API endpoints.
 """
 import uuid
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
@@ -54,7 +54,6 @@ async def get_user_data_summary(
     """
     try:
         # Find user by Yandex ID
-        user_manager = UserManager(db)
         users = await db.execute(
             "SELECT id FROM users WHERE yandex_user_id = :yandex_id",
             {"yandex_id": user_id}

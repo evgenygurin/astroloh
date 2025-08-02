@@ -38,6 +38,17 @@ async def get_database() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Alias for get_database for backward compatibility.
+    
+    Yields:
+        AsyncSession: Database session
+    """
+    async for session in get_database():
+        yield session
+
+
 async def close_database():
     """Close database connections."""
     if db_manager:

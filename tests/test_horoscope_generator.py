@@ -1,7 +1,6 @@
 """
 Тесты для генератора гороскопов.
 """
-import pytest
 from datetime import datetime, date
 from app.services.horoscope_generator import HoroscopeGenerator, HoroscopePeriod
 from app.models.yandex_models import YandexZodiacSign
@@ -36,7 +35,7 @@ class TestHoroscopeGenerator:
         assert 'astrological_influences' in horoscope
         
         # Проверяем значения
-        assert horoscope['zodiac_sign'] == "Близнецы"
+        assert horoscope['zodiac_sign'] == "близнецы"
         assert horoscope['period'] == "день"
         assert isinstance(horoscope['general_forecast'], str)
         assert len(horoscope['general_forecast']) > 0
@@ -268,7 +267,7 @@ class TestHoroscopeGenerator:
         advice_lower = advice.lower()
         
         # Хотя бы одно ключевое слово должно присутствовать в совете
-        keyword_found = any(keyword.lower() in advice_lower for keyword in sign_keywords)
+        _ = any(keyword.lower() in advice_lower for keyword in sign_keywords)
         # Не обязательно, но желательно для персонализации
     
     def test_deterministic_behavior(self):

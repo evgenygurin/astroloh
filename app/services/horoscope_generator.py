@@ -1,7 +1,7 @@
 """
 Сервис генерации персональных гороскопов.
 """
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from typing import Dict, List, Any, Optional
 import random
 from enum import Enum

@@ -3,11 +3,10 @@ Database models and configuration for secure data storage.
 """
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import (
     Column, String, DateTime, Text, Boolean, Integer, 
-    Float, ForeignKey, LargeBinary, UniqueConstraint
+    ForeignKey, LargeBinary, UniqueConstraint
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base

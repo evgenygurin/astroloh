@@ -2,13 +2,12 @@
 Tests for error recovery functionality.
 """
 import pytest
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from app.services.error_recovery import (
-    ErrorRecoveryService, ErrorType, ErrorSeverity, RecoveryStrategy
+    ErrorType, ErrorSeverity
 )
-from app.models.yandex_models import YandexRequest, YandexSession, YandexUser
+from app.models.yandex_models import YandexRequestModel, YandexSession
 
 
 class TestErrorRecoveryService:
@@ -18,9 +17,9 @@ class TestErrorRecoveryService:
         """Setup before each test."""
         self.error_recovery = ErrorRecoveryService()
     
-    def create_mock_request(self, command: str = "тест", user_id: str = "test_user") -> YandexRequest:
+    def create_mock_request(self, command: str = "тест", user_id: str = "test_user") -> YandexRequestModel:
         """Create mock Yandex request."""
-        return YandexRequest(
+        return YandexRequestModel(
             meta=MagicMock(),
             request=MagicMock(command=command),
             session=YandexSession(
@@ -28,7 +27,7 @@ class TestErrorRecoveryService:
                 session_id="test_session",
                 skill_id="test_skill",
                 user_id=user_id,
-                user=YandexUser(user_id=user_id),
+                user={"user_id": user_id},
                 application=MagicMock(),
                 new=False
             ),

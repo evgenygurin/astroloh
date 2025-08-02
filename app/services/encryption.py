@@ -1,10 +1,9 @@
 """
 Encryption and security utilities for protecting sensitive user data.
 """
-import os
 import hashlib
 import secrets
-from typing import Optional, Union
+from typing import Optional
 from datetime import datetime, timedelta
 
 from cryptography.fernet import Fernet

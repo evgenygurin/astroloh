@@ -1,8 +1,7 @@
 """
 API роутер для интеграции с Яндекс.Диалогами.
 """
-from fastapi import APIRouter, HTTPException, Request, Depends
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
@@ -11,7 +10,6 @@ from app.services.dialog_handler import dialog_handler
 from app.utils.error_handler import error_handler
 from app.core.database import get_database
 from app.services.user_manager import UserManager
-from app.services.gdpr_compliance import GDPRComplianceService
 
 
 logger = logging.getLogger(__name__)

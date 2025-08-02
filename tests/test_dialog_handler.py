@@ -2,12 +2,11 @@
 Tests for dialog handler functionality.
 """
 import pytest
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.services.dialog_handler import DialogHandler
 from app.models.yandex_models import (
-    YandexRequest, YandexSession, YandexUser, YandexRequestData, 
+    YandexRequestModel, YandexSession, YandexRequestData, YandexRequestMeta,
     YandexResponse, YandexIntent
 )
 from app.services.dialog_flow_manager import DialogState
@@ -20,15 +19,20 @@ class TestDialogHandler:
         """Setup before each test."""
         self.dialog_handler = DialogHandler()
     
-    def create_mock_request(self, command: str = "привет", user_id: str = "test_user") -> YandexRequest:
+    def create_mock_request(self, command: str = "привет", user_id: str = "test_user") -> YandexRequestModel:
         """Create mock Yandex request."""
-        return YandexRequest(
-            meta=MagicMock(),
+        return YandexRequestModel(
+            meta=YandexRequestMeta(
+                locale="ru-RU",
+                timezone="Europe/Moscow",
+                client_id="test_client",
+                interfaces={}
+            ),
             request=YandexRequestData(
                 command=command,
                 original_utterance=command,
                 type="SimpleUtterance",
-                markup=MagicMock(),
+                markup={},
                 payload={}
             ),
             session=YandexSession(
@@ -36,8 +40,8 @@ class TestDialogHandler:
                 session_id="test_session",
                 skill_id="test_skill",
                 user_id=user_id,
-                user=YandexUser(user_id=user_id),
-                application=MagicMock(),
+                user={"user_id": user_id},
+                application={},
                 new=False
             ),
             version="1.0"
@@ -51,50 +55,53 @@ class TestDialogHandler:
         
         with patch.multiple(
             self.dialog_handler,
-            intent_recognition=AsyncMock(),
+            intent_recognizer=AsyncMock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock()
         ) as mocks:
             
             # Mock intent recognition
-            mocks['intent_recognition'].recognize_intent.return_value = (
-                YandexIntent.GREETING, {}, 0.9
+            from app.models.yandex_models import ProcessedRequest, UserContext
+            mock_processed_request = ProcessedRequest(
+                intent=YandexIntent.GREET,
+                entities={},
+                confidence=0.9,
+                raw_text="привет",
+                user_context=UserContext()
             )
+            self.dialog_handler.intent_recognizer.recognize_intent.return_value = mock_processed_request
             
-            # Mock conversation context
-            mock_context = MagicMock()
-            mock_context.personalization_level = 50
-            mocks['conversation_manager'].get_conversation_context.return_value = mock_context
+            # Mock conversation processing  
+            self.dialog_handler.conversation_manager.process_conversation.return_value = (
+                DialogState.INITIAL, {}
+            )
             
             # Mock dialog flow
-            mocks['dialog_flow_manager'].get_current_state.return_value = DialogState.GREETING
-            mocks['dialog_flow_manager'].process_intent.return_value = DialogState.WAITING_FOR_REQUEST
+            self.dialog_handler.dialog_flow_manager.get_current_state.return_value = DialogState.INITIAL
+            self.dialog_handler.dialog_flow_manager.process_intent.return_value = DialogState.INITIAL
             
-            # Mock response formatting
+            # Mock contextual response generation
             mock_response = YandexResponse(
-                response=MagicMock(),
-                session=MagicMock(),
-                version="1.0"
+                text="Привет! Я астролог Алиса."
             )
-            mocks['response_formatter'].format_greeting_response.return_value = mock_response
+            self.dialog_handler._generate_contextual_response = AsyncMock(return_value=mock_response)
             
-            result = await self.dialog_handler.handle_request(request, mock_db)
+            result = await self.dialog_handler.handle_request(request)
             
             assert isinstance(result, YandexResponse)
-            mocks['intent_recognition'].recognize_intent.assert_called_once()
-            mocks['conversation_manager'].get_conversation_context.assert_called_once()
-            mocks['response_formatter'].format_greeting_response.assert_called_once()
+            self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
+            self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
+            self.dialog_handler._generate_contextual_response.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_handle_request_horoscope(self):
         """Test handling horoscope request."""
         request = self.create_mock_request("мой гороскоп на сегодня")
-        mock_db = AsyncMock()
         
         with patch.multiple(
             self.dialog_handler,
-            intent_recognition=AsyncMock(),
+            intent_recognizer=AsyncMock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
@@ -102,39 +109,33 @@ class TestDialogHandler:
         ) as mocks:
             
             # Mock intent recognition
-            mocks['intent_recognition'].recognize_intent.return_value = (
-                YandexIntent.PERSONAL_HOROSCOPE, {"period": "today"}, 0.9
+            from app.models.yandex_models import ProcessedRequest, UserContext
+            mock_processed_request = ProcessedRequest(
+                intent=YandexIntent.HOROSCOPE,
+                entities={"period": "today"},
+                confidence=0.9,
+                raw_text="мой гороскоп на сегодня",
+                user_context=UserContext()
+            )
+            self.dialog_handler.intent_recognizer.recognize_intent.return_value = mock_processed_request
+            
+            # Mock conversation processing  
+            self.dialog_handler.conversation_manager.process_conversation.return_value = (
+                DialogState.PROVIDING_HOROSCOPE, {}
             )
             
-            # Mock conversation context
-            mock_context = MagicMock()
-            mock_context.personalization_level = 70
-            mocks['conversation_manager'].get_conversation_context.return_value = mock_context
-            
-            # Mock dialog flow
-            mocks['dialog_flow_manager'].get_current_state.return_value = DialogState.WAITING_FOR_REQUEST
-            mocks['dialog_flow_manager'].process_intent.return_value = DialogState.PROVIDING_HOROSCOPE
-            
-            # Mock horoscope generation
-            mock_horoscope = {
-                "prediction": "Отличный день для новых начинаний!",
-                "lucky_numbers": [7, 14, 21],
-                "lucky_color": "синий"
-            }
-            mocks['horoscope_generator'].generate_personal_horoscope.return_value = mock_horoscope
-            
-            # Mock response formatting
+            # Mock contextual response generation
             mock_response = YandexResponse(
-                response=MagicMock(),
-                session=MagicMock(),
-                version="1.0"
+                text="Отличный день для новых начинаний!"
             )
-            mocks['response_formatter'].format_horoscope_response.return_value = mock_response
+            self.dialog_handler._generate_contextual_response = AsyncMock(return_value=mock_response)
             
-            result = await self.dialog_handler.handle_request(request, mock_db)
+            result = await self.dialog_handler.handle_request(request)
             
             assert isinstance(result, YandexResponse)
-            mocks['horoscope_generator'].generate_personal_horoscope.assert_called_once()
+            self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
+            self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
+            self.dialog_handler._generate_contextual_response.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_handle_request_compatibility(self):
@@ -144,25 +145,33 @@ class TestDialogHandler:
         
         with patch.multiple(
             self.dialog_handler,
-            intent_recognition=AsyncMock(),
+            intent_recognizer=AsyncMock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
-            astrology_calculator=AsyncMock()
+            astro_calculator=AsyncMock()
         ) as mocks:
             
             # Mock intent recognition
-            mocks['intent_recognition'].recognize_intent.return_value = (
-                YandexIntent.COMPATIBILITY, {"sign1": "leo", "sign2": "libra"}, 0.9
+            from app.models.yandex_models import ProcessedRequest, UserContext
+            mock_processed_request = ProcessedRequest(
+                intent=
+                YandexIntent.COMPATIBILITY,
+                entities={"sign1": "leo", "sign2": "libra"},
+                confidence=0.9,
+                raw_text="совместимость льва и весов",
+                user_context=UserContext()
+            )
+            self.dialog_handler.intent_recognizer.recognize_intent.return_value = mock_processed_request
+            
+            # Mock conversation processing  
+            self.dialog_handler.conversation_manager.process_conversation.return_value = (
+                DialogState.EXPLORING_COMPATIBILITY, {}
             )
             
-            # Mock conversation context
-            mock_context = MagicMock()
-            mocks['conversation_manager'].get_conversation_context.return_value = mock_context
-            
             # Mock dialog flow
-            mocks['dialog_flow_manager'].get_current_state.return_value = DialogState.WAITING_FOR_REQUEST
-            mocks['dialog_flow_manager'].process_intent.return_value = DialogState.PROVIDING_COMPATIBILITY
+            self.dialog_handler.dialog_flow_manager.get_current_state.return_value = DialogState.WAITING_FOR_REQUEST
+            self.dialog_handler.dialog_flow_manager.process_intent.return_value = DialogState.PROVIDING_COMPATIBILITY
             
             # Mock compatibility calculation
             mock_compatibility = {
@@ -171,20 +180,20 @@ class TestDialogHandler:
                 "strengths": ["понимание", "гармония"],
                 "challenges": ["разные темпераменты"]
             }
-            mocks['astrology_calculator'].calculate_compatibility.return_value = mock_compatibility
+            self.dialog_handler.astro_calculator.calculate_compatibility.return_value = mock_compatibility
             
             # Mock response formatting
             mock_response = YandexResponse(
-                response=MagicMock(),
-                session=MagicMock(),
-                version="1.0"
+                text="Mock response"
             )
-            mocks['response_formatter'].format_compatibility_response.return_value = mock_response
+            self.dialog_handler._generate_contextual_response = AsyncMock(return_value=mock_response)
             
-            result = await self.dialog_handler.handle_request(request, mock_db)
+            result = await self.dialog_handler.handle_request(request)
             
             assert isinstance(result, YandexResponse)
-            mocks['astrology_calculator'].calculate_compatibility.assert_called_once()
+            self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
+            self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
+            self.dialog_handler._generate_contextual_response.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_handle_request_error_handling(self):
@@ -194,28 +203,28 @@ class TestDialogHandler:
         
         with patch.multiple(
             self.dialog_handler,
-            intent_recognition=AsyncMock(),
+            intent_recognizer=AsyncMock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
-            error_recovery=AsyncMock()
-        ) as mocks:
+            error_recovery_manager=AsyncMock()
+            ) as mocks:
             
             # Mock intent recognition to raise an error
-            mocks['intent_recognition'].recognize_intent.side_effect = Exception("Test error")
+            self.dialog_handler.intent_recognizer.recognize_intent.side_effect = Exception("Test error")
             
             # Mock error recovery
             mock_error_response = YandexResponse(
-                response=MagicMock(),
-                session=MagicMock(),
-                version="1.0"
+                text="Произошла ошибка, попробуйте еще раз"
             )
-            mocks['error_recovery'].handle_error.return_value = mock_error_response
+            self.dialog_handler.error_recovery_manager.handle_error.return_value = (None, mock_error_response)
             
-            result = await self.dialog_handler.handle_request(request, mock_db)
+            result = await self.dialog_handler.handle_request(request)
             
             assert isinstance(result, YandexResponse)
-            mocks['error_recovery'].handle_error.assert_called_once()
+            self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
+            self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
+            self.dialog_handler._generate_contextual_response.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_handle_natal_chart_request(self):
@@ -225,38 +234,43 @@ class TestDialogHandler:
         
         with patch.multiple(
             self.dialog_handler,
-            intent_recognition=AsyncMock(),
+            intent_recognizer=AsyncMock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
-            natal_chart=AsyncMock()
+            natal_chart_calculator=AsyncMock()
         ) as mocks:
             
             # Mock intent recognition
-            mocks['intent_recognition'].recognize_intent.return_value = (
-                YandexIntent.NATAL_CHART, {}, 0.9
+            from app.models.yandex_models import ProcessedRequest, UserContext
+            mock_processed_request = ProcessedRequest(
+                intent=YandexIntent.NATAL_CHART,
+                entities={},
+                confidence=0.9,
+                raw_text="составь мою натальную карту",
+                user_context=UserContext()
+            )
+            self.dialog_handler.intent_recognizer.recognize_intent.return_value = mock_processed_request
+            
+            # Mock conversation processing  
+            self.dialog_handler.conversation_manager.process_conversation.return_value = (
+                DialogState.EXPLORING_COMPATIBILITY, {}
             )
             
-            # Mock conversation context
-            mock_context = MagicMock()
-            mocks['conversation_manager'].get_conversation_context.return_value = mock_context
-            
             # Mock dialog flow
-            mocks['dialog_flow_manager'].get_current_state.return_value = DialogState.WAITING_FOR_REQUEST
-            mocks['dialog_flow_manager'].process_intent.return_value = DialogState.COLLECTING_BIRTH_DATA
+            self.dialog_handler.dialog_flow_manager.get_current_state.return_value = DialogState.WAITING_FOR_REQUEST
+            self.dialog_handler.dialog_flow_manager.process_intent.return_value = DialogState.COLLECTING_BIRTH_DATA
             
             # Mock response formatting
             mock_response = YandexResponse(
-                response=MagicMock(),
-                session=MagicMock(),
-                version="1.0"
+                text="Mock response"
             )
-            mocks['response_formatter'].format_clarification_response.return_value = mock_response
+            self.dialog_handler.response_formatter.format_clarification_response.return_value = mock_response
             
-            result = await self.dialog_handler.handle_request(request, mock_db)
+            result = await self.dialog_handler.handle_request(request)
             
             assert isinstance(result, YandexResponse)
-            mocks['response_formatter'].format_clarification_response.assert_called_once()
+            self.dialog_handler.response_formatter.format_clarification_response.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_handle_lunar_calendar_request(self):
@@ -266,7 +280,7 @@ class TestDialogHandler:
         
         with patch.multiple(
             self.dialog_handler,
-            intent_recognition=AsyncMock(),
+            intent_recognizer=AsyncMock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
@@ -274,17 +288,20 @@ class TestDialogHandler:
         ) as mocks:
             
             # Mock intent recognition
-            mocks['intent_recognition'].recognize_intent.return_value = (
+            from app.models.yandex_models import ProcessedRequest, UserContext
+            mock_processed_request = ProcessedRequest(
+                intent=
                 YandexIntent.LUNAR_CALENDAR, {"date": "today"}, 0.9
             )
             
-            # Mock conversation context
-            mock_context = MagicMock()
-            mocks['conversation_manager'].get_conversation_context.return_value = mock_context
+            # Mock conversation processing  
+            self.dialog_handler.conversation_manager.process_conversation.return_value = (
+                DialogState.EXPLORING_COMPATIBILITY, {}
+            )
             
             # Mock dialog flow
-            mocks['dialog_flow_manager'].get_current_state.return_value = DialogState.WAITING_FOR_REQUEST
-            mocks['dialog_flow_manager'].process_intent.return_value = DialogState.PROVIDING_LUNAR_INFO
+            self.dialog_handler.dialog_flow_manager.get_current_state.return_value = DialogState.WAITING_FOR_REQUEST
+            self.dialog_handler.dialog_flow_manager.process_intent.return_value = DialogState.PROVIDING_LUNAR_INFO
             
             # Mock lunar calendar data
             mock_lunar_data = {
@@ -293,20 +310,18 @@ class TestDialogHandler:
                 "recommendations": ["Время для завершения дел"],
                 "energy_level": 90
             }
-            mocks['lunar_calendar'].get_lunar_day_info.return_value = mock_lunar_data
+            self.dialog_handler.lunar_calendar.get_lunar_day_info.return_value = mock_lunar_data
             
             # Mock response formatting
             mock_response = YandexResponse(
-                response=MagicMock(),
-                session=MagicMock(),
-                version="1.0"
+                text="Mock response"
             )
-            mocks['response_formatter'].format_lunar_calendar_response.return_value = mock_response
+            self.dialog_handler.response_formatter.format_lunar_calendar_response.return_value = mock_response
             
-            result = await self.dialog_handler.handle_request(request, mock_db)
+            result = await self.dialog_handler.handle_request(request)
             
             assert isinstance(result, YandexResponse)
-            mocks['lunar_calendar'].get_lunar_day_info.assert_called_once()
+            self.dialog_handler.lunar_calendar.get_lunar_day_info.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_handle_help_request(self):
@@ -316,44 +331,45 @@ class TestDialogHandler:
         
         with patch.multiple(
             self.dialog_handler,
-            intent_recognition=AsyncMock(),
+            intent_recognizer=AsyncMock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock()
         ) as mocks:
             
             # Mock intent recognition
-            mocks['intent_recognition'].recognize_intent.return_value = (
+            from app.models.yandex_models import ProcessedRequest, UserContext
+            mock_processed_request = ProcessedRequest(
+                intent=
                 YandexIntent.HELP, {}, 0.9
             )
             
-            # Mock conversation context
-            mock_context = MagicMock()
-            mocks['conversation_manager'].get_conversation_context.return_value = mock_context
+            # Mock conversation processing  
+            self.dialog_handler.conversation_manager.process_conversation.return_value = (
+                DialogState.EXPLORING_COMPATIBILITY, {}
+            )
             
             # Mock dialog flow
-            mocks['dialog_flow_manager'].get_current_state.return_value = DialogState.WAITING_FOR_REQUEST
+            self.dialog_handler.dialog_flow_manager.get_current_state.return_value = DialogState.WAITING_FOR_REQUEST
             
             # Mock response formatting
             mock_response = YandexResponse(
-                response=MagicMock(),
-                session=MagicMock(),
-                version="1.0"
+                text="Mock response"
             )
-            mocks['response_formatter'].format_help_response.return_value = mock_response
+            self.dialog_handler._generate_contextual_response = AsyncMock(return_value=mock_response)
             
-            result = await self.dialog_handler.handle_request(request, mock_db)
+            result = await self.dialog_handler.handle_request(request)
             
             assert isinstance(result, YandexResponse)
-            mocks['response_formatter'].format_help_response.assert_called_once()
+            self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
+            self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
+            self.dialog_handler._generate_contextual_response.assert_called_once()
     
     def test_log_interaction(self):
         """Test interaction logging."""
         request = self.create_mock_request("test command")
         response = YandexResponse(
-            response=MagicMock(),
-            session=MagicMock(),
-            version="1.0"
+            text="test response"
         )
         
         # Should not raise any exceptions

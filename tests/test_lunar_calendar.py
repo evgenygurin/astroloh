@@ -1,8 +1,7 @@
 """
 Тесты для лунного календаря.
 """
-import pytest
-from datetime import datetime, date
+from datetime import datetime
 import calendar
 from app.services.lunar_calendar import LunarCalendar
 

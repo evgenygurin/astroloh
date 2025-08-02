@@ -1,17 +1,13 @@
 """
 Система восстановления после ошибок и обработки сбоев для Stage 5.
 """
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Tuple
 from datetime import datetime, timedelta
 from enum import Enum
 import logging
-import traceback
 
 from app.models.yandex_models import (
     YandexIntent, 
-    YandexZodiacSign, 
-    ProcessedRequest, 
-    UserContext,
     YandexResponse,
     YandexButton
 )

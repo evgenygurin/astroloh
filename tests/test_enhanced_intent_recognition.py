@@ -2,7 +2,6 @@
 Тесты для расширенной системы распознавания интентов Stage 5.
 """
 import pytest
-from unittest.mock import Mock
 from datetime import datetime, date
 
 from app.services.intent_recognition import IntentRecognizer

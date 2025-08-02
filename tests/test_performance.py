@@ -5,14 +5,12 @@ import pytest
 import time
 import asyncio
 from datetime import datetime, date, timedelta
-from unittest.mock import AsyncMock, patch
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.horoscope_generator import HoroscopeGenerator
 from app.services.natal_chart import NatalChartCalculator
 from app.services.lunar_calendar import LunarCalendar
-from app.services.intent_recognition import IntentRecognitionService
 
 
 class TestPerformance:
@@ -174,7 +172,6 @@ class TestPerformance:
     def test_concurrent_horoscope_generation(self):
         """Test concurrent horoscope generation performance."""
         from app.models.yandex_models import YandexZodiacSign
-        import threading
         
         def generate_horoscope(sign, period):
             return self.horoscope_generator.generate_horoscope(

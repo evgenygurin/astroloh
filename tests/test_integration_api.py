@@ -1,12 +1,10 @@
 """
 Integration tests for API endpoints.
 """
-import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
 
 from app.main import app
-from app.models.yandex_models import YandexRequest, YandexSession, YandexUser
 
 
 class TestAPIIntegration:
@@ -343,7 +341,6 @@ class TestAPIIntegration:
     def test_yandex_webhook_concurrent_requests(self):
         """Test handling concurrent requests to Yandex webhook."""
         import threading
-        import time
         
         request_data = {
             "meta": {

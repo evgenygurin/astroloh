@@ -3,7 +3,6 @@
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import asyncio
 import logging
 
 from app.api.yandex_dialogs import router as yandex_router

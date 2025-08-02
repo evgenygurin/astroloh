@@ -2,11 +2,10 @@
 Сервис астрологических вычислений с поддержкой множественных астрономических библиотек.
 Автоматическое переключение между pyswisseph, skyfield и astropy в зависимости от доступности.
 """
-from datetime import datetime, date, time
-from typing import Dict, List, Tuple, Optional, Any, Union
+from datetime import datetime, date
+from typing import Dict, List, Any
 import pytz
 import math
-from enum import Enum
 import logging
 
 from app.models.yandex_models import YandexZodiacSign
@@ -21,16 +20,13 @@ try:
 except ImportError as e:
     logging.warning(f"Swiss Ephemeris not available: {e}")
     try:
-        from skyfield.api import load, Topos
-        from skyfield.nutationlib import iau2000a_ecliptic_obliquity
+        import skyfield.api
         _astronomy_backend = "skyfield"
         logging.info("Using Skyfield backend for astronomical calculations")
     except ImportError as e:
         logging.warning(f"Skyfield not available: {e}")
         try:
-            from astropy.time import Time
-            from astropy.coordinates import SkyCoord, EarthLocation, get_sun, get_moon
-            from astropy import units as u
+            import astropy
             _astronomy_backend = "astropy"
             logging.info("Using Astropy backend for astronomical calculations")
         except ImportError as e:
@@ -69,9 +65,14 @@ class AstrologyCalculator:
             }
         elif self.backend == "skyfield":
             # Инициализация Skyfield
-            self.skyfield_loader = load
-            self.skyfield_ts = load.timescale()
-            self.skyfield_planets = load('de421.bsp')  # JPL planetary ephemeris
+            try:
+                from skyfield.api import load
+                self.skyfield_loader = load
+                self.skyfield_ts = load.timescale()
+                self.skyfield_planets = load('de421.bsp')  # JPL planetary ephemeris
+            except ImportError:
+                # Fallback to stub if skyfield not available
+                self.backend = None
             
         elif self.backend == "astropy":
             # Astropy не требует особой инициализации
@@ -88,17 +89,17 @@ class AstrologyCalculator:
         
         # Элементы знаков
         self.elements = {
-            "Овен": "fire", "Лев": "fire", "Стрелец": "fire",
-            "Телец": "earth", "Дева": "earth", "Козерог": "earth", 
-            "Близнецы": "air", "Весы": "air", "Водолей": "air",
-            "Рак": "water", "Скорпион": "water", "Рыбы": "water"
+            "овен": "fire", "лев": "fire", "стрелец": "fire",
+            "телец": "earth", "дева": "earth", "козерог": "earth", 
+            "близнецы": "air", "весы": "air", "водолей": "air",
+            "рак": "water", "скорпион": "water", "рыбы": "water"
         }
         
         # Качества знаков
         self.qualities = {
-            "Овен": "cardinal", "Рак": "cardinal", "Весы": "cardinal", "Козерог": "cardinal",
-            "Телец": "fixed", "Лев": "fixed", "Скорпион": "fixed", "Водолей": "fixed",
-            "Близнецы": "mutable", "Дева": "mutable", "Стрелец": "mutable", "Рыбы": "mutable"
+            "овен": "cardinal", "рак": "cardinal", "весы": "cardinal", "козерог": "cardinal",
+            "телец": "fixed", "лев": "fixed", "скорпион": "fixed", "водолей": "fixed",
+            "близнецы": "mutable", "дева": "mutable", "стрелец": "mutable", "рыбы": "mutable"
         }
 
     def calculate_julian_day(self, birth_datetime: datetime) -> float:
@@ -121,7 +122,6 @@ class AstrologyCalculator:
             return t.jd
         else:
             # Fallback: простое вычисление Julian Day
-            import calendar
             a = (14 - month) // 12
             y = year + 4800 - a
             m = month + 12 * a - 3
@@ -190,7 +190,7 @@ class AstrologyCalculator:
                         'sign_number': sign_num
                     }
                     
-                except Exception as e:
+                except Exception:
                     positions[planet_name] = self._get_fallback_position(planet_name)
                     
         elif self.backend == "skyfield":
@@ -365,7 +365,7 @@ class AstrologyCalculator:
                 'degree_in_sign': ascmc[1] % 30
             }
             
-        except Exception as e:
+        except Exception:
             # В случае ошибки создаем упрощенную систему домов
             for i in range(12):
                 houses[i + 1] = {

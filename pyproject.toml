@@ -2,12 +2,15 @@
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = ["app"]
+
 [project]
 name = "astroloh"
 version = "1.0.0"
 description = "Навык Астролог для Яндекс Алисы"
 authors = [{name = "evgenygurin", email = "evgenygurin@users.noreply.github.com"}]
-license = {text = "MIT"}
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -80,7 +83,7 @@ dev = [
     "flake8==6.1.0",
     "mypy==1.7.1",
     "bandit==1.7.5",
-    "safety==2.3.5"
+    "safety>=2.3.5,<3.0"
 ]
 
 [tool.black]

@@ -1,7 +1,6 @@
 """
 Сервис управления сессиями пользователей с интеграцией безопасного хранения.
 """
-import json
 from typing import Dict, Optional, Any
 from datetime import datetime, timedelta
 

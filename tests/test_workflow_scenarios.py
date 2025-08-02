@@ -2,14 +2,13 @@
 End-to-end workflow scenario tests.
 """
 import pytest
-from datetime import datetime, date
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.services.dialog_handler import DialogHandler
 from app.services.conversation_manager import ConversationManager
 from app.services.dialog_flow_manager import DialogFlowManager, DialogState
 from app.models.yandex_models import (
-    YandexRequest, YandexSession, YandexUser, YandexRequestData, YandexIntent
+    YandexRequestModel, YandexSession, YandexRequestData, YandexIntent
 )
 
 
@@ -23,9 +22,9 @@ class TestWorkflowScenarios:
         self.dialog_flow_manager = DialogFlowManager()
     
     def create_mock_request(self, command: str, user_id: str = "test_user", 
-                          session_id: str = "test_session") -> YandexRequest:
+                          session_id: str = "test_session") -> YandexRequestModel:
         """Create mock Yandex request."""
-        return YandexRequest(
+        return YandexRequestModel(
             meta=MagicMock(),
             request=YandexRequestData(
                 command=command,
@@ -39,7 +38,7 @@ class TestWorkflowScenarios:
                 session_id=session_id,
                 skill_id="test_skill",
                 user_id=user_id,
-                user=YandexUser(user_id=user_id),
+                user={"user_id": user_id},
                 application=MagicMock(),
                 new=False
             ),

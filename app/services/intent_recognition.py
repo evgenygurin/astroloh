@@ -3,9 +3,7 @@
 """
 import re
 import hashlib
-from typing import Dict, Any, Tuple, List, Optional, Set
-from datetime import datetime, date
-from collections import defaultdict
+from typing import Dict, Any, Tuple, List
 
 from app.models.yandex_models import (
     YandexIntent, 
@@ -58,7 +56,7 @@ class IntentRecognizer:
         self.zodiac_patterns = {
             YandexZodiacSign.ARIES: [r"овен", r"aries"],
             YandexZodiacSign.TAURUS: [r"телец", r"taurus"],
-            YandexZodiacSign.GEMINI: [r"близнецы", r"gemini"],
+            YandexZodiacSign.GEMINI: [r"близнецы", r"близнецов", r"gemini"],
             YandexZodiacSign.CANCER: [r"рак", r"cancer"],
             YandexZodiacSign.LEO: [r"лев", r"leo"],
             YandexZodiacSign.VIRGO: [r"дева", r"virgo"],
@@ -74,6 +72,7 @@ class IntentRecognizer:
             r"(\d{1,2})[\.\/\-\s](\d{1,2})[\.\/\-\s](\d{4})",  # DD.MM.YYYY
             r"(\d{1,2})[\.\/\-\s](\d{1,2})[\.\/\-\s](\d{2})",   # DD.MM.YY
             r"(\d{4})[\.\/\-\s](\d{1,2})[\.\/\-\s](\d{1,2})",  # YYYY.MM.DD
+            r"(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+(\d{4})"  # DD месяца YYYY
         ]
         
         self.time_patterns = [

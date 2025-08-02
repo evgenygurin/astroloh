@@ -38,9 +38,9 @@ async def mock_database():
 @pytest.fixture
 def mock_yandex_request():
     """Create a mock Yandex request."""
-    from app.models.yandex_models import YandexRequest, YandexSession, YandexUser, YandexRequestData
+    from app.models.yandex_models import YandexRequestModel, YandexSession, YandexRequestData
     
-    return YandexRequest(
+    return YandexRequestModel(
         meta=MagicMock(),
         request=YandexRequestData(
             command="тест",
@@ -54,7 +54,7 @@ def mock_yandex_request():
             session_id="test_session",
             skill_id="test_skill",
             user_id="test_user",
-            user=YandexUser(user_id="test_user"),
+            user={"user_id": "test_user"},
             application=MagicMock(),
             new=False
         ),

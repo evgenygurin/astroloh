@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock, MagicMock
 from app.services.encryption import EncryptionService, SecurityUtils, DataProtectionManager
 from app.services.user_manager import UserManager, SessionManager
 from app.services.gdpr_compliance import GDPRComplianceService
-from app.models.database import User, UserSession
 
 
 class TestEncryptionService:
@@ -219,7 +218,7 @@ class TestUserManager:
         
         manager = UserManager(mock_db)
         
-        user = await manager.get_or_create_user("test_yandex_id")
+        _ = await manager.get_or_create_user("test_yandex_id")
         
         assert mock_db.add.called
         assert mock_db.commit.called
@@ -290,7 +289,7 @@ class TestSessionManager:
         user_id = uuid.uuid4()
         session_id = "test_session_id"
         
-        session = await manager.create_session(user_id, session_id)
+        _ = await manager.create_session(user_id, session_id)
         
         assert mock_db.add.called
         assert mock_db.commit.called

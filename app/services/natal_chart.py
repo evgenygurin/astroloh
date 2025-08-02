@@ -2,10 +2,9 @@
 Сервис расчета и интерпретации натальной карты.
 """
 from datetime import datetime, date, time
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 import pytz
 
-from app.models.yandex_models import YandexZodiacSign
 from app.services.astrology_calculator import AstrologyCalculator
 
 

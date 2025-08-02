@@ -80,7 +80,7 @@ class TestDialogFlowManager:
         flow = DialogFlow("test", DialogState.INITIAL, {})
         
         # Тестируем переход от INITIAL к COLLECTING_BIRTH_DATA
-        request = ProcessedRequest(
+        _ = ProcessedRequest(
             intent=YandexIntent.HOROSCOPE,
             entities={},
             confidence=0.9,
@@ -150,7 +150,7 @@ class TestDialogFlowManager:
         """Тест очистки истекших потоков."""
         # Создаем несколько потоков
         flow1 = dialog_manager.get_or_create_flow("session1", "user1")
-        flow2 = dialog_manager.get_or_create_flow("session2", "user2")
+        _ = dialog_manager.get_or_create_flow("session2", "user2")
         
         # Помечаем один как истекший
         from datetime import timedelta

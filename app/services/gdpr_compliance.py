@@ -2,11 +2,10 @@
 GDPR compliance service for data protection and privacy management.
 """
 import uuid
-import hashlib
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func
+from sqlalchemy import select, update, func
 
 from app.models.database import User, DataDeletionRequest, SecurityLog, HoroscopeRequest
 from app.services.encryption import data_protection, SecurityUtils

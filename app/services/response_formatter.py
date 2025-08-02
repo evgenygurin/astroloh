@@ -6,8 +6,6 @@ from typing import List, Optional, Dict, Any
 from app.models.yandex_models import (
     YandexResponse, 
     YandexButton, 
-    YandexCard,
-    YandexIntent,
     YandexZodiacSign
 )
 
@@ -456,7 +454,7 @@ class ResponseFormatter:
         elif "Убывающая" in phase_name:
             phase_emoji = "🌗"
         
-        text = f"🌙 Лунный календарь на сегодня:\n\n"
+        text = "🌙 Лунный календарь на сегодня:\n\n"
         text += f"📅 {lunar_day}-й лунный день - {name}\n"
         text += f"{phase_emoji} Фаза: {phase_name} ({illumination}%)\n"
         text += f"⚡ Энергия: {energy_level}\n\n"
