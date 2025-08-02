@@ -221,7 +221,9 @@ class TestUserManager:
     async def test_get_or_create_user_new(self):
         """Test creating a new user."""
         mock_db = AsyncMock()
-        mock_db.execute.return_value.scalar_one_or_none.return_value = None
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_db.execute.return_value = mock_result
         mock_db.commit = AsyncMock()
         mock_db.refresh = AsyncMock()
 
@@ -239,9 +241,9 @@ class TestUserManager:
         mock_user.yandex_user_id = "test_yandex_id"
 
         mock_db = AsyncMock()
-        mock_db.execute.return_value.scalar_one_or_none.return_value = (
-            mock_user
-        )
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_user
+        mock_db.execute.return_value = mock_result
         mock_db.commit = AsyncMock()
 
         manager = UserManager(mock_db)
@@ -312,9 +314,9 @@ class TestSessionManager:
         mock_session.expires_at = datetime.utcnow() + timedelta(hours=1)
 
         mock_db = AsyncMock()
-        mock_db.execute.return_value.scalar_one_or_none.return_value = (
-            mock_session
-        )
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_session
+        mock_db.execute.return_value = mock_result
 
         manager = SessionManager(mock_db)
 
@@ -329,9 +331,9 @@ class TestSessionManager:
         mock_session.is_active = True
 
         mock_db = AsyncMock()
-        mock_db.execute.return_value.scalar_one_or_none.return_value = (
-            mock_session
-        )
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_session
+        mock_db.execute.return_value = mock_result
         mock_db.commit = AsyncMock()
 
         manager = SessionManager(mock_db)
@@ -377,10 +379,19 @@ class TestGDPRCompliance:
         mock_user.encrypted_name = b"encrypted_name"
 
         mock_db = AsyncMock()
-        mock_db.execute.return_value.scalar_one_or_none.return_value = (
-            mock_user
-        )
-        mock_db.execute.return_value.scalar.return_value = 5  # horoscope count
+        
+        # Setup mocks for three database queries
+        mock_user_result = MagicMock()
+        mock_user_result.scalar_one_or_none.return_value = mock_user
+        
+        mock_count_result = MagicMock()
+        mock_count_result.scalar.return_value = 5
+        
+        mock_activity_result = MagicMock()
+        mock_activity_result.scalar_one_or_none.return_value = datetime.utcnow()
+        
+        # Configure side_effect to return different results for each call
+        mock_db.execute.side_effect = [mock_user_result, mock_count_result, mock_activity_result]
 
         service = GDPRComplianceService(mock_db)
         service.user_manager.get_user_birth_data = AsyncMock(
@@ -437,10 +448,29 @@ class TestGDPRCompliance:
     async def test_generate_compliance_report(self):
         """Test generating compliance report."""
         mock_db = AsyncMock()
-        mock_db.execute.return_value.scalar.return_value = 100
-        mock_db.execute.return_value.fetchall.return_value = [
+        
+        # Setup mocks for four database queries
+        mock_total_users = MagicMock()
+        mock_total_users.scalar.return_value = 100
+        
+        mock_consented_users = MagicMock()
+        mock_consented_users.scalar.return_value = 80
+        
+        mock_deletion_requests = MagicMock()
+        mock_deletion_requests.scalar.return_value = 5
+        
+        mock_security_events = MagicMock()
+        mock_security_events.all.return_value = [
             ("data_access", 50),
             ("consent_update", 25),
+        ]
+        
+        # Configure side_effect to return different results for each call
+        mock_db.execute.side_effect = [
+            mock_total_users, 
+            mock_consented_users, 
+            mock_deletion_requests, 
+            mock_security_events
         ]
 
         service = GDPRComplianceService(mock_db)

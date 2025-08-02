@@ -22,9 +22,9 @@ class TestUserManager:
     async def test_get_or_create_user_new_user(self):
         """Test creating a new user."""
         # Mock database query to return None (user doesn't exist)
-        self.mock_db.execute.return_value.scalar_one_or_none.return_value = (
-            None
-        )
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        self.mock_db.execute.return_value = mock_result
 
         user_id = "test_user_123"
         await self.user_manager.get_or_create_user(user_id)
@@ -42,54 +42,78 @@ class TestUserManager:
         mock_user.yandex_user_id = "test_user_123"
         mock_user.zodiac_sign = "leo"
 
-        self.mock_db.execute.return_value.scalar_one_or_none.return_value = (
-            mock_user
-        )
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_user
+        self.mock_db.execute.return_value = mock_result
 
         user_id = "test_user_123"
         user = await self.user_manager.get_or_create_user(user_id)
 
         assert user == mock_user
-        # Should not call add or commit for existing user
+        # Should not call add for existing user, but should commit to update last_accessed
         assert not self.mock_db.add.called
-        assert not self.mock_db.commit.called
+        assert self.mock_db.commit.called
 
     @pytest.mark.asyncio
     async def test_update_user_birth_data(self):
         """Test updating user birth data."""
-        mock_user = MagicMock()
+        import uuid
+        from app.services.encryption import data_protection
+        
+        user_id = uuid.uuid4()
+        birth_date = "1990-05-15"
+        birth_time = "14:30:00"
+        birth_location = "Moscow"
+        zodiac_sign = "taurus"
 
-        birth_data = {
-            "birth_date": datetime(1990, 5, 15, 14, 30),
-            "birth_location": {
-                "latitude": 55.7558,
-                "longitude": 37.6176,
-                "name": "Moscow",
-            },
-        }
+        with patch.object(data_protection, "encrypt_birth_data") as mock_encrypt:
+            mock_encrypt.return_value = {
+                "encrypted_birth_date": b"encrypted_date",
+                "encrypted_birth_time": b"encrypted_time",
+                "encrypted_birth_location": b"encrypted_location"
+            }
+            
+            # Mock database query
+            mock_result = AsyncMock()
+            mock_result.rowcount = 1
+            self.mock_db.execute.return_value = mock_result
 
-        with patch.object(self.user_manager, "_encrypt_data") as mock_encrypt:
-            mock_encrypt.return_value = b"encrypted_data"
-
-            await self.user_manager.update_user_birth_data(
-                mock_user, birth_data
+            result = await self.user_manager.update_user_birth_data(
+                user_id, birth_date, birth_time, birth_location, zodiac_sign
             )
 
             # Verify encryption was called
             assert mock_encrypt.called
             assert self.mock_db.commit.called
+            assert result is True
 
     @pytest.mark.asyncio
-    async def test_update_user_zodiac_sign(self):
-        """Test updating user zodiac sign."""
-        mock_user = MagicMock()
+    async def test_update_zodiac_via_birth_data(self):
+        """Test updating zodiac sign via birth data update."""
+        import uuid
+        from app.services.encryption import data_protection
+        
+        user_id = uuid.uuid4()
+        zodiac_sign = "leo"
 
-        await self.user_manager.update_user_zodiac_sign(
-            mock_user, YandexZodiacSign.LEO
-        )
+        with patch.object(data_protection, "encrypt_birth_data") as mock_encrypt:
+            mock_encrypt.return_value = {
+                "encrypted_birth_date": b"encrypted_date",
+                "encrypted_birth_time": b"encrypted_time", 
+                "encrypted_birth_location": b"encrypted_location"
+            }
+            
+            # Mock database query
+            mock_result = AsyncMock()
+            mock_result.rowcount = 1
+            self.mock_db.execute.return_value = mock_result
 
-        assert mock_user.zodiac_sign == "leo"
-        assert self.mock_db.commit.called
+            result = await self.user_manager.update_user_birth_data(
+                user_id, "1990-08-10", zodiac_sign=zodiac_sign
+            )
+
+            assert result is True
+            assert self.mock_db.commit.called
 
     @pytest.mark.asyncio
     async def test_get_user_birth_data_encrypted(self):
