@@ -220,12 +220,19 @@ class TestUserManager:
 
     async def test_get_or_create_user_new(self):
         """Test creating a new user."""
-        mock_db = AsyncMock()
+        mock_db = MagicMock()
+        # Configure async methods
+        mock_db.execute = AsyncMock()
+        mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+        mock_db.refresh = AsyncMock()
+        # Sync methods remain as MagicMock
+        mock_db.add = MagicMock()
+        mock_db.delete = MagicMock()
+        
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_db.execute.return_value = mock_result
-        mock_db.commit = AsyncMock()
-        mock_db.refresh = AsyncMock()
 
         manager = UserManager(mock_db)
 
@@ -240,11 +247,19 @@ class TestUserManager:
         mock_user.id = uuid.uuid4()
         mock_user.yandex_user_id = "test_yandex_id"
 
-        mock_db = AsyncMock()
+        mock_db = MagicMock()
+        # Configure async methods
+        mock_db.execute = AsyncMock()
+        mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+        mock_db.refresh = AsyncMock()
+        # Sync methods remain as MagicMock
+        mock_db.add = MagicMock()
+        mock_db.delete = MagicMock()
+        
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_user
         mock_db.execute.return_value = mock_result
-        mock_db.commit = AsyncMock()
 
         manager = UserManager(mock_db)
 

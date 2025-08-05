@@ -2,7 +2,6 @@
 Клиент для работы с Yandex GPT API.
 """
 import asyncio
-import json
 import logging
 from typing import Any, Dict, List, Optional
 

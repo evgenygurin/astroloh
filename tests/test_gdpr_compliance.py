@@ -15,7 +15,15 @@ class TestGDPRComplianceService:
 
     def setup_method(self):
         """Setup before each test."""
-        self.mock_db = AsyncMock()
+        self.mock_db = MagicMock()
+        # Configure async methods
+        self.mock_db.execute = AsyncMock()
+        self.mock_db.commit = AsyncMock()
+        self.mock_db.rollback = AsyncMock()
+        self.mock_db.refresh = AsyncMock()
+        # Sync methods remain as MagicMock
+        self.mock_db.add = MagicMock()
+        self.mock_db.delete = MagicMock()
         self.compliance_service = GDPRComplianceService(self.mock_db)
         # Replace the user_manager with a mock
         self.mock_user_manager = AsyncMock()

@@ -393,3 +393,20 @@ class TestSecurityUtils:
         except Exception as e:
             # Exception is acceptable for invalid data
             assert isinstance(e, Exception)
+
+    def test_encryption_service_fallback_key_derivation(self):
+        """Test encryption service with fallback key derivation from SECRET_KEY."""
+        with patch('app.core.config.settings') as mock_settings:
+            # Set up mock settings to trigger fallback key derivation
+            mock_settings.ENCRYPTION_KEY = None
+            mock_settings.SECRET_KEY = "test_secret_key_for_fallback"
+            
+            # Create service without explicit encryption key
+            service = EncryptionService()
+            
+            # Test that encryption/decryption still works
+            test_data = "test data for fallback encryption"
+            encrypted = service.encrypt(test_data)
+            decrypted = service.decrypt(encrypted)
+            
+            assert decrypted == test_data

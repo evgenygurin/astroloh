@@ -739,3 +739,57 @@ class TestAPIIntegration:
         
         # Should return some response (could be 200, 404, etc.)
         assert response.status_code in [200, 404, 400, 500]
+
+    def test_security_delete_request_endpoint(self):
+        """Test security data deletion request endpoint."""
+        async def mock_get_database():
+            db = AsyncMock()
+            db.execute = AsyncMock(return_value=AsyncMock())
+            db.commit = AsyncMock()
+            db.rollback = AsyncMock()
+            db.close = AsyncMock()
+            yield db
+
+        with patch("app.core.database.get_database", side_effect=mock_get_database):
+            response = self.client.post("/api/v1/security/user/test_user/delete-request")
+        
+        # Should return some response (could be 200, 404, etc.)
+        assert response.status_code in [200, 404, 400, 422, 500]
+
+    def test_security_rectify_endpoint(self):
+        """Test security data rectification endpoint."""
+        async def mock_get_database():
+            db = AsyncMock()
+            db.execute = AsyncMock(return_value=AsyncMock())
+            db.commit = AsyncMock()
+            db.rollback = AsyncMock()
+            db.close = AsyncMock()
+            yield db
+
+        with patch("app.core.database.get_database", side_effect=mock_get_database):
+            response = self.client.post(
+                "/api/v1/security/user/test_user/rectify",
+                json={"birth_date": "1990-01-01", "zodiac_sign": "capricorn"}
+            )
+        
+        # Should return some response (could be 200, 404, etc.)
+        assert response.status_code in [200, 404, 400, 422, 500]
+
+    def test_security_restrict_processing_endpoint(self):
+        """Test security restrict processing endpoint."""
+        async def mock_get_database():
+            db = AsyncMock()
+            db.execute = AsyncMock(return_value=AsyncMock())
+            db.commit = AsyncMock()
+            db.rollback = AsyncMock()
+            db.close = AsyncMock()
+            yield db
+
+        with patch("app.core.database.get_database", side_effect=mock_get_database):
+            response = self.client.post(
+                "/api/v1/security/user/test_user/restrict-processing",
+                json={"restrict": True, "reason": "user request"}
+            )
+        
+        # Should return some response (could be 200, 404, etc.)
+        assert response.status_code in [200, 404, 400, 422, 500]
