@@ -464,6 +464,8 @@ class TestGDPRCompliance:
     async def test_export_user_data(self):
         """Test exporting user data."""
         mock_db = AsyncMock()
+        # Make db.add synchronous to match actual database behavior
+        mock_db.add = MagicMock()
         service = GDPRComplianceService(mock_db)
 
         # Mock the get_user_data_summary method
@@ -487,6 +489,8 @@ class TestGDPRCompliance:
     async def test_request_data_deletion(self):
         """Test requesting data deletion."""
         mock_db = AsyncMock()
+        # Make db.add synchronous to match actual database behavior
+        mock_db.add = MagicMock()
         service = GDPRComplianceService(mock_db)
 
         # Mock the user manager
