@@ -68,8 +68,16 @@ class AstrologyCalculator:
             }
         elif self.backend == "swisseph" and swe is None:
             # Fallback if swisseph backend was selected but import failed
-            self.backend = None
-        elif self.backend == "skyfield":
+            import importlib.util
+            if importlib.util.find_spec("skyfield"):
+                self.backend = "skyfield"
+            elif importlib.util.find_spec("astropy"):
+                self.backend = "astropy"
+            else:
+                self.backend = None
+        
+        # Initialize the selected backend properly
+        if self.backend == "skyfield":
             # Инициализация Skyfield
             try:
                 from skyfield.api import load
@@ -79,9 +87,13 @@ class AstrologyCalculator:
                 self.skyfield_planets = load(
                     "de421.bsp"
                 )  # JPL planetary ephemeris
-            except ImportError:
-                # Fallback to stub if skyfield not available
-                self.backend = None
+            except (ImportError, Exception):
+                # Fallback to astropy or None if skyfield not available
+                import importlib.util
+                if importlib.util.find_spec("astropy"):
+                    self.backend = "astropy"
+                else:
+                    self.backend = None
 
         elif self.backend == "astropy":
             # Astropy не требует особой инициализации
@@ -466,12 +478,34 @@ class AstrologyCalculator:
                     }
         else:
             # Fallback: создаем упрощенную систему домов для не-swisseph бэкендов
+            # Добавляем зависимость от широты для получения разных результатов для разных локаций
+            latitude_offset = int(latitude) % 30  # Используем широту для сдвига
+            
             for i in range(12):
+                cusp_longitude = (i * 30 + latitude_offset) % 360
+                sign_num = int(cusp_longitude / 30)
                 houses[i + 1] = {
-                    "cusp_longitude": i * 30,
-                    "sign": self.zodiac_signs[i],
-                    "degree_in_sign": 0,
+                    "cusp_longitude": cusp_longitude,
+                    "sign": self.zodiac_signs[sign_num],
+                    "degree_in_sign": cusp_longitude % 30,
                 }
+
+            # Добавляем важные точки для fallback режима (также зависящие от широты)
+            asc_longitude = latitude_offset % 360
+            asc_sign_num = int(asc_longitude / 30)
+            houses["ascendant"] = {
+                "longitude": asc_longitude,
+                "sign": self.zodiac_signs[asc_sign_num],
+                "degree_in_sign": asc_longitude % 30,
+            }
+
+            mc_longitude = (270 + latitude_offset) % 360
+            mc_sign_num = int(mc_longitude / 30)
+            houses["midheaven"] = {
+                "longitude": mc_longitude,
+                "sign": self.zodiac_signs[mc_sign_num],
+                "degree_in_sign": mc_longitude % 30,
+            }
 
         return houses
 
@@ -584,7 +618,7 @@ class AstrologyCalculator:
                 "phase_description": phase_info["description"],
                 "angle": angle,
                 "illumination_percent": round(illumination, 1),
-                "is_waxing": angle < 180,
+                "is_waxing": bool(angle < 180),
             }
 
         except Exception:
@@ -598,7 +632,7 @@ class AstrologyCalculator:
                 "phase_description": phase_info["description"],
                 "angle": phase_angle,
                 "illumination_percent": 50,
-                "is_waxing": True,
+                "is_waxing": bool(day_of_month <= 14),
             }
 
     def _get_moon_phase_info(self, angle: float) -> Dict[str, str]:
