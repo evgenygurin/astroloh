@@ -24,6 +24,7 @@ class YandexIntent(str, Enum):
     LUNAR_CALENDAR = "lunar_calendar"
     ADVICE = "advice"
     HELP = "help"
+    EXIT = "exit"
     UNKNOWN = "unknown"
 
 
@@ -51,6 +52,12 @@ class YandexButton(BaseModel):
     payload: Optional[Dict[str, Any]] = None
     url: Optional[str] = None
     hide: bool = True
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Ensure button title length complies with Alice limits (max 64 chars)
+        if len(self.title) > 64:
+            self.title = self.title[:61] + "..."
 
 
 class YandexCard(BaseModel):
@@ -61,6 +68,14 @@ class YandexCard(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     button: Optional[YandexButton] = None
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Ensure title and description length comply with Alice limits
+        if self.title and len(self.title) > 128:
+            self.title = self.title[:125] + "..."
+        if self.description and len(self.description) > 256:
+            self.description = self.description[:253] + "..."
 
 
 class YandexRequestMeta(BaseModel):
@@ -113,6 +128,18 @@ class YandexResponse(BaseModel):
     buttons: Optional[List[YandexButton]] = None
     end_session: bool = False
     directives: Optional[Dict[str, Any]] = None
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Ensure Alice button limit compliance (max 5 buttons)
+        if self.buttons and len(self.buttons) > 5:
+            self.buttons = self.buttons[:5]
+        # Ensure text is not empty for Alice compatibility
+        if not self.text or len(self.text.strip()) == 0:
+            self.text = "Извините, произошла ошибка. Попробуйте еще раз."
+        # Ensure text length is reasonable for voice interface
+        if len(self.text) > 1024:
+            self.text = self.text[:1020] + "..."
 
 
 class YandexResponseModel(BaseModel):

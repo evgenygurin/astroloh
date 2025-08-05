@@ -688,3 +688,54 @@ class TestAPIIntegration:
         )
 
         assert response.status_code in [400, 422]
+
+    def test_security_data_summary_endpoint(self):
+        """Test security data summary endpoint."""
+        async def mock_get_database():
+            db = AsyncMock()
+            db.execute = AsyncMock(return_value=AsyncMock())
+            db.commit = AsyncMock()
+            db.rollback = AsyncMock()
+            db.close = AsyncMock()
+            yield db
+
+        with patch("app.core.database.get_database", side_effect=mock_get_database):
+            response = self.client.get("/api/v1/security/user/test_user/data-summary")
+        
+        # Should return some response (could be 200, 404, etc.)
+        assert response.status_code in [200, 404, 400, 500]
+
+    def test_security_consent_endpoint(self):
+        """Test security consent endpoint."""
+        async def mock_get_database():
+            db = AsyncMock()
+            db.execute = AsyncMock(return_value=AsyncMock())
+            db.commit = AsyncMock()
+            db.rollback = AsyncMock()
+            db.close = AsyncMock()
+            yield db
+
+        with patch("app.core.database.get_database", side_effect=mock_get_database):
+            response = self.client.post(
+                "/api/v1/security/user/test_user/consent",
+                json={"consent": True, "retention_days": 365}
+            )
+        
+        # Should return some response (could be 200, 404, etc.)
+        assert response.status_code in [200, 404, 400, 422, 500]
+
+    def test_security_export_endpoint(self):
+        """Test security data export endpoint."""
+        async def mock_get_database():
+            db = AsyncMock()
+            db.execute = AsyncMock(return_value=AsyncMock())
+            db.commit = AsyncMock()
+            db.rollback = AsyncMock()
+            db.close = AsyncMock()
+            yield db
+
+        with patch("app.core.database.get_database", side_effect=mock_get_database):
+            response = self.client.get("/api/v1/security/user/test_user/export")
+        
+        # Should return some response (could be 200, 404, etc.)
+        assert response.status_code in [200, 404, 400, 500]

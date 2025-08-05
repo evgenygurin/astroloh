@@ -12,6 +12,7 @@ from app.models.yandex_models import (
     YandexRequestModel,
     YandexResponseModel,
 )
+from app.services.ai_horoscope_service import ai_horoscope_service
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.conversation_manager import ConversationManager
 from app.services.dialog_flow_manager import DialogFlowManager, DialogState
@@ -42,6 +43,9 @@ class DialogHandler:
         self.natal_chart_calculator = NatalChartCalculator()
         self.lunar_calendar = LunarCalendar()
         self.astro_calculator = AstrologyCalculator()
+        
+        # AI-powered сервисы
+        self.ai_horoscope_service = ai_horoscope_service
 
         # Расширенная функциональность Stage 5
         self.dialog_flow_manager = DialogFlowManager()
@@ -118,11 +122,8 @@ class DialogHandler:
 
         # Обработка в зависимости от типа запроса
         if request.request.type == "ButtonPressed":
-            # Для кнопок используем NLU токены или payload
-            if request.request.nlu and request.request.nlu.get("tokens"):
-                clean_input = " ".join(request.request.nlu["tokens"])
-            else:
-                clean_input = "помощь"  # Default для кнопок без токенов
+            # Обрабатываем нажатия кнопок
+            clean_input = self._handle_button_press(request)
         else:
             # Санитизация пользовательского ввода для обычных запросов
             clean_input = self.request_validator.sanitize_user_input(
@@ -161,28 +162,19 @@ class DialogHandler:
             )
 
         except Exception as e:
-            self.logger.error(f"Error in conversation processing: {str(e)}")
+            self.logger.error(f"Error in conversation processing: {str(e)}", exc_info=True)
 
-            # Используем систему восстановления после ошибок (Stage 5)
-            recovery_response = await self.error_recovery_manager.handle_error(
-                e,
-                request,
-                {
-                    "user_id": request.session.user_id,
-                    "session_id": request.session.session_id,
-                    "intent": processed_request.intent,
-                    "dialog_state": None,  # Будет определено в error_recovery_manager
-                },
+            # Alice-совместимая обработка ошибок
+            response = await self._handle_error_gracefully(
+                e, request, processed_request
             )
-
-            # Используем ответ системы восстановления
-            response = recovery_response
-
-            # Если восстановление не удалось, fallback к стандартной обработке
-            if not response:
-                response = await self._process_intent(
-                    processed_request, request.session
-                )
+            
+            # Очищаем состояние сессии при критических ошибках
+            user_context = self.session_manager.get_user_context(request.session)
+            if self._is_critical_error(e):
+                user_context.awaiting_data = None
+                user_context.conversation_step = 0
+                self.session_manager.update_user_context(request.session, user_context)
 
         # Логирование обработки запроса
         self.error_handler.log_request_processing(
@@ -476,6 +468,9 @@ class DialogHandler:
 
         elif intent == YandexIntent.HELP:
             return await self._handle_help(user_context, session)
+            
+        elif intent == YandexIntent.EXIT:
+            return await self._handle_exit(user_context, session)
 
         else:
             return await self._handle_unknown(user_context, session)
@@ -538,14 +533,21 @@ class DialogHandler:
                 user_context.zodiac_sign = zodiac_sign
                 self.session_manager.clear_awaiting_data(session, user_context)
 
-                # Генерируем персональный гороскоп
-                horoscope = (
-                    self.horoscope_generator.generate_personalized_horoscope(
+                # Генерируем персональный гороскоп с AI
+                try:
+                    horoscope = await self.ai_horoscope_service.generate_enhanced_horoscope(
                         zodiac_sign=zodiac_sign,
                         birth_date=birth_date,
                         period=HoroscopePeriod.DAILY,
                     )
-                )
+                except Exception as e:
+                    self.logger.error(f"AI horoscope generation failed: {e}")
+                    # Fallback к традиционному гороскопу
+                    horoscope = self.horoscope_generator.generate_personalized_horoscope(
+                        zodiac_sign=zodiac_sign,
+                        birth_date=birth_date,
+                        period=HoroscopePeriod.DAILY,
+                    )
 
                 return self.response_formatter.format_horoscope_response(
                     zodiac_sign, horoscope
@@ -560,14 +562,21 @@ class DialogHandler:
                 birth_date
             )
 
-            # Генерируем персональный гороскоп
-            horoscope = (
-                self.horoscope_generator.generate_personalized_horoscope(
+            # Генерируем персональный гороскоп с AI
+            try:
+                horoscope = await self.ai_horoscope_service.generate_enhanced_horoscope(
                     zodiac_sign=zodiac_sign,
                     birth_date=birth_date,
                     period=HoroscopePeriod.DAILY,
                 )
-            )
+            except Exception as e:
+                self.logger.error(f"AI horoscope generation failed: {e}")
+                # Fallback к традиционному гороскопу
+                horoscope = self.horoscope_generator.generate_personalized_horoscope(
+                    zodiac_sign=zodiac_sign,
+                    birth_date=birth_date,
+                    period=HoroscopePeriod.DAILY,
+                )
 
             return self.response_formatter.format_horoscope_response(
                 zodiac_sign, horoscope
@@ -594,12 +603,17 @@ class DialogHandler:
             user_context.partner_sign = sign2
             self.session_manager.clear_awaiting_data(session, user_context)
 
-            # Вычисляем совместимость с деталями
-            compatibility = (
-                self.astro_calculator.calculate_compatibility_score(
+            # Вычисляем совместимость с AI поддержкой
+            try:
+                compatibility = await self.ai_horoscope_service.generate_compatibility_analysis(
+                    sign1, sign2, use_ai=True
+                )
+            except Exception as e:
+                self.logger.error(f"AI compatibility analysis failed: {e}")
+                # Fallback к традиционному анализу
+                compatibility = self.astro_calculator.calculate_compatibility_score(
                     sign1, sign2
                 )
-            )
 
             return self.response_formatter.format_compatibility_response(
                 sign1, sign2, compatibility
@@ -622,12 +636,17 @@ class DialogHandler:
                 user_context.partner_sign = zodiac_signs[0]
                 self.session_manager.clear_awaiting_data(session, user_context)
 
-                # Вычисляем совместимость с деталями
-                compatibility = (
-                    self.astro_calculator.calculate_compatibility_score(
+                # Вычисляем совместимость с AI поддержкой
+                try:
+                    compatibility = await self.ai_horoscope_service.generate_compatibility_analysis(
+                        user_context.zodiac_sign, user_context.partner_sign, use_ai=True
+                    )
+                except Exception as e:
+                    self.logger.error(f"AI compatibility analysis failed: {e}")
+                    # Fallback к традиционному анализу
+                    compatibility = self.astro_calculator.calculate_compatibility_score(
                         user_context.zodiac_sign, user_context.partner_sign
                     )
-                )
 
                 return self.response_formatter.format_compatibility_response(
                     user_context.zodiac_sign,
@@ -667,12 +686,17 @@ class DialogHandler:
         else:
             self.session_manager.clear_awaiting_data(session, user_context)
 
-            # Вычисляем совместимость с деталями
-            compatibility = (
-                self.astro_calculator.calculate_compatibility_score(
+            # Вычисляем совместимость с AI поддержкой
+            try:
+                compatibility = await self.ai_horoscope_service.generate_compatibility_analysis(
+                    user_context.zodiac_sign, user_context.partner_sign, use_ai=True
+                )
+            except Exception as e:
+                self.logger.error(f"AI compatibility analysis failed: {e}")
+                # Fallback к традиционному анализу
+                compatibility = self.astro_calculator.calculate_compatibility_score(
                     user_context.zodiac_sign, user_context.partner_sign
                 )
-            )
 
             return self.response_formatter.format_compatibility_response(
                 user_context.zodiac_sign,
@@ -736,18 +760,151 @@ class DialogHandler:
             return self.response_formatter.format_error_response("general")
 
     async def _handle_advice(self, user_context: UserContext, session) -> Any:
-        """Обрабатывает запрос астрологического совета."""
+        """Обрабатывает запрос астрологического совета с AI поддержкой."""
         self.session_manager.clear_awaiting_data(session, user_context)
+        
+        # Пытаемся сгенерировать персонализированный совет с AI
+        if user_context.zodiac_sign:
+            try:
+                advice = await self.ai_horoscope_service.generate_personalized_advice(
+                    zodiac_sign=user_context.zodiac_sign,
+                    user_context={"mood": "neutral"},
+                    use_ai=True
+                )
+                
+                if advice and advice.get("ai_enhanced"):
+                    return self.response_formatter.format_personalized_advice_response(
+                        advice_text=advice["advice"],
+                        zodiac_sign=user_context.zodiac_sign
+                    )
+            except Exception as e:
+                self.logger.error(f"AI advice generation failed: {e}")
+                # Продолжаем к fallback
+        
+        # Fallback к обычному ответу
         return self.response_formatter.format_advice_response()
 
     async def _handle_help(self, user_context: UserContext, session) -> Any:
         """Обрабатывает запрос справки."""
         self.session_manager.clear_awaiting_data(session, user_context)
         return self.response_formatter.format_help_response()
+    
+    async def _handle_exit(self, user_context: UserContext, session) -> Any:
+        """Обрабатывает запрос на выход из навыка."""
+        # Очищаем состояние сессии
+        self.session_manager.clear_user_context(session)
+        
+        # Проверяем, хочет ли пользователь персонализированное прощание
+        has_user_data = (
+            user_context.zodiac_sign or 
+            user_context.birth_date or 
+            user_context.conversation_step > 2
+        )
+        
+        return self.response_formatter.format_goodbye_response(
+            personalized=has_user_data,
+            user_context=user_context
+        )
 
     async def _handle_unknown(self, user_context: UserContext, session) -> Any:
-        """Обрабатывает неизвестный интент."""
-        return self.response_formatter.format_error_response("general")
+        """Обрабатывает неизвестный интент с помощью по контексту."""
+        # Проверяем, можем ли помочь на основе текущего состояния
+        if user_context.awaiting_data:
+            # Пользователь может быть запутался в процессе ввода данных
+            if user_context.awaiting_data == "birth_date":
+                return self.response_formatter.format_personalized_birth_date_request(
+                    user_returning=True,
+                    suggestions=["Пример: 15 марта 1990", "Помощь"]
+                )
+            elif user_context.awaiting_data in ["zodiac_sign", "partner_sign"]:
+                return self.response_formatter.format_compatibility_request_response(
+                    1 if user_context.awaiting_data == "zodiac_sign" else 2
+                )
+        
+        # Обычный ответ с помощью
+        return self.response_formatter.format_clarification_response(
+            suggestions=["Мой гороскоп", "Совместимость", "Помощь"]
+        )
+
+
+    async def _handle_error_gracefully(
+        self, error: Exception, request: YandexRequestModel, processed_request: ProcessedRequest
+    ) -> Any:
+        """Обрабатывает ошибки без нарушения потока разговора Alice."""
+        error_type = self._classify_error(error)
+        
+        # Пробуем систему восстановления сначала
+        try:
+            recovery_response = await self.error_recovery_manager.handle_error(
+                error,
+                request,
+                {
+                    "user_id": request.session.user_id,
+                    "session_id": request.session.session_id,
+                    "intent": processed_request.intent,
+                    "error_type": error_type,
+                },
+            )
+            if recovery_response:
+                return recovery_response
+        except Exception as recovery_error:
+            self.logger.error(f"Error recovery failed: {str(recovery_error)}")
+        
+        # Fallback к стандартной обработке ошибок
+        if error_type == "validation":
+            return self.response_formatter.format_error_response("invalid_date")
+        elif error_type == "timeout":
+            return self.response_formatter.format_error_response("timeout")
+        elif error_type == "data":
+            return self.response_formatter.format_error_response("no_data")
+        else:
+            return self.response_formatter.format_error_response("general")
+    
+    def _classify_error(self, error: Exception) -> str:
+        """Классифицирует тип ошибки для более точного ответа."""
+        error_str = str(error).lower()
+        
+        if any(keyword in error_str for keyword in ["date", "datetime", "parse", "format"]):
+            return "validation"
+        elif any(keyword in error_str for keyword in ["timeout", "connection", "network"]):
+            return "timeout"
+        elif any(keyword in error_str for keyword in ["data", "missing", "required", "empty"]):
+            return "data"
+        elif any(keyword in error_str for keyword in ["database", "sql", "connection"]):
+            return "database"
+        else:
+            return "general"
+    
+    def _is_critical_error(self, error: Exception) -> bool:
+        """Определяет, является ли ошибка критической (требует сброса состояния)."""
+        critical_errors = [
+            "AttributeError",
+            "TypeError", 
+            "KeyError",
+            "ImportError",
+            "MemoryError"
+        ]
+        return any(error_type in str(type(error)) for error_type in critical_errors)
+    
+    def _handle_button_press(self, request: YandexRequestModel) -> str:
+        """Обрабатывает нажатие кнопки с учетом Alice совместимости."""
+        # Проверяем payload кнопки
+        if request.request.payload:
+            action = request.request.payload.get("action")
+            if action == "confirm_exit":
+                return "выход"
+            elif action == "cancel_exit":
+                return "помощь"
+            elif action:
+                # Преобразуем action в текст
+                return action.replace("_", " ")
+        
+        # Используем NLU токены если доступны
+        if request.request.nlu and request.request.nlu.get("tokens"):
+            return " ".join(request.request.nlu["tokens"])
+        
+        # По умолчанию показываем помощь
+        return "помощь"
 
 
 # Глобальный экземпляр обработчика диалогов

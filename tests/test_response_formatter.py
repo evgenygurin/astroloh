@@ -275,7 +275,7 @@ class TestResponseFormatter:
         assert len(response.text) > 0
         assert any(
             word in response.text.lower()
-            for word in ["до свидания", "пока", "увидимся"]
+            for word in ["до свидания", "хорошего дня", "до встречи"]
         )
         assert response.end_session is True
 

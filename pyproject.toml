@@ -19,31 +19,26 @@ dependencies = [
     "uvicorn[standard]==0.24.0",
     "pydantic==2.5.0",
     "pydantic-settings==2.1.0",
-    
     # База данных
     "sqlalchemy==2.0.23",
     "alembic==1.13.1",
     "asyncpg==0.29.0",
     "psycopg2-binary==2.9.9",
-    
     # Шифрование и безопасность
     "cryptography==42.0.8",
     "python-jose[cryptography]==3.3.0",
     "passlib[bcrypt]==1.7.4",
-    
     # HTTP клиенты
     "httpx==0.25.2",
     "aiohttp==3.9.5",
-    
     # Обработка данных
     "python-dateutil==2.8.2",
     "pytz==2023.3",
-    
     # Логирование и мониторинг
     "loguru==0.7.2",
-    
     # Переменные окружения
-    "python-dotenv==1.0.0"
+    "python-dotenv==1.0.0",
+    "swisseph>=0.0.0.dev1",
 ]
 
 [project.optional-dependencies]

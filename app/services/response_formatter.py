@@ -471,25 +471,50 @@ class ResponseFormatter:
     def format_error_response(
         self, error_type: str = "general"
     ) -> YandexResponse:
-        """Форматирует ответ об ошибке."""
+        """Форматирует ответ об ошибке с учетом требований Алисы."""
         error_messages = {
-            "general": "Извините, произошла ошибка. Попробуйте еще раз.",
-            "invalid_date": "Не удалось распознать дату. Попробуйте сказать в формате: день, месяц, год.",
-            "invalid_sign": "Не удалось распознать знак зодиака. Выберите из предложенных вариантов.",
-            "no_data": "Недостаточно данных для ответа. Попробуйте уточнить запрос.",
+            "general": "Извините, произошла небольшая ошибка. Попробуйте еще раз или скажите 'помощь'.",
+            "invalid_date": "Не удалось распознать дату. Попробуйте сказать в формате: 15 марта 1990 года.",
+            "invalid_sign": "Не удалось распознать знак зодиака. Выберите из кнопок ниже.",
+            "no_data": "Мне нужно больше информации. Попробуйте уточнить запрос.",
+            "timeout": "Слишком долго не могу обработать запрос. Попробуйте позже.",
         }
 
         text = error_messages.get(error_type, error_messages["general"])
+        
+        # Ограничиваем количество кнопок для Алисы (max 5)
+        buttons = self.help_buttons[:5] if self.help_buttons else None
 
         return YandexResponse(
-            text=text, tts=text, buttons=self.help_buttons, end_session=False
+            text=text, 
+            tts=self._add_tts_pauses(text), 
+            buttons=buttons, 
+            end_session=False
         )
 
-    def format_goodbye_response(self) -> YandexResponse:
-        """Форматирует прощальное сообщение."""
-        text = "До свидания! Пусть звёзды ведут вас к счастью!"
+    def format_goodbye_response(self, personalized: bool = False, user_context: Any = None) -> YandexResponse:
+        """Форматирует прощальное сообщение с учетом Alice рекомендаций."""
+        farewell_messages = [
+            "До свидания! Пусть звёзды ведут вас к счастью!",
+            "Хорошего дня! Обращайтесь к звёздам за мудростью.",
+            "До встречи! Пусть звёзды освещают ваш путь.",
+        ]
+        
+        if personalized and user_context and hasattr(user_context, 'zodiac_sign'):
+            zodiac_sign = user_context.zodiac_sign
+            if zodiac_sign:
+                text = f"До свидания! Пусть звёзды благословят {zodiac_sign.value} на весь день!"
+            else:
+                text = farewell_messages[0]
+        else:
+            import random
+            text = random.choice(farewell_messages)
 
-        return YandexResponse(text=text, tts=text, end_session=True)
+        return YandexResponse(
+            text=text, 
+            tts=self._add_tts_pauses(text), 
+            end_session=True
+        )
 
     def format_natal_chart_request_response(self) -> YandexResponse:
         """Форматирует запрос данных для натальной карты."""
@@ -602,25 +627,46 @@ class ResponseFormatter:
             end_session=False,
         )
 
-    def _get_zodiac_buttons(self) -> List[YandexButton]:
-        """Возвращает кнопки со знаками зодиака."""
-        return [
+    def _get_zodiac_buttons(self, limit: int = 5) -> List[YandexButton]:
+        """Возвращает кнопки со знаками зодиака (с учетом лимита Алисы)."""
+        all_buttons = [
             YandexButton(title="Овен", payload={"sign": "овен"}),
             YandexButton(title="Телец", payload={"sign": "телец"}),
             YandexButton(title="Близнецы", payload={"sign": "близнецы"}),
             YandexButton(title="Рак", payload={"sign": "рак"}),
             YandexButton(title="Лев", payload={"sign": "лев"}),
             YandexButton(title="Дева", payload={"sign": "дева"}),
+            YandexButton(title="Весы", payload={"sign": "весы"}),
+            YandexButton(title="Скорпион", payload={"sign": "скорпион"}),
+            YandexButton(title="Стрелец", payload={"sign": "стрелец"}),
+            YandexButton(title="Козерог", payload={"sign": "козерог"}),
+            YandexButton(title="Водолей", payload={"sign": "водолей"}),
+            YandexButton(title="Рыбы", payload={"sign": "рыбы"}),
         ]
+        # Ограничиваем количество кнопок для Алисы
+        return all_buttons[:limit]
 
     def _add_tts_pauses(self, text: str) -> str:
-        """Добавляет паузы в TTS."""
-        # Добавляем небольшие паузы после знаков препинания
-        tts = text.replace(".", ". <pause=300ms>")
-        tts = tts.replace("!", "! <pause=300ms>")
-        tts = tts.replace("?", "? <pause=300ms>")
-        tts = tts.replace(":", ": <pause=200ms>")
-        tts = tts.replace(";", "; <pause=200ms>")
+        """Добавляет паузы в TTS для Алисы."""
+        import re
+        
+        # Очищаем текст от эмодзи для TTS
+        tts = re.sub(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF\u2600-\u26FF\u2700-\u27BF]', '', text)
+        
+        # Добавляем паузы после знаков препинания
+        tts = tts.replace(".", ". - ")
+        tts = tts.replace("!", "! - ")
+        tts = tts.replace("?", "? - ")
+        tts = tts.replace(":", ": ")
+        tts = tts.replace(";", "; ")
+        
+        # Обрабатываем переносы строк
+        tts = tts.replace("\n\n", ". ")
+        tts = tts.replace("\n", ", ")
+        
+        # Убираем лишние пробелы
+        tts = re.sub(r'\s+', ' ', tts).strip()
+        
         return tts
 
     def _generate_horoscope_text(
@@ -786,6 +832,33 @@ class ResponseFormatter:
 
         return text
 
+    def format_exit_confirmation_response(self) -> YandexResponse:
+        """Форматирует ответ для подтверждения выхода из навыка."""
+        text = "Вы хотите завершить работу с астрологом?"
+        
+        buttons = [
+            YandexButton(title="Да, завершить", payload={"action": "confirm_exit"}),
+            YandexButton(title="Нет, остаться", payload={"action": "cancel_exit"}),
+            YandexButton(title="Помощь", payload={"action": "help"}),
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+    
+    def format_skill_timeout_response(self) -> YandexResponse:
+        """Форматирует ответ при таймауте навыка."""
+        text = "Мы долго не общались. Обращайтесь к мне, когда будет нужен совет звёзд."
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            end_session=True
+        )
+    
     def _create_buttons(self, button_titles: List[str]) -> List[YandexButton]:
         """Создает кнопки из списка заголовков для тестов."""
         if not button_titles:

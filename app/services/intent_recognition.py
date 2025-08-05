@@ -37,6 +37,12 @@ class IntentRecognizer:
                 r"hi",
                 r"начни",
                 r"запуск",
+                # Alice-специфичные паттерны приветствия
+                r"алиса.*астролог",
+                r"откр.*навык",
+                r"включ.*астролог",
+                r"поговори.*звезд",
+                r"давай.*гороскоп",
             ],
             YandexIntent.HOROSCOPE: [
                 r"гороскоп",
@@ -53,6 +59,15 @@ class IntentRecognizer:
                 r"horoscope.*for",
                 r"forecast",
                 r"prediction",
+                # Голосовые варианты
+                r"расскажи.*гороскоп",
+                r"какой.*гороскоп",
+                r"что.*звезды.*говорят",
+                r"астрологический.*прогноз",
+                r"что.*день.*готовит",
+                r"планеты.*сегодня",
+                r"мой.*знак.*сегодня",
+                r"что.*ждет.*день",
             ],
             YandexIntent.COMPATIBILITY: [
                 r"совместимость",
@@ -67,6 +82,15 @@ class IntentRecognizer:
                 r"compatible",
                 r"match",
                 r"relationship",
+                # Голосовые варианты для совместимости
+                r"подходит.*ли",
+                r"сочетаются.*ли",
+                r"как.*уживаемся",
+                r"отношения.*с",
+                r"любовная.*совместимость",
+                r"проверь.*совместимость",
+                r"мы.*подходим",
+                r"хорошая.*ли.*пара",
             ],
             YandexIntent.NATAL_CHART: [
                 r"натальная карта",
@@ -97,6 +121,14 @@ class IntentRecognizer:
                 r"советы",
                 r"рекомендации",
                 r"с советами",
+                # Голосовые варианты для советов
+                r"дай.*совет",
+                r"что.*посоветуешь",
+                r"как.*лучше.*поступить",
+                r"астрологический.*совет",
+                r"совет.*дня",
+                r"что.*звезды.*советуют",
+                r"мудрость.*звезд",
             ],
             YandexIntent.HELP: [
                 r"помощь",
@@ -106,6 +138,36 @@ class IntentRecognizer:
                 r"команды",
                 r"функции",
                 r"помоги",
+                # Alice-специфичные паттерны помощи
+                r"как.*работать",
+                r"что.*можешь",
+                r"как.*пользоваться",
+                r"инструкция",
+                r"как.*спросить",
+                r"что.*спросить",
+                r"покажи.*возможности",
+                r"список.*команд",
+            ],
+            YandexIntent.EXIT: [
+                r"выход",
+                r"завершить",
+                r"окончить",
+                r"стоп",
+                r"хватит",
+                r"всё",
+                r"баста",
+                r"до свидания",
+                r"пока",
+                r"уходить",
+                r"закрыть",
+                r"конец",
+                # Alice-специфичные паттерны выхода
+                r"закрой.*навык",
+                r"выйти.*из.*навыка",
+                r"отключи.*астролог",
+                r"заверши.*работу",
+                r"не.*нужно.*больше",
+                r"спасибо.*до.*свидания",
             ],
         }
 
@@ -235,12 +297,15 @@ class IntentRecognizer:
         )
 
     def _match_intent(self, text: str) -> Tuple[YandexIntent, float]:
-        """Определяет интент по тексту."""
+        """Определяет интент по тексту с улучшенной обработкой для Alice."""
         # Проверяем кеш
         cache_key = hashlib.md5(text.encode()).hexdigest()
         if cache_key in self._intent_cache:
             return self._intent_cache[cache_key]
 
+        # Преобразуем текст для лучшей обработки голосового ввода
+        processed_text = self._preprocess_voice_input(text)
+        
         best_intent = YandexIntent.UNKNOWN
         max_confidence = 0.0
 
@@ -248,33 +313,39 @@ class IntentRecognizer:
             confidence = 0.0
             matches = 0
             exact_match = False
+            voice_match = False
 
             for pattern in patterns:
+                # Проверяем оригинальный текст
                 if re.search(pattern, text):
                     matches += 1
-                    # Check for exact match (pattern equals the entire text)
                     if re.fullmatch(pattern, text):
                         exact_match = True
-                        confidence += 0.9  # High confidence for exact matches
+                        confidence += 0.9
                     else:
-                        # Give higher base confidence for pattern matches
                         confidence += 0.4 + (0.6 / len(patterns))
+                
+                # Проверяем обработанный текст
+                elif re.search(pattern, processed_text):
+                    matches += 1
+                    voice_match = True
+                    confidence += 0.5 + (0.4 / len(patterns))
 
-            # Bonus for multiple matches
+            # Бонус за множественные совпадения
             if matches > 1:
-                confidence *= (
-                    1.2 + (matches - 1) * 0.3
-                )  # More bonus for more matches
+                confidence *= (1.2 + (matches - 1) * 0.3)
 
-            # Ensure exact matches have high confidence
+            # Высокая уверенность для точных совпадений
             if exact_match:
                 confidence = max(confidence, 0.85)
+            elif voice_match and matches >= 2:
+                confidence = max(confidence, 0.75)
 
-            # Boost confidence for multiple pattern matches
+            # Бонус за множественные паттерны
             if matches >= 3:
                 confidence = max(confidence, 0.95)
 
-            # Minimum threshold for single matches in complex text
+            # Минимальный порог для одиночных совпадений
             if matches == 1 and len(text.split()) > 3:
                 confidence = max(confidence, 0.35)
 
@@ -284,9 +355,8 @@ class IntentRecognizer:
 
         result = (best_intent, min(max_confidence, 1.0))
 
-        # Сохраняем в кеш с ограничением размера
+        # Сохраняем в кеш
         if len(self._intent_cache) >= self.cache_size_limit:
-            # Удаляем самые старые записи
             self._intent_cache.clear()
         self._intent_cache[cache_key] = result
 
@@ -497,6 +567,22 @@ class IntentRecognizer:
         self._intent_cache.clear()
         self._entity_cache.clear()
 
+    def _preprocess_voice_input(self, text: str) -> str:
+        """Преобразует текст для лучшей обработки голосового ввода."""
+        # Общие ошибки распознавания речи
+        voice_corrections = {
+            r"гороскоп.*на.*сигодня": "гороскоп на сегодня",
+            r"асталог": "астролог",
+            r"совместимост": "совместимость",
+            r"гороскоп.*ля.*льва": "гороскоп для льва",
+        }
+        
+        processed = text.lower()
+        for pattern, replacement in voice_corrections.items():
+            processed = re.sub(pattern, replacement, processed)
+        
+        return processed
+    
     def get_user_preferences(self, user_id: str) -> List[YandexIntent]:
         """Получает предпочтения пользователя."""
         if user_id not in self._user_patterns:
