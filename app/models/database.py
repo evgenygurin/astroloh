@@ -16,12 +16,50 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.dialects.postgresql import UUID as PostgreSQL_UUID
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import relationship
+from sqlalchemy.types import TypeDecorator, CHAR
 
 Base = declarative_base()
+
+
+class GUID(TypeDecorator):
+    """Platform-independent GUID type.
+    
+    Uses PostgreSQL's UUID type when available, otherwise uses
+    CHAR(36) storing as stringified hex values.
+    """
+    
+    impl = CHAR
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PostgreSQL_UUID(as_uuid=True))
+        else:
+            return dialect.type_descriptor(CHAR(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        elif dialect.name == 'postgresql':
+            return value
+        else:
+            if not isinstance(value, uuid.UUID):
+                return str(uuid.UUID(value))
+            else:
+                return str(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        else:
+            if not isinstance(value, uuid.UUID):
+                return uuid.UUID(value)
+            else:
+                return value
 
 
 class User(Base):
@@ -31,7 +69,7 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     yandex_user_id = Column(
         String(255), unique=True, index=True, nullable=False
     )
@@ -76,9 +114,9 @@ class UserSession(Base):
 
     __tablename__ = "user_sessions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+        GUID(), ForeignKey("users.id"), nullable=False
     )
     session_id = Column(String(255), unique=True, index=True, nullable=False)
 
@@ -108,9 +146,9 @@ class HoroscopeRequest(Base):
 
     __tablename__ = "horoscope_requests"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+        GUID(), ForeignKey("users.id"), nullable=False
     )
 
     # Тип запроса
@@ -138,9 +176,9 @@ class DataDeletionRequest(Base):
 
     __tablename__ = "data_deletion_requests"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+        GUID(), ForeignKey("users.id"), nullable=False
     )
 
     # Статус запроса
@@ -165,13 +203,13 @@ class SecurityLog(Base):
 
     __tablename__ = "security_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
 
     # Основная информация
     event_type = Column(
         String(50), nullable=False
     )  # login, data_access, encryption, decryption, deletion
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=True)
     session_id = Column(String(255), nullable=True)
 
     # Детали события
@@ -221,8 +259,8 @@ class DatabaseManager:
 
         self.engine = create_async_engine(self.database_url, **engine_kwargs)
 
-        self.async_session = sessionmaker(
-            self.engine, class_=AsyncSession, expire_on_commit=False
+        self.async_session = async_sessionmaker(
+            self.engine, expire_on_commit=False
         )
 
     async def create_tables(self):

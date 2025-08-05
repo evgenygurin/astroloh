@@ -11,7 +11,7 @@ import pytest
 
 # Set test environment variables
 os.environ["ENVIRONMENT"] = "testing"
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 # Generate secure random keys for testing
 os.environ["SECRET_KEY"] = secrets.token_urlsafe(32)
 os.environ["ENCRYPTION_KEY"] = secrets.token_urlsafe(32)
@@ -238,11 +238,31 @@ def clear_caches():
         pass
 
 
+@pytest.fixture(autouse=True)
+async def reset_database_state():
+    """Reset global database state before each test."""
+    # Reset global db_manager to None before each test
+    import app.core.database
+    app.core.database.db_manager = None
+    app.core.database.async_session_factory = None
+    
+    yield
+    
+    # Clean up after test
+    if app.core.database.db_manager:
+        try:
+            await app.core.database.close_database()
+        except Exception:
+            pass
+    app.core.database.db_manager = None
+    app.core.database.async_session_factory = None
+
+
 @pytest.fixture(scope="session")
 def test_config():
     """Test configuration."""
     return {
-        "database_url": "sqlite:///:memory:",
+        "database_url": "sqlite+aiosqlite:///:memory:",
         "secret_key": secrets.token_urlsafe(32),
         "encryption_key": secrets.token_urlsafe(32),
         "environment": "testing",

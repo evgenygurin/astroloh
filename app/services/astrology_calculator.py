@@ -21,6 +21,7 @@ try:
     logging.info("Using Swiss Ephemeris backend for astronomical calculations")
 except ImportError as e:
     logging.warning(f"Swiss Ephemeris not available: {e}")
+    swe = None  # Set swe to None when import fails
     import importlib.util
 
     if importlib.util.find_spec("skyfield"):
@@ -46,7 +47,7 @@ class AstrologyCalculator:
             )
 
         # Настройка в зависимости от доступного бэкенда
-        if self.backend == "swisseph":
+        if self.backend == "swisseph" and swe is not None:
             try:
                 swe.set_ephe_path("/usr/share/swisseph")  # Путь к эфемеридам
             except Exception:
@@ -65,6 +66,9 @@ class AstrologyCalculator:
                 "Neptune": swe.NEPTUNE,
                 "Pluto": swe.PLUTO,
             }
+        elif self.backend == "swisseph" and swe is None:
+            # Fallback if swisseph backend was selected but import failed
+            self.backend = None
         elif self.backend == "skyfield":
             # Инициализация Skyfield
             try:

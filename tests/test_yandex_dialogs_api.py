@@ -76,7 +76,7 @@ class TestYandexDialogsAPI:
         async def mock_get_database():
             yield mock_db
         
-        mock_get_db.return_value = mock_get_database()
+        mock_get_db.side_effect = mock_get_database
         
         mock_user_manager = AsyncMock()
         mock_user_manager_class.return_value = mock_user_manager
@@ -141,7 +141,7 @@ class TestYandexDialogsAPI:
         async def mock_get_database():
             yield mock_db
         
-        mock_get_db.return_value = mock_get_database()
+        mock_get_db.side_effect = mock_get_database
         
         mock_user_manager = AsyncMock()
         mock_user_manager_class.return_value = mock_user_manager
