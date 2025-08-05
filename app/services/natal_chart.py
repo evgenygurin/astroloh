@@ -622,3 +622,39 @@ class NatalChartCalculator:
             description = "Разнообразные интересы и таланты"
 
         return {"shape": shape, "description": description}
+
+    def calculate_progressions(
+        self,
+        birth_date: date,
+        birth_time: Optional[time] = None,
+        birth_place: Optional[Dict[str, float]] = None,
+        target_date: Optional[date] = None,
+    ) -> Dict[str, Any]:
+        """
+        Вычисляет прогрессии (символическое развитие натальной карты).
+        Интеграция с TransitCalculator для расчета прогрессий.
+        """
+        from app.services.transit_calculator import TransitCalculator
+        
+        transit_calc = TransitCalculator()
+        return transit_calc.calculate_progressions(
+            birth_date, birth_time, birth_place, target_date
+        )
+
+    def calculate_solar_return(
+        self,
+        birth_date: date,
+        birth_time: Optional[time] = None,
+        birth_place: Optional[Dict[str, float]] = None,
+        target_year: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Вычисляет соляр (солнечное возвращение).
+        Интеграция с TransitCalculator для расчета соляра.
+        """
+        from app.services.transit_calculator import TransitCalculator
+        
+        transit_calc = TransitCalculator()
+        return transit_calc.calculate_solar_return(
+            birth_date, birth_time, birth_place, target_year
+        )

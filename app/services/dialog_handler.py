@@ -44,6 +44,10 @@ class DialogHandler:
         self.lunar_calendar = LunarCalendar()
         self.astro_calculator = AstrologyCalculator()
         
+        # Новый компонент для транзитов и прогрессий
+        from app.services.transit_calculator import TransitCalculator
+        self.transit_calculator = TransitCalculator()
+        
         # AI-powered сервисы
         self.ai_horoscope_service = ai_horoscope_service
 
@@ -471,6 +475,18 @@ class DialogHandler:
             
         elif intent == YandexIntent.EXIT:
             return await self._handle_exit(user_context, session)
+            
+        elif intent == YandexIntent.TRANSITS:
+            return await self._handle_transits(entities, user_context, session)
+            
+        elif intent == YandexIntent.PROGRESSIONS:
+            return await self._handle_progressions(entities, user_context, session)
+            
+        elif intent == YandexIntent.SOLAR_RETURN:
+            return await self._handle_solar_return(entities, user_context, session)
+            
+        elif intent == YandexIntent.LUNAR_RETURN:
+            return await self._handle_lunar_return(entities, user_context, session)
 
         else:
             return await self._handle_unknown(user_context, session)
@@ -905,6 +921,123 @@ class DialogHandler:
         
         # По умолчанию показываем помощь
         return "помощь"
+
+    async def _handle_transits(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает запрос текущих транзитов."""
+        
+        # Проверяем наличие даты рождения
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.TRANSITS
+            )
+            return self.response_formatter.format_birth_date_request_for_transits()
+
+        try:
+            from datetime import date
+            birth_date = date.fromisoformat(user_context.birth_date)
+            
+            # Рассчитываем текущие транзиты
+            transits = self.transit_calculator.calculate_current_transits(
+                birth_date=birth_date
+            )
+            
+            if transits.get("error"):
+                return self.response_formatter.format_error_response("general")
+            
+            return self.response_formatter.format_transits_response(transits)
+            
+        except Exception as e:
+            self.error_handler.log_error(f"Transits calculation error: {str(e)}")
+            return self.response_formatter.format_error_response("general")
+
+    async def _handle_progressions(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает запрос прогрессий."""
+        
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.PROGRESSIONS
+            )
+            return self.response_formatter.format_birth_date_request_for_progressions()
+
+        try:
+            from datetime import date
+            birth_date = date.fromisoformat(user_context.birth_date)
+            
+            # Рассчитываем прогрессии
+            progressions = self.transit_calculator.calculate_progressions(
+                birth_date=birth_date
+            )
+            
+            if progressions.get("error"):
+                return self.response_formatter.format_error_response("general")
+            
+            return self.response_formatter.format_progressions_response(progressions)
+            
+        except Exception as e:
+            self.error_handler.log_error(f"Progressions calculation error: {str(e)}")
+            return self.response_formatter.format_error_response("general")
+
+    async def _handle_solar_return(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает запрос соляра."""
+        
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.SOLAR_RETURN
+            )
+            return self.response_formatter.format_birth_date_request_for_solar()
+
+        try:
+            from datetime import date
+            birth_date = date.fromisoformat(user_context.birth_date)
+            
+            # Рассчитываем соляр на текущий год
+            solar_return = self.transit_calculator.calculate_solar_return(
+                birth_date=birth_date
+            )
+            
+            if solar_return.get("error"):
+                return self.response_formatter.format_error_response("general")
+            
+            return self.response_formatter.format_solar_return_response(solar_return)
+            
+        except Exception as e:
+            self.error_handler.log_error(f"Solar return calculation error: {str(e)}")
+            return self.response_formatter.format_error_response("general")
+
+    async def _handle_lunar_return(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает запрос лунара."""
+        
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.LUNAR_RETURN
+            )
+            return self.response_formatter.format_birth_date_request_for_lunar()
+
+        try:
+            from datetime import date
+            birth_date = date.fromisoformat(user_context.birth_date)
+            
+            # Рассчитываем лунар
+            lunar_return = self.transit_calculator.calculate_lunar_return(
+                birth_date=birth_date
+            )
+            
+            if lunar_return.get("error"):
+                return self.response_formatter.format_error_response("general")
+            
+            return self.response_formatter.format_lunar_return_response(lunar_return)
+            
+        except Exception as e:
+            self.error_handler.log_error(f"Lunar return calculation error: {str(e)}")
+            return self.response_formatter.format_error_response("general")
 
 
 # Глобальный экземпляр обработчика диалогов

@@ -26,6 +26,12 @@ class YandexIntent(str, Enum):
     HELP = "help"
     EXIT = "exit"
     UNKNOWN = "unknown"
+    
+    # Новые интенты для транзитов и прогрессий
+    TRANSITS = "transits"
+    PROGRESSIONS = "progressions"
+    SOLAR_RETURN = "solar_return"
+    LUNAR_RETURN = "lunar_return"
 
 
 class YandexZodiacSign(str, Enum):
