@@ -271,9 +271,15 @@ class TestUserManager:
 
     async def test_update_user_birth_data(self):
         """Test updating user birth data."""
-        mock_db = AsyncMock()
+        mock_db = MagicMock()
+        # Configure async methods
         mock_db.execute = AsyncMock()
         mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+        mock_db.refresh = AsyncMock()
+        # Sync methods remain as MagicMock
+        mock_db.add = MagicMock()
+        mock_db.delete = MagicMock()
 
         manager = UserManager(mock_db)
         user_id = uuid.uuid4()
@@ -288,9 +294,15 @@ class TestUserManager:
 
     async def test_set_data_consent(self):
         """Test setting data consent."""
-        mock_db = AsyncMock()
+        mock_db = MagicMock()
+        # Configure async methods
         mock_db.execute = AsyncMock()
         mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+        mock_db.refresh = AsyncMock()
+        # Sync methods remain as MagicMock
+        mock_db.add = MagicMock()
+        mock_db.delete = MagicMock()
 
         manager = UserManager(mock_db)
         user_id = uuid.uuid4()
@@ -308,10 +320,15 @@ class TestSessionManager:
 
     async def test_create_session(self):
         """Test creating a new session."""
-        mock_db = AsyncMock()
+        mock_db = MagicMock()
+        # Configure async methods
         mock_db.execute = AsyncMock()
         mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
         mock_db.refresh = AsyncMock()
+        # Sync methods remain as MagicMock
+        mock_db.add = MagicMock()
+        mock_db.delete = MagicMock()
 
         manager = SessionManager(mock_db)
         user_id = uuid.uuid4()
@@ -328,7 +345,16 @@ class TestSessionManager:
         mock_session = MagicMock()
         mock_session.expires_at = datetime.utcnow() + timedelta(hours=1)
 
-        mock_db = AsyncMock()
+        mock_db = MagicMock()
+        # Configure async methods
+        mock_db.execute = AsyncMock()
+        mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+        mock_db.refresh = AsyncMock()
+        # Sync methods remain as MagicMock
+        mock_db.add = MagicMock()
+        mock_db.delete = MagicMock()
+        
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_session
         mock_db.execute.return_value = mock_result
@@ -345,7 +371,15 @@ class TestSessionManager:
         mock_session.expires_at = datetime.utcnow() - timedelta(hours=1)
         mock_session.is_active = True
 
-        mock_db = AsyncMock()
+        mock_db = MagicMock()
+        # Configure async methods
+        mock_db.execute = AsyncMock()
+        mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+        mock_db.refresh = AsyncMock()
+        # Sync methods remain as MagicMock
+        mock_db.add = MagicMock()
+        mock_db.delete = MagicMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_session
         mock_db.execute.return_value = mock_result

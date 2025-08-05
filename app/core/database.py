@@ -12,10 +12,13 @@ from app.models.database import DatabaseManager
 # Global database manager instance
 db_manager: DatabaseManager = None
 
+# For backward compatibility with tests
+async_session_factory = None
+
 
 async def init_database():
     """Initialize database connection."""
-    global db_manager
+    global db_manager, async_session_factory
 
     if not settings.DATABASE_URL:
         raise ValueError("DATABASE_URL is not configured")
@@ -23,6 +26,9 @@ async def init_database():
     db_manager = DatabaseManager(settings.DATABASE_URL)
     await db_manager.initialize()
     await db_manager.create_tables()
+    
+    # Set for backward compatibility with tests
+    async_session_factory = db_manager.async_session
 
 
 async def get_database() -> AsyncGenerator[AsyncSession, None]:
@@ -35,7 +41,7 @@ async def get_database() -> AsyncGenerator[AsyncSession, None]:
     if not db_manager:
         await init_database()
 
-    async for session in db_manager.get_session():
+    async with db_manager.async_session() as session:
         yield session
 
 
@@ -68,4 +74,7 @@ async def get_db_session_context() -> AsyncGenerator[AsyncSession, None]:
 async def close_database():
     """Close database connections."""
     if db_manager:
-        await db_manager.close()
+        try:
+            await db_manager.close()
+        except Exception:
+            pass
