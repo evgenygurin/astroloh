@@ -89,9 +89,15 @@ class TestGDPRComplianceService:
         """Test getting user data summary for nonexistent user."""
         user_id = uuid.uuid4()
 
-        self.mock_db.execute.return_value.scalar_one_or_none.return_value = (
-            None
-        )
+        # Create properly configured mock result using MagicMock instead of AsyncMock for the result
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        
+        # Configure the async execute method to return the mock result
+        async def mock_execute(*args, **kwargs):
+            return mock_result
+        
+        self.mock_db.execute = mock_execute
 
         summary = await self.compliance_service.get_user_data_summary(user_id)
 
