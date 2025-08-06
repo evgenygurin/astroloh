@@ -38,7 +38,7 @@ app.include_router(security_router, prefix="/api/v1")
 
 
 @app.get("/")
-async def root() -> dict[str, str]:
+async def root() -> dict[str, str | list[str]]:
     """Корневой эндпоинт для проверки работы API."""
     return {"message": "Astroloh - Multi-Platform Astrological Assistant is running!", 
             "platforms": ["Yandex Alice", "Telegram Bot", "Google Assistant"]}

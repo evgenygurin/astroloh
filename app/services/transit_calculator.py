@@ -2,14 +2,12 @@
 Сервис расчета астрологических транзитов и их влияния на натальную карту.
 """
 import logging
-import math
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
 import pytz
 
 from app.services.astrology_calculator import AstrologyCalculator
-from app.models.yandex_models import YandexZodiacSign
 
 
 class TransitCalculator:
@@ -265,7 +263,7 @@ class TransitCalculator:
             
         # Находим точное время соляра (когда Солнце возвращается в натальную позицию)
         natal_datetime = datetime.combine(birth_date, datetime.min.time())
-        natal_sun_pos = self.astro_calc.calculate_planet_positions(natal_datetime)["Sun"]["longitude"]
+        self.astro_calc.calculate_planet_positions(natal_datetime)["Sun"]["longitude"]
         
         # Приблизительная дата соляра
         solar_date = date(year, birth_date.month, birth_date.day)
@@ -533,7 +531,7 @@ class TransitCalculator:
         
         # Анализируем основные планеты
         moon_sign = positions.get("Moon", {}).get("sign", "Рак")
-        mercury_sign = positions.get("Mercury", {}).get("sign", "Близнецы")
+        positions.get("Mercury", {}).get("sign", "Близнецы")
         
         moon_themes = {
             "Овен": "Эмоциональная активность и инициатива",

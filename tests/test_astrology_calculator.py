@@ -347,10 +347,15 @@ class TestAstrologyCalculator:
             assert isinstance(moon_phase, dict)
 
             backend_info = calc.get_backend_info()
-            # Backend may fall back to None if library is not available
-            if backend_name == "skyfield":
-                # skyfield may not be available, so backend could be None
-                assert backend_info["backend"] in [backend_name, None]
+            # Backend may fall back to None or another backend if library is not available
+            if backend_name in ["skyfield", "swisseph"]:
+                # skyfield or swisseph may not be available, so backend could be None or fallback
+                available_backends = backend_info["available_backends"]
+                if backend_name not in available_backends:
+                    # If requested backend is not available, it should fall back
+                    assert backend_info["backend"] in available_backends + [None]
+                else:
+                    assert backend_info["backend"] == backend_name
             else:
                 assert backend_info["backend"] == backend_name
 

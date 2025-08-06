@@ -31,6 +31,8 @@ from app.utils.validators import (
     ZodiacValidator,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class DialogHandler:
     """Основной класс обработки диалогов с расширенной функциональностью."""
@@ -748,9 +750,7 @@ class DialogHandler:
             )
 
         except Exception as e:
-            self.error_handler.log_error(
-                f"Natal chart calculation error: {str(e)}"
-            )
+            logger.error(f"Natal chart calculation error: {str(e)}")
             return self.response_formatter.format_error_response("general")
 
     async def _handle_lunar_calendar(
@@ -770,7 +770,7 @@ class DialogHandler:
             )
 
         except Exception as e:
-            self.error_handler.log_error(f"Lunar calendar error: {str(e)}")
+            logger.error(f"Lunar calendar error: {str(e)}")
             return self.response_formatter.format_error_response("general")
 
     async def _handle_advice(self, user_context: UserContext, session) -> Any:
@@ -933,7 +933,7 @@ class DialogHandler:
             return self.response_formatter.format_transit_request_response()
 
         try:
-            from datetime import date, datetime
+            from datetime import date
 
             birth_date = date.fromisoformat(user_context.birth_date)
             
@@ -947,7 +947,7 @@ class DialogHandler:
             return self.response_formatter.format_transits_response(transits)
 
         except Exception as e:
-            self.error_handler.log_error(f"Transit calculation error: {str(e)}")
+            logger.error(f"Transit calculation error: {str(e)}")
             return self.response_formatter.format_error_response("general")
 
     async def _handle_progressions(
@@ -973,7 +973,7 @@ class DialogHandler:
             return self.response_formatter.format_progressions_response(progressions)
 
         except Exception as e:
-            self.error_handler.log_error(f"Progressions calculation error: {str(e)}")
+            logger.error(f"Progressions calculation error: {str(e)}")
             return self.response_formatter.format_error_response("general")
 
     async def _handle_solar_return(
@@ -1000,7 +1000,7 @@ class DialogHandler:
             return self.response_formatter.format_solar_return_response(solar_return)
 
         except Exception as e:
-            self.error_handler.log_error(f"Solar return calculation error: {str(e)}")
+            logger.error(f"Solar return calculation error: {str(e)}")
             return self.response_formatter.format_error_response("general")
 
     async def _handle_lunar_return(
@@ -1029,7 +1029,7 @@ class DialogHandler:
             return self.response_formatter.format_lunar_return_response(lunar_return)
 
         except Exception as e:
-            self.error_handler.log_error(f"Lunar return calculation error: {str(e)}")
+            logger.error(f"Lunar return calculation error: {str(e)}")
             return self.response_formatter.format_error_response("general")
 
 

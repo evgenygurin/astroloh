@@ -2,10 +2,9 @@
 Yandex Alice platform adapter for converting between Yandex format and universal formats.
 """
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from app.models.platform_models import (
-    Button,
     MessageType,
     Platform,
     PlatformAdapter,

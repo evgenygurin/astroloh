@@ -176,7 +176,7 @@ class TestAIHoroscopeService:
             # Mock традиционного генератора
             mock_characteristics = {
                 YandexZodiacSign.LIBRA: {
-                    "keywords": ["гармония", "баланс", "красота"]
+                    "keywords": ["гармония", "баланс"]
                 }
             }
             self.service.traditional_generator.sign_characteristics = mock_characteristics

@@ -74,19 +74,22 @@ async def telegram_webhook(
             }
         
         # Convert response to Telegram format
-        telegram_response = telegram_adapter.from_universal_response(universal_response)
+        telegram_adapter.from_universal_response(universal_response)
         
-        logger.info(f"Successfully processed Telegram request")
+        logger.info("Successfully processed Telegram request")
         
         # Return 200 OK to Telegram (actual responses are sent via API)
         return {"ok": True}
         
+    except HTTPException:
+        # Let HTTPException pass through for proper status codes
+        raise
     except Exception as e:
         logger.error(f"Error processing Telegram request: {str(e)}", exc_info=True)
         
         # Handle error gracefully
         try:
-            error_response = error_handler.handle_error(
+            error_handler.handle_error(
                 e,
                 {
                     "platform": "telegram",

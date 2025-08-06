@@ -1,16 +1,18 @@
 """
 Google Assistant-specific models and data structures.
 """
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class GoogleUser(BaseModel):
     """Google Assistant user model."""
-    user_id: str
+    model_config = {"populate_by_name": True}
+    
+    user_id: str = Field(alias="userId")
     locale: Optional[str] = None
-    user_verification: Optional[str] = None
+    user_verification: Optional[str] = Field(default=None, alias="userVerification")
 
 
 class GoogleDevice(BaseModel):
@@ -25,16 +27,20 @@ class GoogleSurface(BaseModel):
 
 class GoogleInput(BaseModel):
     """Google Assistant input model."""
-    raw_inputs: List[Dict[str, Any]]
+    model_config = {"populate_by_name": True}
+    
+    raw_inputs: List[Dict[str, Any]] = Field(alias="rawInputs")
     intent: str
     arguments: Optional[List[Dict[str, Any]]] = None
 
 
 class GoogleConversation(BaseModel):
     """Google Assistant conversation model."""
-    conversation_id: str
+    model_config = {"populate_by_name": True}
+    
+    conversation_id: str = Field(alias="conversationId")
     type: str
-    conversation_token: Optional[str] = None
+    conversation_token: Optional[str] = Field(default=None, alias="conversationToken")
 
 
 class GoogleRequest(BaseModel):
@@ -104,7 +110,9 @@ class GoogleResponse(BaseModel):
 
 class GoogleDialogflowResponse(BaseModel):
     """Google Assistant Dialogflow response wrapper."""
-    fulfillment_text: Optional[str] = None
-    fulfillment_messages: Optional[List[Dict[str, Any]]] = None
+    model_config = {"populate_by_name": True}
+    
+    fulfillment_text: Optional[str] = Field(default=None, alias="fulfillmentText")
+    fulfillment_messages: Optional[List[Dict[str, Any]]] = Field(default=None, alias="fulfillmentMessages")
     source: Optional[str] = None
     payload: Optional[GoogleResponse] = None

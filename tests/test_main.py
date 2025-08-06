@@ -121,6 +121,6 @@ class TestMainApp:
 
     def test_app_metadata(self):
         """Test FastAPI app metadata configuration."""
-        assert app.title == "Astroloh - Навык Астролог для Яндекс Алисы"
+        assert app.title == "Astroloh - Multi-Platform Astrological Assistant"
         assert app.version == "1.0.0"
-        assert "астрологических прогнозов" in app.description.lower()
+        assert "astrological forecasts" in app.description.lower()

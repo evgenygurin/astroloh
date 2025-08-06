@@ -2,7 +2,7 @@
 Tests for multi-platform integration functionality.
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 from app.models.platform_models import Platform, UniversalRequest, UniversalResponse
 from app.services.google_adapter import GoogleAssistantAdapter
@@ -29,7 +29,7 @@ class TestPlatformAdapters:
                 "text": "Hello"
             }
         }
-        assert adapter.validate_request(valid_request) == True
+        assert adapter.validate_request(valid_request)
         
         # Invalid request - missing update_id
         invalid_request = {
@@ -41,11 +41,11 @@ class TestPlatformAdapters:
                 "text": "Hello"
             }
         }
-        assert adapter.validate_request(invalid_request) == False
+        assert not adapter.validate_request(invalid_request)
         
         # Invalid request - no message or callback_query
         invalid_request2 = {"update_id": 123}
-        assert adapter.validate_request(invalid_request2) == False
+        assert not adapter.validate_request(invalid_request2)
     
     def test_telegram_adapter_conversion(self):
         """Test Telegram adapter conversion to universal format."""
@@ -91,7 +91,7 @@ class TestPlatformAdapters:
             },
             "session": "projects/test/agent/sessions/456"
         }
-        assert adapter.validate_request(valid_dialogflow_request) == True
+        assert adapter.validate_request(valid_dialogflow_request)
         
         # Valid Google Actions request
         valid_actions_request = {
@@ -99,11 +99,11 @@ class TestPlatformAdapters:
             "conversation": {"conversationId": "conv456", "type": "NEW"},
             "inputs": [{"intent": "actions.intent.MAIN"}]
         }
-        assert adapter.validate_request(valid_actions_request) == True
+        assert adapter.validate_request(valid_actions_request)
         
         # Invalid request
         invalid_request = {"invalid": "data"}
-        assert adapter.validate_request(invalid_request) == False
+        assert not adapter.validate_request(invalid_request)
     
     def test_yandex_adapter_validation(self):
         """Test Yandex adapter request validation."""
@@ -122,6 +122,7 @@ class TestPlatformAdapters:
             session_id="session123",
             message_id=1,
             user_id="user456",
+            skill_id="test_skill",
             new=True,
             application=application
         )
@@ -138,8 +139,8 @@ class TestPlatformAdapters:
             version="1.0"
         )
         
-        assert adapter.validate_request(yandex_request) == True
-        assert adapter.validate_request({"invalid": "data"}) == False
+        assert adapter.validate_request(yandex_request)
+        assert not adapter.validate_request({"invalid": "data"})
 
 
 class TestMultiPlatformHandler:
@@ -189,13 +190,17 @@ class TestMultiPlatformHandler:
                     session_id="session123",
                     message_id=1,
                     user_id="123",
+                    skill_id="test_skill",
                     new=True,
                     application=YandexApplication(application_id="test")
                 ),
                 version="1.0"
             )
             
-            mock_dialog_handler.handle_request.return_value = mock_yandex_response
+            # Make the handle_request method async
+            async def async_handle_request(*args, **kwargs):
+                return mock_yandex_response
+            mock_dialog_handler.handle_request = async_handle_request
             
             # Test the handler
             response = await multi_platform_handler.handle_request(universal_request, mock_db)
@@ -246,13 +251,17 @@ class TestMultiPlatformHandler:
                     session_id="conv456",
                     message_id=1,
                     user_id="google123",
+                    skill_id="test_skill",
                     new=False,
                     application=YandexApplication(application_id="test")
                 ),
                 version="1.0"
             )
             
-            mock_dialog_handler.handle_request.return_value = mock_yandex_response
+            # Make the handle_request method async
+            async def async_handle_request(*args, **kwargs):
+                return mock_yandex_response
+            mock_dialog_handler.handle_request = async_handle_request
             
             # Test the handler
             response = await multi_platform_handler.handle_request(universal_request, mock_db)
@@ -308,7 +317,7 @@ class TestResponseConversion:
         google_response = adapter.from_universal_response(universal_response)
         
         assert "expect_user_response" in google_response
-        assert google_response["expect_user_response"] == True
+        assert google_response["expect_user_response"]
         assert "rich_response" in google_response
         assert "items" in google_response["rich_response"]
         assert "suggestions" in google_response["rich_response"]
@@ -333,6 +342,7 @@ class TestResponseConversion:
                     session_id="test123",
                     message_id=1,
                     user_id="user456",
+                    skill_id="test_skill",
                     new=True,
                     application=YandexApplication(application_id="test")
                 ),
@@ -346,4 +356,4 @@ class TestResponseConversion:
         assert yandex_response.response.text == "Добро пожаловать в мир астрологии!"
         assert yandex_response.response.tts == "Добро пожаловать в мир астрологии!"
         assert len(yandex_response.response.buttons) == 2
-        assert yandex_response.response.end_session == False
+        assert not yandex_response.response.end_session

@@ -107,7 +107,7 @@ class AIHoroscopeService:
             "ai_generated": True,
             "general_forecast": ai_horoscope,
             "prediction": ai_horoscope,  # For backward compatibility
-            "generation_method": "yandex_gpt"
+            "generation_method": "hybrid"
         }
     
     def _merge_horoscope_data(

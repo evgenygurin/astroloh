@@ -3,7 +3,7 @@
 """
 import pytest
 from datetime import date, time
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from app.services.natal_chart import NatalChartCalculator
 

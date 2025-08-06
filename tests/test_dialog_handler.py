@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.models.yandex_models import (
+    YandexApplication,
     YandexIntent,
     YandexRequestData,
     YandexRequestMeta,
@@ -48,7 +49,7 @@ class TestDialogHandler:
                 skill_id="test_skill",
                 user_id=user_id,
                 user={"user_id": user_id},
-                application={},
+                application=YandexApplication(application_id="test_app"),
                 new=False,
             ),
             version="1.0",

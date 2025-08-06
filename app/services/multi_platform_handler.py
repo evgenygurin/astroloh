@@ -2,7 +2,6 @@
 Multi-platform request handler that provides unified business logic for all platforms.
 """
 import logging
-from typing import Any, Dict, List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -214,6 +213,7 @@ class MultiPlatformHandler:
             session_id=universal_request.session_id,
             message_id=0,
             user_id=universal_request.user_id,
+            skill_id="multi_platform_mock",
             new=universal_request.is_new_session,
             application=application,
         )

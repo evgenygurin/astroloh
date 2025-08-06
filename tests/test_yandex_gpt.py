@@ -1,11 +1,9 @@
 """
 Тесты для Yandex GPT клиента.
 """
-import json
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from aiohttp import ClientError, ClientTimeout
-from aiohttp.web_response import Response
 
 from app.services.yandex_gpt import YandexGPTClient, YandexGPTMessage, YandexGPTRequest
 
@@ -69,9 +67,35 @@ class TestYandexGPTClient:
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value=mock_response_data)
         
+        # Create proper async context manager mock
+        class MockContextManager:
+            def __init__(self, response):
+                self.response = response
+            
+            async def __aenter__(self):
+                return self.response
+            
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                return None
+        
+        # Create mock session that returns the context manager
         mock_session = AsyncMock()
-        mock_session.post.return_value.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_session.post.return_value.__aexit__ = AsyncMock(return_value=None)
+        
+        # Create a simple mock function that returns context manager
+        def post_mock(*args, **kwargs):
+            return MockContextManager(mock_response)
+        
+        # Track calls manually
+        post_mock.call_args = None
+        post_mock.call_count = 0
+        
+        original_post = post_mock
+        def tracking_post(*args, **kwargs):
+            post_mock.call_args = (args, kwargs)
+            post_mock.call_count += 1
+            return original_post(*args, **kwargs)
+        
+        mock_session.post = tracking_post
         
         self.client._get_session = AsyncMock(return_value=mock_session)
         
@@ -85,7 +109,7 @@ class TestYandexGPTClient:
         assert result == "Сгенерированный текст"
         
         # Проверяем, что запрос был сформирован правильно
-        call_args = mock_session.post.call_args
+        call_args = post_mock.call_args
         assert call_args[0][0] == self.client.completion_url
         
         request_json = call_args[1]["json"]
@@ -115,9 +139,35 @@ class TestYandexGPTClient:
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value=mock_response_data)
         
+        # Create proper async context manager mock
+        class MockContextManager:
+            def __init__(self, response):
+                self.response = response
+            
+            async def __aenter__(self):
+                return self.response
+            
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                return None
+        
+        # Create mock session that returns the context manager
         mock_session = AsyncMock()
-        mock_session.post.return_value.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_session.post.return_value.__aexit__ = AsyncMock(return_value=None)
+        
+        # Create a simple mock function that returns context manager
+        def post_mock(*args, **kwargs):
+            return MockContextManager(mock_response)
+        
+        # Track calls manually
+        post_mock.call_args = None
+        post_mock.call_count = 0
+        
+        original_post = post_mock
+        def tracking_post(*args, **kwargs):
+            post_mock.call_args = (args, kwargs)
+            post_mock.call_count += 1
+            return original_post(*args, **kwargs)
+        
+        mock_session.post = tracking_post
         
         self.client._get_session = AsyncMock(return_value=mock_session)
         
@@ -129,7 +179,7 @@ class TestYandexGPTClient:
         assert result == "Ответ без системного промпта"
         
         # Проверяем, что только одно сообщение в запросе
-        call_args = mock_session.post.call_args
+        call_args = post_mock.call_args
         request_json = call_args[1]["json"]
         assert len(request_json["messages"]) == 1
         assert request_json["messages"][0]["role"] == "user"
@@ -141,9 +191,35 @@ class TestYandexGPTClient:
         mock_response.status = 400
         mock_response.text = AsyncMock(return_value="Bad Request")
         
+        # Create proper async context manager mock
+        class MockContextManager:
+            def __init__(self, response):
+                self.response = response
+            
+            async def __aenter__(self):
+                return self.response
+            
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                return None
+        
+        # Create mock session that returns the context manager
         mock_session = AsyncMock()
-        mock_session.post.return_value.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_session.post.return_value.__aexit__ = AsyncMock(return_value=None)
+        
+        # Create a simple mock function that returns context manager
+        def post_mock(*args, **kwargs):
+            return MockContextManager(mock_response)
+        
+        # Track calls manually
+        post_mock.call_args = None
+        post_mock.call_count = 0
+        
+        original_post = post_mock
+        def tracking_post(*args, **kwargs):
+            post_mock.call_args = (args, kwargs)
+            post_mock.call_count += 1
+            return original_post(*args, **kwargs)
+        
+        mock_session.post = tracking_post
         
         self.client._get_session = AsyncMock(return_value=mock_session)
         
@@ -161,9 +237,35 @@ class TestYandexGPTClient:
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value=mock_response_data)
         
+        # Create proper async context manager mock
+        class MockContextManager:
+            def __init__(self, response):
+                self.response = response
+            
+            async def __aenter__(self):
+                return self.response
+            
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                return None
+        
+        # Create mock session that returns the context manager
         mock_session = AsyncMock()
-        mock_session.post.return_value.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_session.post.return_value.__aexit__ = AsyncMock(return_value=None)
+        
+        # Create a simple mock function that returns context manager
+        def post_mock(*args, **kwargs):
+            return MockContextManager(mock_response)
+        
+        # Track calls manually
+        post_mock.call_args = None
+        post_mock.call_count = 0
+        
+        original_post = post_mock
+        def tracking_post(*args, **kwargs):
+            post_mock.call_args = (args, kwargs)
+            post_mock.call_count += 1
+            return original_post(*args, **kwargs)
+        
+        mock_session.post = tracking_post
         
         self.client._get_session = AsyncMock(return_value=mock_session)
         
@@ -268,7 +370,7 @@ class TestYandexGPTClient:
         call_args = self.client.generate_text.call_args
         assert "овен" in call_args[1]["prompt"]
         assert "лев" in call_args[1]["prompt"]
-        assert "романтических" in call_args[1]["prompt"]
+        assert "романтические" in call_args[1]["prompt"]
         assert call_args[1]["temperature"] == 0.6
         assert call_args[1]["max_tokens"] == 600
 

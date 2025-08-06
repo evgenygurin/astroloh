@@ -2,11 +2,9 @@
 Telegram platform adapter for converting between Telegram and universal formats.
 """
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-from app.models.google_models import GoogleRequest
 from app.models.platform_models import (
-    Button,
     MessageType,
     Platform,
     PlatformAdapter,

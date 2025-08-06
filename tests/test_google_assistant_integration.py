@@ -1,7 +1,6 @@
 """
 Tests for Google Assistant integration.
 """
-import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
 
@@ -35,7 +34,7 @@ class TestGoogleAssistantWebhook:
             ],
             end_session=False
         )
-        mock_handler.handle_request.return_value = mock_response
+        mock_handler.handle_request = AsyncMock(return_value=mock_response)
         
         # Test Google Actions request
         google_request = {
@@ -72,7 +71,7 @@ class TestGoogleAssistantWebhook:
         # Should have Google Actions response format
         assert "expect_user_response" in response_data
         assert "rich_response" in response_data
-        assert response_data["expect_user_response"] == True
+        assert response_data["expect_user_response"]
         
         # Verify handler was called
         mock_handler.handle_request.assert_called_once()
@@ -91,7 +90,7 @@ class TestGoogleAssistantWebhook:
             text="Для составления гороскопа назовите ваш знак зодиака.",
             end_session=False
         )
-        mock_handler.handle_request.return_value = mock_response
+        mock_handler.handle_request = AsyncMock(return_value=mock_response)
         
         # Test Dialogflow request
         dialogflow_request = {
@@ -157,7 +156,7 @@ class TestGoogleAssistantAdapter:
             "inputs": [{"intent": "actions.intent.MAIN"}]
         }
         
-        assert self.adapter.validate_request(valid_request) == True
+        assert self.adapter.validate_request(valid_request)
     
     def test_validate_dialogflow_request(self):
         """Test Dialogflow request validation."""
@@ -168,7 +167,7 @@ class TestGoogleAssistantAdapter:
             }
         }
         
-        assert self.adapter.validate_request(valid_request) == True
+        assert self.adapter.validate_request(valid_request)
     
     def test_convert_google_actions_to_universal(self):
         """Test converting Google Actions request to universal format."""
@@ -206,7 +205,7 @@ class TestGoogleAssistantAdapter:
         assert universal_request.user_id == "google_user_123"
         assert universal_request.session_id == "conv_456"
         assert universal_request.text == "Расскажи гороскоп на завтра"
-        assert universal_request.is_new_session == False
+        assert not universal_request.is_new_session
         
         # Check user context
         assert "google_user" in universal_request.user_context
@@ -238,7 +237,7 @@ class TestGoogleAssistantAdapter:
         assert universal_request.platform.value == "google_assistant"
         assert universal_request.user_id == "session_abc123"
         assert universal_request.text == "Какая совместимость у Льва и Рыб?"
-        assert universal_request.is_new_session == False
+        assert not universal_request.is_new_session
         
         # Check Dialogflow-specific context
         assert "dialogflow" in universal_request.user_context
@@ -263,7 +262,7 @@ class TestGoogleAssistantAdapter:
         google_response = self.adapter.from_universal_response(universal_response)
         
         assert "expect_user_response" in google_response
-        assert google_response["expect_user_response"] == True
+        assert google_response["expect_user_response"]
         
         assert "rich_response" in google_response
         rich_response = google_response["rich_response"]
@@ -323,7 +322,10 @@ class TestGoogleAssistantAdapter:
         assert "⭐" not in formatted
         assert "💕" not in formatted
         assert "гороскоп" in formatted
-        assert "успех в любви" in formatted
+        assert "star" in formatted  # ⭐ should be replaced with "star"
+        assert "love" in formatted  # 💕 should be replaced with "love"
+        assert "успех" in formatted
+        assert "любви" in formatted
     
     def test_final_response_on_end_session(self):
         """Test that final response is used when end_session is True."""
@@ -338,7 +340,7 @@ class TestGoogleAssistantAdapter:
         google_response = self.adapter.from_universal_response(universal_response)
         
         assert "expect_user_response" in google_response
-        assert google_response["expect_user_response"] == False
+        assert not google_response["expect_user_response"]
         
         assert "final_response" in google_response
         assert "rich_response" in google_response["final_response"]

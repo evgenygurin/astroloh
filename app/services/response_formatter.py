@@ -940,7 +940,7 @@ class ResponseFormatter:
         """Форматирует ответ с прогрессиями."""
         interpretation = progressions.get('interpretation', {})
         
-        text = f"Ваши прогрессии показывают:\n\n"
+        text = "Ваши прогрессии показывают:\n\n"
         text += f"Возраст: {interpretation.get('current_age', 'неизвестен')} лет\n"
         text += f"Жизненный этап: {interpretation.get('life_stage', 'развитие')}\n\n"
         

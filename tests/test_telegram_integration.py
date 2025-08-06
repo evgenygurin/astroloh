@@ -1,7 +1,6 @@
 """
 Tests for Telegram Bot integration.
 """
-import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
 
@@ -34,7 +33,8 @@ class TestTelegramWebhook:
             ],
             end_session=False
         )
-        mock_handler.handle_request.return_value = mock_response
+        # Make handle_request async
+        mock_handler.handle_request = AsyncMock(return_value=mock_response)
         
         # Test request
         telegram_update = {
@@ -63,7 +63,7 @@ class TestTelegramWebhook:
         response = self.client.post("/api/v1/telegram/webhook", json=telegram_update)
         
         assert response.status_code == 200
-        assert response.json()["ok"] == True
+        assert response.json()["ok"]
         
         # Verify handler was called
         mock_handler.handle_request.assert_called_once()
@@ -82,7 +82,8 @@ class TestTelegramWebhook:
             text="Отлично! Назовите ваш знак зодиака.",
             end_session=False
         )
-        mock_handler.handle_request.return_value = mock_response
+        # Make handle_request async
+        mock_handler.handle_request = AsyncMock(return_value=mock_response)
         
         # Test callback query request
         telegram_update = {
@@ -96,6 +97,11 @@ class TestTelegramWebhook:
                 },
                 "message": {
                     "message_id": 2,
+                    "from": {
+                        "id": 987654321,
+                        "is_bot": False,
+                        "first_name": "Test"
+                    },
                     "chat": {"id": 987654321, "type": "private"},
                     "date": 1234567891
                 },
@@ -107,7 +113,7 @@ class TestTelegramWebhook:
         response = self.client.post("/api/v1/telegram/webhook", json=telegram_update)
         
         assert response.status_code == 200
-        assert response.json()["ok"] == True
+        assert response.json()["ok"]
         
         # Verify handler was called
         mock_handler.handle_request.assert_called_once()
@@ -165,7 +171,7 @@ class TestTelegramAdapter:
             }
         }
         
-        assert self.adapter.validate_request(valid_update) == True
+        assert self.adapter.validate_request(valid_update)
     
     def test_validate_telegram_callback(self):
         """Test Telegram callback query validation."""
@@ -179,7 +185,7 @@ class TestTelegramAdapter:
             }
         }
         
-        assert self.adapter.validate_request(valid_callback) == True
+        assert self.adapter.validate_request(valid_callback)
     
     def test_convert_telegram_message_to_universal(self):
         """Test converting Telegram message to universal format."""
@@ -210,7 +216,7 @@ class TestTelegramAdapter:
         assert universal_request.user_id == "987654321"
         assert universal_request.session_id == "987654321"
         assert universal_request.text == "Привет, расскажи гороскоп"
-        assert universal_request.is_new_session == True
+        assert universal_request.is_new_session
         
         # Check user context
         assert "telegram_user" in universal_request.user_context

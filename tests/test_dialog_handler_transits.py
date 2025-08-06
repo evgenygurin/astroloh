@@ -2,15 +2,17 @@
 Тесты для обработки новых интентов в DialogHandler.
 """
 import pytest
-from datetime import date, datetime
-from unittest.mock import Mock, patch, AsyncMock
+from datetime import date
+from unittest.mock import Mock, patch
 
 from app.services.dialog_handler import DialogHandler
 from app.models.yandex_models import (
     YandexIntent,
     YandexRequestModel,
+    YandexRequestMeta,
+    YandexRequestType,
     YandexSession,
-    YandexRequest,
+    YandexRequestData,
     UserContext
 )
 
@@ -26,19 +28,28 @@ class TestDialogHandlerTransits:
         self.mock_session = YandexSession(
             session_id="test_session",
             user_id="test_user",
+            skill_id="test_skill",
             message_id=1,
             new=False
         )
         
         # Мок запроса
-        self.mock_request = YandexRequest(
+        self.mock_request = YandexRequestData(
             command="транзиты",
             original_utterance="какие транзиты у меня сейчас",
-            type="SimpleUtterance"
+            type=YandexRequestType.SIMPLE_UTTERANCE
+        )
+        
+        # Мок метаданных
+        self.mock_meta = YandexRequestMeta(
+            locale="ru-RU",
+            timezone="Europe/Moscow",
+            client_id="test_client"
         )
         
         # Полный запрос
         self.full_request = YandexRequestModel(
+            meta=self.mock_meta,
             session=self.mock_session,
             request=self.mock_request,
             version="1.0"
@@ -62,7 +73,7 @@ class TestDialogHandlerTransits:
             
             mock_format.return_value = Mock()
             
-            result = await self.dialog_handler._handle_transits(
+            await self.dialog_handler._handle_transits(
                 entities, user_context, self.mock_session
             )
             
@@ -115,7 +126,7 @@ class TestDialogHandlerTransits:
             mock_transits_calc.return_value = mock_transits
             mock_format.return_value = Mock()
             
-            result = await self.dialog_handler._handle_transits(
+            await self.dialog_handler._handle_transits(
                 entities, user_context, self.mock_session
             )
             
@@ -141,7 +152,7 @@ class TestDialogHandlerTransits:
             
             mock_format.return_value = Mock()
             
-            result = await self.dialog_handler._handle_progressions(
+            await self.dialog_handler._handle_progressions(
                 entities, user_context, self.mock_session
             )
             
@@ -179,7 +190,7 @@ class TestDialogHandlerTransits:
             mock_progressions_calc.return_value = mock_progressions
             mock_format.return_value = Mock()
             
-            result = await self.dialog_handler._handle_progressions(
+            await self.dialog_handler._handle_progressions(
                 entities, user_context, self.mock_session
             )
             
@@ -215,7 +226,7 @@ class TestDialogHandlerTransits:
             mock_solar_calc.return_value = mock_solar_return
             mock_format.return_value = Mock()
             
-            result = await self.dialog_handler._handle_solar_return(
+            await self.dialog_handler._handle_solar_return(
                 entities, user_context, self.mock_session
             )
             
@@ -254,7 +265,7 @@ class TestDialogHandlerTransits:
             mock_lunar_calc.return_value = mock_lunar_return
             mock_format.return_value = Mock()
             
-            result = await self.dialog_handler._handle_lunar_return(
+            await self.dialog_handler._handle_lunar_return(
                 entities, user_context, self.mock_session
             )
             
@@ -277,10 +288,7 @@ class TestDialogHandlerTransits:
             self.dialog_handler.natal_chart_calculator,
             'calculate_natal_chart'
         ) as mock_natal, \
-        patch.object(
-            self.dialog_handler.error_handler,
-            'log_error'
-        ) as mock_log_error, \
+        patch('app.services.dialog_handler.logger') as mock_logger, \
         patch.object(
             self.dialog_handler.response_formatter,
             'format_error_response'
@@ -290,11 +298,11 @@ class TestDialogHandlerTransits:
             mock_natal.side_effect = Exception("Test error")
             mock_format_error.return_value = Mock()
             
-            result = await self.dialog_handler._handle_transits(
+            await self.dialog_handler._handle_transits(
                 entities, user_context, self.mock_session
             )
             
-            mock_log_error.assert_called_once()
+            mock_logger.error.assert_called_once()
             mock_format_error.assert_called_once_with("general")
 
     @pytest.mark.integration
@@ -303,11 +311,12 @@ class TestDialogHandlerTransits:
         """Интеграционный тест полного потока запроса транзитов."""
         # Создаем полный запрос
         request = YandexRequestModel(
+            meta=self.mock_meta,
             session=self.mock_session,
-            request=YandexRequest(
+            request=YandexRequestData(
                 command="какие транзиты у меня сейчас",
                 original_utterance="какие транзиты у меня сейчас",
-                type="SimpleUtterance"
+                type=YandexRequestType.SIMPLE_UTTERANCE
             ),
             version="1.0"
         )
@@ -360,10 +369,7 @@ class TestDialogHandlerTransits:
         user_context = UserContext()
         user_context.birth_date = "invalid-date"  # Некорректная дата
         
-        with patch.object(
-            self.dialog_handler.error_handler,
-            'log_error'
-        ) as mock_log_error, \
+        with patch('app.services.dialog_handler.logger') as mock_logger, \
         patch.object(
             self.dialog_handler.response_formatter,
             'format_error_response'
@@ -371,12 +377,12 @@ class TestDialogHandlerTransits:
             
             mock_format_error.return_value = Mock()
             
-            result = await self.dialog_handler._handle_transits(
+            await self.dialog_handler._handle_transits(
                 entities, user_context, self.mock_session
             )
             
             # Должна быть зафиксирована ошибка
-            mock_log_error.assert_called_once()
+            mock_logger.error.assert_called_once()
             mock_format_error.assert_called_once_with("general")
 
     @pytest.mark.performance

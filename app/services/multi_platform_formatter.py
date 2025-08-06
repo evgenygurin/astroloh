@@ -3,7 +3,7 @@ Multi-platform response formatter that extends the existing ResponseFormatter
 to support multiple platforms while maintaining unified business logic.
 """
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from app.models.platform_models import Button, Platform, UniversalResponse
 from app.services.response_formatter import ResponseFormatter

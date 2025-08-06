@@ -11,7 +11,6 @@ from app.core.database import get_database
 from app.services.google_adapter import GoogleAssistantAdapter
 from app.services.multi_platform_handler import multi_platform_handler
 from app.services.user_manager import UserManager
-from app.utils.error_handler import error_handler
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/google", tags=["Google Assistant"])
@@ -33,7 +32,7 @@ async def google_assistant_webhook(
         # Get raw request data
         google_data = await request.json()
         
-        logger.info(f"Received Google Assistant request")
+        logger.info("Received Google Assistant request")
         
         # Validate request
         if not google_adapter.validate_request(google_data):
@@ -68,10 +67,13 @@ async def google_assistant_webhook(
         # Convert response to Google format
         google_response = google_adapter.from_universal_response(universal_response)
         
-        logger.info(f"Successfully processed Google Assistant request")
+        logger.info("Successfully processed Google Assistant request")
         
         return google_response
         
+    except HTTPException:
+        # Let HTTP exceptions propagate to return proper status codes
+        raise
     except Exception as e:
         logger.error(f"Error processing Google Assistant request: {str(e)}", exc_info=True)
         

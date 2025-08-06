@@ -1,9 +1,8 @@
 """
 Google Assistant platform adapter for converting between Google Actions and universal formats.
 """
-import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from app.models.google_models import (
     GoogleBasicCard,
@@ -16,7 +15,6 @@ from app.models.google_models import (
     GoogleSuggestion,
 )
 from app.models.platform_models import (
-    Button,
     MessageType,
     Platform,
     PlatformAdapter,
@@ -253,12 +251,12 @@ class GoogleAssistantAdapter(PlatformAdapter):
                 })
         
         dialogflow_response = GoogleDialogflowResponse(
-            fulfillment_text=universal_response.text,
-            fulfillment_messages=fulfillment_messages,
+            fulfillmentText=universal_response.text,
+            fulfillmentMessages=fulfillment_messages,
             source="astroloh",
         )
         
-        return dialogflow_response.dict(exclude_none=True)
+        return dialogflow_response.model_dump(exclude_none=True, by_alias=True)
     
     def _format_google_text(self, text: str) -> str:
         """Format text for Google Assistant speech synthesis."""

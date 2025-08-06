@@ -91,6 +91,12 @@ class YandexRequestMeta(BaseModel):
     interfaces: Dict[str, Any] = Field(default_factory=dict)
 
 
+class YandexApplication(BaseModel):
+    """Данные приложения."""
+    
+    application_id: str
+
+
 class YandexRequestData(BaseModel):
     """Данные запроса пользователя."""
 
@@ -102,6 +108,10 @@ class YandexRequestData(BaseModel):
     nlu: Optional[Dict[str, Any]] = None
 
 
+# Alias for backward compatibility
+YandexRequest = YandexRequestData
+
+
 class YandexSession(BaseModel):
     """Данные сессии."""
 
@@ -110,7 +120,7 @@ class YandexSession(BaseModel):
     skill_id: str
     user_id: str
     user: Optional[Dict[str, Any]] = None
-    application: Optional[Dict[str, Any]] = None
+    application: Optional[YandexApplication] = None
     new: bool = True
 
 
