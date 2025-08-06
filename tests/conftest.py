@@ -8,6 +8,9 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.pool import StaticPool
 
 # Set test environment variables
 os.environ["ENVIRONMENT"] = "testing"
@@ -34,6 +37,35 @@ async def mock_database():
     db.rollback = AsyncMock()
     db.close = AsyncMock()
     return db
+
+
+@pytest.fixture
+async def db_session():
+    """Create a real database session for testing."""
+    from app.models.database import Base
+    
+    # Create in-memory SQLite database for testing
+    engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        echo=False,
+        poolclass=StaticPool,
+        connect_args={"check_same_thread": False},
+    )
+    
+    # Create all tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    # Create session factory
+    async_session_factory = async_sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
+    
+    async with async_session_factory() as session:
+        yield session
+    
+    # Clean up
+    await engine.dispose()
 
 
 @pytest.fixture
