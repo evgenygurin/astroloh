@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(30, 27, 75, 0.3);
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+  }
+}
+
+/* Mystical effects */
+@layer components {
+  .mystical-card {
+    @apply bg-gradient-to-br from-dark-100/80 to-dark-200/60 backdrop-blur-sm border border-mystical-gold/20 rounded-lg shadow-2xl;
+  }
+  
+  .mystical-button {
+    @apply bg-gradient-to-r from-mystical-gold to-primary-600 hover:from-primary-600 hover:to-mystical-gold text-dark-900 font-semibold py-2 px-6 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+  }
+  
+  .mystical-input {
+    @apply bg-dark-200/50 border border-mystical-gold/30 text-mystical-silver placeholder-mystical-silver/50 rounded-lg px-4 py-2 focus:outline-none focus:border-mystical-gold focus:ring-1 focus:ring-mystical-gold transition-colors duration-200;
+  }
+  
+  .floating-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    background: radial-gradient(2px 2px at 20px 30px, rgba(251, 191, 36, 0.3), transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(99, 102, 241, 0.2), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(251, 191, 36, 0.4), transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(99, 102, 241, 0.3), transparent);
+    background-size: 200px 200px;
+    animation: float 10s ease-in-out infinite;
+  }
+  
+  .zodiac-symbol {
+    @apply text-mystical-gold text-2xl font-mystical opacity-70 hover:opacity-100 transition-opacity duration-300;
+  }
+  
+  .planetary-orbit {
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 50%;
+    position: absolute;
+  }
+  
+  .constellation-line {
+    stroke: rgba(251, 191, 36, 0.3);
+    stroke-width: 1;
+    fill: none;
+  }
+  
+  .star-glow {
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+  }
+}
