@@ -228,6 +228,195 @@ class SecurityLog(Base):
     __table_args__ = (UniqueConstraint("id"),)
 
 
+class UserPreference(Base):
+    """
+    Пользовательские предпочтения для системы рекомендаций.
+    """
+
+    __tablename__ = "user_preferences"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
+
+    # Категории интересов
+    interests = Column(JSON, nullable=True)  # {"career": 0.8, "love": 0.9, "health": 0.6}
+    
+    # Предпочтения контента
+    communication_style = Column(String(20), default="balanced")  # formal, casual, friendly, mystical
+    complexity_level = Column(String(20), default="intermediate")  # beginner, intermediate, advanced
+    
+    # Временные предпочтения
+    preferred_time_slots = Column(JSON, nullable=True)  # [{"start": "09:00", "end": "12:00"}]
+    timezone = Column(String(50), nullable=True)
+    
+    # Культурные настройки
+    cultural_context = Column(String(20), nullable=True)  # western, vedic, chinese
+    language_preference = Column(String(10), default="ru")
+    
+    # Персонализация контента
+    content_length_preference = Column(String(20), default="medium")  # short, medium, long
+    detail_level = Column(String(20), default="standard")  # brief, standard, detailed
+    
+    # Метаданные
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Связи
+    user = relationship("User", backref="preferences")
+
+
+class UserInteraction(Base):
+    """
+    История взаимодействий пользователя для обучения модели.
+    """
+
+    __tablename__ = "user_interactions"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
+
+    # Тип взаимодействия
+    interaction_type = Column(String(50), nullable=False)  # view, like, dislike, save, share
+    content_type = Column(String(50), nullable=False)  # horoscope, compatibility, lunar
+    content_id = Column(String(255), nullable=True)
+    
+    # Контекст взаимодействия
+    session_duration = Column(Integer, nullable=True)  # секунды
+    rating = Column(Integer, nullable=True)  # 1-5
+    feedback_text = Column(Text, nullable=True)
+    
+    # Астрологические данные на момент взаимодействия
+    astronomical_data = Column(JSON, nullable=True)  # позиции планет, транзиты
+    
+    # Временная метка
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Связи
+    user = relationship("User", backref="interactions")
+
+
+class Recommendation(Base):
+    """
+    Рекомендации для пользователей.
+    """
+
+    __tablename__ = "recommendations"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
+
+    # Тип рекомендации
+    recommendation_type = Column(String(50), nullable=False)  # content, action, timing
+    content_type = Column(String(50), nullable=False)  # daily, weekly, compatibility
+    
+    # Содержание рекомендации
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    recommendation_data = Column(JSON, nullable=True)
+    
+    # Скоринг
+    confidence_score = Column(Integer, nullable=False)  # 0-100
+    priority = Column(Integer, default=1)  # 1-5
+    
+    # Алгоритм и модель
+    algorithm_used = Column(String(50), nullable=False)  # collaborative, content_based, hybrid
+    model_version = Column(String(20), nullable=False)
+    
+    # Статус
+    status = Column(String(20), default="active")  # active, shown, dismissed, expired
+    expires_at = Column(DateTime, nullable=True)
+    shown_at = Column(DateTime, nullable=True)
+    
+    # Временная метка
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Связи
+    user = relationship("User", backref="recommendations")
+
+
+class UserCluster(Base):
+    """
+    Кластеры пользователей для коллаборативной фильтрации.
+    """
+
+    __tablename__ = "user_clusters"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
+
+    # Кластер
+    cluster_id = Column(String(50), nullable=False)
+    cluster_name = Column(String(100), nullable=True)
+    
+    # Характеристики кластера
+    cluster_features = Column(JSON, nullable=True)  # астрологические признаки
+    similarity_score = Column(Integer, nullable=False)  # 0-100
+    
+    # Метаданные
+    algorithm_version = Column(String(20), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Связи
+    user = relationship("User", backref="clusters")
+
+
+class ABTestGroup(Base):
+    """
+    A/B тестирование для рекомендательной системы.
+    """
+
+    __tablename__ = "ab_test_groups"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
+
+    # Тест
+    test_name = Column(String(100), nullable=False)
+    group_name = Column(String(50), nullable=False)  # control, variant_a, variant_b
+    
+    # Параметры теста
+    test_parameters = Column(JSON, nullable=True)
+    test_start_date = Column(DateTime, nullable=False)
+    test_end_date = Column(DateTime, nullable=True)
+    
+    # Статус
+    is_active = Column(Boolean, default=True)
+    
+    # Временная метка
+    assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Связи
+    user = relationship("User", backref="ab_tests")
+
+
+class RecommendationMetrics(Base):
+    """
+    Метрики эффективности рекомендательной системы.
+    """
+
+    __tablename__ = "recommendation_metrics"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=True)
+    recommendation_id = Column(GUID(), ForeignKey("recommendations.id"), nullable=True)
+
+    # Метрики
+    metric_name = Column(String(50), nullable=False)  # ctr, conversion, satisfaction
+    metric_value = Column(Integer, nullable=False)
+    
+    # Контекст
+    context_data = Column(JSON, nullable=True)
+    session_id = Column(String(255), nullable=True)
+    
+    # Временная метка
+    recorded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Связи
+    user = relationship("User")
+    recommendation = relationship("Recommendation")
+
+
 # Database connection management
 class DatabaseManager:
     """
