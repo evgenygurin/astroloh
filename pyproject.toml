@@ -40,6 +40,10 @@ dependencies = [
     # Переменные окружения
     "python-dotenv==1.0.0",
     "swisseph>=0.0.0.dev1",
+    # Telegram Bot API
+    "aiogram==3.13.1",
+    # Google Assistant integration
+    "google-cloud-dialogflow==2.28.0",
 ]
 
 [project.optional-dependencies]

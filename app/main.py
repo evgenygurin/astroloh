@@ -6,14 +6,16 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.google_assistant import router as google_router
 from app.api.security import router as security_router
+from app.api.telegram_bot import router as telegram_router
 from app.api.yandex_dialogs import router as yandex_router
 from app.core.config import settings
 from app.core.database import close_database, init_database
 
 app = FastAPI(
-    title="Astroloh - Навык Астролог для Яндекс Алисы",
-    description="API для предоставления астрологических прогнозов и консультаций",
+    title="Astroloh - Multi-Platform Astrological Assistant",
+    description="Unified API for astrological forecasts across Yandex Alice, Telegram Bot, and Google Assistant",
     version="1.0.0",
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
@@ -30,13 +32,16 @@ app.add_middleware(
 
 # Подключение роутеров
 app.include_router(yandex_router, prefix="/api/v1")
+app.include_router(telegram_router, prefix="/api/v1")
+app.include_router(google_router, prefix="/api/v1")
 app.include_router(security_router, prefix="/api/v1")
 
 
 @app.get("/")
 async def root() -> dict[str, str]:
     """Корневой эндпоинт для проверки работы API."""
-    return {"message": "Astroloh - Астролог навык для Яндекс Алисы работает!"}
+    return {"message": "Astroloh - Multi-Platform Astrological Assistant is running!", 
+            "platforms": ["Yandex Alice", "Telegram Bot", "Google Assistant"]}
 
 
 @app.get("/health")
