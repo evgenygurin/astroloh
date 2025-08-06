@@ -7,12 +7,14 @@ The Astroloh Design System is a comprehensive UI/UX framework designed specifica
 ## Design Philosophy
 
 ### Core Principles
+
 - **Mystical & Cosmic**: Dark themes with golden accents reflecting the night sky and celestial bodies
 - **Accessible**: WCAG 2.1 AA compliant with high contrast and keyboard navigation
 - **Platform Agnostic**: Adaptive design that works across web, mobile, voice, and messaging platforms
 - **Astrologically Authentic**: Uses proper astrological symbols and follows traditional conventions
 
 ### Visual Identity
+
 - **Primary Colors**: Mystical gold (#fbbf24) representing celestial illumination
 - **Background**: Deep cosmic colors (#1e1b4b to #0a0a0f) representing the night sky
 - **Accent Colors**: Mystical purple (#6366f1) for interactive elements
@@ -70,6 +72,7 @@ The Astroloh Design System is a comprehensive UI/UX framework designed specifica
 ### Cards
 
 #### Astro Card
+
 The foundation component for all content containers.
 
 ```html
@@ -80,10 +83,12 @@ The foundation component for all content containers.
 ```
 
 **Variants:**
+
 - `astro-card--elevated`: Higher shadow for important content
 - `astro-card--compact`: Reduced padding for tight spaces
 
 #### Planet Card
+
 Specialized card for displaying planetary information.
 
 ```tsx
@@ -105,6 +110,7 @@ Specialized card for displaying planetary information.
 ### Charts
 
 #### Natal Chart
+
 Interactive circular chart for birth chart visualization.
 
 ```tsx
@@ -118,6 +124,7 @@ Interactive circular chart for birth chart visualization.
 ```
 
 #### Lunar Calendar
+
 Calendar component with lunar phases and astrological events.
 
 ```tsx
@@ -200,21 +207,25 @@ const fullMoon = LUNAR_PHASES.fullMoon.symbol; // 🌕
 ## Platform Adaptations
 
 ### Web Interface
+
 - Full desktop experience with sidebar navigation
 - Grid-based layouts for dashboards
 - Interactive charts and detailed information panels
 
 ### Mobile Applications
+
 - Touch-optimized with 44px minimum touch targets
 - Bottom navigation for thumb accessibility
 - Simplified single-column layouts
 
 ### Yandex Alice (Voice)
+
 - High contrast cards for voice UI companion
 - Large text and clear visual hierarchy
 - Rich content cards for horoscope delivery
 
 ### Telegram Bot
+
 - Compact design for messaging context
 - Inline keyboards for interaction
 - 300px maximum width for readability
@@ -232,16 +243,19 @@ const fullMoon = LUNAR_PHASES.fullMoon.symbol; // 🌕
 ### Interaction Patterns
 
 #### Information Hierarchy
+
 1. **Primary**: Main horoscope content, zodiac sign
 2. **Secondary**: Planetary influences, aspects
 3. **Tertiary**: Dates, technical details, fine print
 
 #### Progressive Disclosure
+
 - Start with essential information
 - Provide "Learn More" options for deeper content
 - Use expandable sections for advanced features
 
 #### Feedback & States
+
 - **Loading**: Shimmer effects and cosmic animations
 - **Success**: Golden glow and positive messaging
 - **Errors**: Gentle red highlights with helpful guidance
@@ -250,21 +264,25 @@ const fullMoon = LUNAR_PHASES.fullMoon.symbol; // 🌕
 ### Accessibility
 
 #### Color & Contrast
+
 - Minimum 4.5:1 contrast ratio for normal text
 - Minimum 3:1 contrast ratio for large text
 - Never rely solely on color to convey information
 
 #### Keyboard Navigation
+
 - All interactive elements are keyboard accessible
 - Clear focus indicators with golden outline
 - Logical tab order through content
 
 #### Screen Readers
+
 - Semantic HTML structure
 - ARIA labels for complex widgets
 - Alt text for all astrological symbols
 
 #### Responsive Design
+
 - Mobile-first approach
 - Flexible layouts that adapt to screen size
 - Touch targets minimum 44px for mobile
@@ -272,11 +290,13 @@ const fullMoon = LUNAR_PHASES.fullMoon.symbol; // 🌕
 ### Animation & Motion
 
 #### Principles
+
 - **Subtle**: Enhance without overwhelming
 - **Purposeful**: Guide attention and provide feedback
 - **Respectful**: Honor reduced motion preferences
 
 #### Common Animations
+
 - **Hover**: Gentle scale (1.02x) and glow effects
 - **Loading**: Shimmer effects and particle floating
 - **Transitions**: 200-300ms ease-in-out for most interactions
@@ -326,16 +346,19 @@ import './design-system/platform-styles.css';
 ## Testing & Quality Assurance
 
 ### Visual Regression Testing
+
 - Test all components in different themes
 - Verify responsive behavior at breakpoints
 - Check accessibility with screen readers
 
 ### Browser Support
+
 - Modern browsers (Chrome, Firefox, Safari, Edge)
 - iOS Safari 12+
 - Android Chrome 80+
 
 ### Performance
+
 - Lazy load heavy components (charts, animations)
 - Optimize images and SVGs
 - Use CSS-in-JS sparingly for better performance
@@ -343,16 +366,19 @@ import './design-system/platform-styles.css';
 ## Maintenance & Evolution
 
 ### Versioning
+
 - Follow semantic versioning for design tokens
 - Document breaking changes in component APIs
 - Provide migration guides for major updates
 
 ### Contribution Guidelines
+
 - All new components must include accessibility testing
 - Follow established naming conventions
 - Include usage examples and documentation
 
 ### Review Process
+
 - Design review for visual consistency
 - Code review for technical implementation
 - UX review for usability and accessibility

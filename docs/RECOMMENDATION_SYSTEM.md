@@ -56,11 +56,13 @@ New models added to `app/models/database.py`:
 Finds users with similar astrological profiles and preferences to generate recommendations.
 
 **Algorithm:**
+
 - Analyzes zodiac signs, gender, preferences, and interaction patterns
 - Calculates user similarity scores
 - Recommends content liked by similar users
 
 **Usage:**
+
 ```python
 from app.services.recommendation_engine import CollaborativeFiltering
 
@@ -73,12 +75,14 @@ similar_users = await collaborative.find_similar_users(user_id, limit=10)
 Generates recommendations based on user's astrological characteristics and current celestial conditions.
 
 **Features:**
+
 - Analyzes current transits and planetary positions
 - Considers user's birth chart
 - Adapts to interests (career, love, health, etc.)
 - Seasonal astological adaptation
 
 **Usage:**
+
 ```python
 from app.services.recommendation_engine import ContentBasedFiltering
 
@@ -91,12 +95,14 @@ recommendations = await content_filter.get_content_recommendations(user_id)
 Combines collaborative and content-based filtering with temporal patterns for optimal results.
 
 **Algorithm:**
+
 - Content-based recommendations: 60% weight
 - Collaborative filtering: 40% weight
 - Temporal pattern adjustments
 - Personalization overlay
 
 **Usage:**
+
 ```python
 from app.services.recommendation_engine import HybridRecommendationEngine
 
@@ -109,12 +115,14 @@ recommendations = await hybrid.generate_recommendations(user_id, limit=5)
 Creates personalized horoscopes adapted to user's current life situation.
 
 **Features:**
+
 - Analyzes recent user interactions to understand life focus
 - Adapts content tone based on emotional state
 - Applies communication style preferences
 - Adjusts complexity level and cultural context
 
 **Usage:**
+
 ```python
 from app.services.personalization_service import DynamicHoroscopeGenerator
 
@@ -127,6 +135,7 @@ horoscope = await generator.generate_personalized_horoscope(user_id, "daily")
 Learns user interests from behavior patterns.
 
 **Tracked Interests:**
+
 - Career and professional life
 - Love and relationships
 - Health and wellness
@@ -135,6 +144,7 @@ Learns user interests from behavior patterns.
 - Family matters
 
 **Usage:**
+
 ```python
 from app.services.personalization_service import InterestProfilingSystem
 
@@ -147,6 +157,7 @@ interests = await profiler.update_user_profile(user_id)
 Adapts content to match user's preferred communication style.
 
 **Available Styles:**
+
 - **Formal** - Professional, respectful tone
 - **Casual** - Relaxed, informal approach
 - **Friendly** - Warm, personal communication
@@ -154,6 +165,7 @@ Adapts content to match user's preferred communication style.
 - **Balanced** - Default neutral style
 
 **Usage:**
+
 ```python
 from app.services.personalization_service import CommunicationStyleAdapter
 
@@ -166,11 +178,13 @@ adapted_content = await adapter.adapt_content_style(content, user_id)
 Adjusts content complexity based on user's astrological knowledge level.
 
 **Levels:**
+
 - **Beginner** - Simple language, basic concepts, explanations included
 - **Intermediate** - Standard astrological terms, moderate detail
 - **Advanced** - Technical terms, detailed analysis, historical context
 
 **Usage:**
+
 ```python
 from app.services.personalization_service import ComplexityLevelAdjuster
 
@@ -183,11 +197,13 @@ adjusted_content = await adjuster.adjust_content_complexity(content, user_id)
 Adapts content for different astrological traditions.
 
 **Supported Contexts:**
+
 - **Western** - Tropical zodiac, Western astrology (default)
 - **Vedic** - Sidereal zodiac, Indian astrology concepts
 - **Chinese** - Chinese zodiac, elements, Yin/Yang principles
 
 **Usage:**
+
 ```python
 from app.services.personalization_service import CulturalSensitivityManager
 
@@ -198,6 +214,7 @@ adapted_content = await cultural_mgr.adapt_cultural_context(content, user_id)
 ### 9. Machine Learning Components
 
 #### Preference Learning
+
 Automatically learns user preferences from behavior.
 
 ```python
@@ -208,9 +225,11 @@ preferences = await learning_engine.learn_user_preferences(user_id)
 ```
 
 #### Churn Prediction
+
 Predicts user churn risk with explanations.
 
 **Risk Factors:**
+
 - Days since last access
 - Recent activity levels
 - Activity trends
@@ -225,6 +244,7 @@ risk_assessment = await churn_model.predict_churn_risk(user_id)
 ```
 
 #### Engagement Optimization
+
 Provides strategies to improve user engagement.
 
 ```python
@@ -235,9 +255,11 @@ optimization = await optimizer.optimize_user_engagement(user_id)
 ```
 
 #### Anomaly Detection
+
 Detects unusual patterns in user behavior.
 
 **Detected Anomalies:**
+
 - Unusually high/low activity
 - Activity gaps
 - Satisfaction drops
@@ -256,12 +278,14 @@ anomalies = await detector.detect_anomalies(user_id)
 Adapts recommendations based on astrological seasons and current planetary conditions.
 
 **Features:**
+
 - Determines current astrological season
 - Analyzes dominant elements and aspects
 - Identifies retrograde planets
 - Provides season-specific recommendations
 
 **Usage:**
+
 ```python
 from app.services.recommendation_engine import TemporalPatternAnalyzer
 
@@ -274,12 +298,14 @@ seasonal_recs = await analyzer.get_seasonal_recommendations(user_id)
 Enables testing different recommendation algorithms and UI variations.
 
 **Test Types:**
+
 - Recommendation algorithms (collaborative vs content-based vs hybrid)
 - UI layouts and designs
 - Content variations
 - Personalization depth levels
 
 **Usage:**
+
 ```python
 from app.services.recommendation_engine import ABTestManager
 
@@ -292,6 +318,7 @@ assigned_group = await ab_manager.assign_user_to_test(user_id, "algorithm_test")
 Comprehensive metrics for monitoring and optimization.
 
 **Tracked Metrics:**
+
 - Click-through rates (CTR)
 - Conversion rates
 - User satisfaction scores
@@ -300,6 +327,7 @@ Comprehensive metrics for monitoring and optimization.
 - Recommendation effectiveness
 
 **Usage:**
+
 ```python
 from app.services.recommendation_engine import MetricsCollector
 
@@ -320,10 +348,12 @@ GET /api/v1/recommendations/user/{user_id}
 Returns personalized recommendations for a user.
 
 **Parameters:**
+
 - `user_id` (string): Yandex user ID
 - `limit` (int): Maximum number of recommendations (1-20, default: 5)
 
 **Response:**
+
 ```json
 [
   {
@@ -351,10 +381,12 @@ GET /api/v1/recommendations/user/{user_id}/horoscope
 Generates a personalized horoscope.
 
 **Parameters:**
+
 - `user_id` (string): Yandex user ID
 - `horoscope_type` (string): Type of horoscope ("daily", "weekly", "monthly")
 
 **Response:**
+
 ```json
 {
   "content": "Дорогой друг, сегодня звёзды благоприятствуют новым начинаниям...",
@@ -379,6 +411,7 @@ GET /api/v1/recommendations/user/{user_id}/analytics
 Returns user analytics for personalization.
 
 **Response:**
+
 ```json
 {
   "engagement_level": "high",
@@ -401,6 +434,7 @@ GET /api/v1/recommendations/user/{user_id}/seasonal
 Returns seasonal astrological recommendations.
 
 **Response:**
+
 ```json
 {
   "season": "spring",
@@ -427,6 +461,7 @@ POST /api/v1/recommendations/ab-test/{user_id}/{test_name}
 Assigns user to A/B test group.
 
 **Response:**
+
 ```json
 {
   "test_name": "recommendation_algorithm",
@@ -447,6 +482,7 @@ POST /api/v1/recommendations/user/{user_id}/interaction
 Records user interaction for learning.
 
 **Request Body:**
+
 ```json
 {
   "type": "recommendation_click",
@@ -464,9 +500,11 @@ GET /api/v1/recommendations/metrics
 Returns system-wide recommendation metrics.
 
 **Parameters:**
+
 - `period_days` (int): Analysis period in days (1-30, default: 7)
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -575,6 +613,7 @@ alembic upgrade head
 ### Alerting
 
 Set up alerts for:
+
 - CTR drops below threshold (< 10%)
 - High churn risk user count increases
 - System errors in recommendation generation
@@ -691,6 +730,7 @@ GET /api/v1/recommendations/health
 ```
 
 Should return:
+
 ```json
 {
   "status": "healthy",

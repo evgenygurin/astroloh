@@ -3,8 +3,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/react'
 import { PlanetCard } from '../PlanetCard'
 import { PLANETS } from '../../../design-system/icons'
 

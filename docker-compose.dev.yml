@@ -1,19 +1,23 @@
 services:
-  # Frontend service
-  frontend:
+  # Frontend development service with hot reload
+  frontend-dev:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
-      - "80:80"
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
     depends_on:
       - backend
-    environment:
-      - NODE_ENV=production
     networks:
       - astroloh-network
+    command: npm run dev -- --host 0.0.0.0
 
-  # Backend service (renamed from 'web' for clarity)
+  # Backend service
   backend:
     build:
       context: .
@@ -27,6 +31,8 @@ services:
       - db
     volumes:
       - ./app:/app/app
+      - ./migrations:/app/migrations
+      - ./alembic.ini:/app/alembic.ini
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - astroloh-network

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { PLANETS, ZODIAC_SIGNS, ELEMENTS } from '../../design-system/icons';
+import { PLANETS, ZODIAC_SIGNS } from '../../design-system/icons';
 
 interface PlanetCardProps {
   planet: keyof typeof PLANETS;

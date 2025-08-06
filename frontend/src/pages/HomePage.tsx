@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Star, Moon, Sun, Zap, Heart, Calendar, User } from 'lucide-react'
+import { Star, Moon, Zap, Heart, User } from 'lucide-react'
 
 export default function HomePage() {
   const features = [

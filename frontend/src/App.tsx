@@ -1,5 +1,4 @@
 import { Routes, Route } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'

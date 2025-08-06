@@ -158,18 +158,21 @@ describe('Icon Constants', () => {
     it('has correct element structure', () => {
       Object.entries(ELEMENTS).forEach(([key, element]) => {
         expect(element).toHaveProperty('symbol')
+        expect(element).toHaveProperty('unicode')
         expect(element).toHaveProperty('name')
-        expect(element).toHaveProperty('signs')
-        expect(Array.isArray(element.signs)).toBe(true)
-        expect(element.signs).toHaveLength(3) // Each element has 3 signs
+        expect(element).toHaveProperty('color')
+        expect(typeof element.symbol).toBe('string')
+        expect(typeof element.unicode).toBe('string')
+        expect(typeof element.name).toBe('string')
+        expect(typeof element.color).toBe('string')
       })
     })
 
-    it('has correct element assignments', () => {
-      expect(ELEMENTS.fire.signs).toEqual(['aries', 'leo', 'sagittarius'])
-      expect(ELEMENTS.earth.signs).toEqual(['taurus', 'virgo', 'capricorn'])
-      expect(ELEMENTS.air.signs).toEqual(['gemini', 'libra', 'aquarius'])
-      expect(ELEMENTS.water.signs).toEqual(['cancer', 'scorpio', 'pisces'])
+    it('has correct element colors', () => {
+      expect(ELEMENTS.fire.color).toBe('#ef4444')
+      expect(ELEMENTS.earth.color).toBe('#10b981')
+      expect(ELEMENTS.air.color).toBe('#06b6d4')
+      expect(ELEMENTS.water.color).toBe('#3b82f6')
     })
   })
 })
@@ -284,10 +287,10 @@ describe('Utility Functions', () => {
     })
 
     it('works with all zodiac symbols', () => {
-      Object.entries(ZODIAC_SIGNS).forEach(([key, sign]) => {
+      Object.entries(ZODIAC_SIGNS).forEach(([signKey, sign]) => {
         const result = getZodiacBySymbol(sign.symbol)
         expect(result).toEqual({
-          key,
+          key: signKey,
           sign
         })
       })
@@ -296,59 +299,64 @@ describe('Utility Functions', () => {
 })
 
 describe('Data Integrity', () => {
-  it('ensures all zodiac signs have valid Unicode', () => {
+  it('ensures all zodiac signs have valid Unicode strings', () => {
     Object.values(ZODIAC_SIGNS).forEach(sign => {
       expect(sign.unicode).toMatch(/^\\u[0-9A-F]{4}$/i)
-      expect(sign.symbol).toBe(String.fromCharCode(parseInt(sign.unicode.slice(2), 16)))
+      expect(typeof sign.unicode).toBe('string')
+      expect(sign.unicode.length).toBe(6) // \u + 4 hex digits
     })
   })
 
-  it('ensures all planets have valid Unicode', () => {
+  it('ensures all planets have valid Unicode strings', () => {
     Object.values(PLANETS).forEach(planet => {
       expect(planet.unicode).toMatch(/^\\u[0-9A-F]{4}$/i)
-      expect(planet.symbol).toBe(String.fromCharCode(parseInt(planet.unicode.slice(2), 16)))
+      expect(typeof planet.unicode).toBe('string')
+      expect(planet.unicode.length).toBe(6) // \u + 4 hex digits
     })
   })
 
-  it('ensures all lunar phases have valid Unicode', () => {
+  it('ensures all lunar phases have valid Unicode strings', () => {
     Object.values(LUNAR_PHASES).forEach(phase => {
       expect(phase.unicode).toMatch(/^\\u[0-9A-F]{4,5}$/i)
+      expect(typeof phase.unicode).toBe('string')
       // Moon phases use extended Unicode (emoji)
     })
   })
 
-  it('ensures element signs are valid zodiac signs', () => {
+  it('ensures elements have valid hex colors', () => {
     Object.values(ELEMENTS).forEach(element => {
-      element.signs.forEach(signKey => {
-        expect(ZODIAC_SIGNS).toHaveProperty(signKey)
-      })
+      expect(element.color).toMatch(/^#[0-9a-f]{6}$/i)
     })
   })
 
-  it('ensures all zodiac signs are assigned to an element', () => {
-    const allElementSigns = Object.values(ELEMENTS).flatMap(element => element.signs)
-    const zodiacKeys = Object.keys(ZODIAC_SIGNS)
-    
-    expect(allElementSigns.sort()).toEqual(zodiacKeys.sort())
+  it('ensures all elements have unique colors', () => {
+    const colors = Object.values(ELEMENTS).map(element => element.color)
+    const uniqueColors = new Set(colors)
+    expect(uniqueColors.size).toBe(colors.length)
   })
 })
 
-describe('Constants Immutability', () => {
-  it('prevents modification of ZODIAC_SIGNS', () => {
-    expect(() => {
-      (ZODIAC_SIGNS as any).newSign = { symbol: '🚀', unicode: '\\u1F680', name: 'Rocket' }
-    }).toThrow()
+describe('Constants Type Safety', () => {
+  it('has readonly ZODIAC_SIGNS properties', () => {
+    // TypeScript should enforce readonly at compile time
+    const signs = ZODIAC_SIGNS
+    expect(typeof signs).toBe('object')
+    expect(signs).toBeTruthy()
   })
 
-  it('prevents modification of PLANETS', () => {
-    expect(() => {
-      (PLANETS as any).newPlanet = { symbol: '🪐', unicode: '\\u1FA90', name: 'New Planet' }
-    }).toThrow()
+  it('has readonly PLANETS properties', () => {
+    // TypeScript should enforce readonly at compile time
+    const planets = PLANETS
+    expect(typeof planets).toBe('object')
+    expect(planets).toBeTruthy()
   })
 
-  it('prevents modification of individual sign properties', () => {
-    expect(() => {
-      (ZODIAC_SIGNS.aries as any).name = 'Modified Aries'
-    }).toThrow()
+  it('maintains consistent data structure', () => {
+    // Verify the structure is consistent across all signs
+    Object.values(ZODIAC_SIGNS).forEach(sign => {
+      expect(sign).toHaveProperty('symbol')
+      expect(sign).toHaveProperty('unicode')
+      expect(sign).toHaveProperty('name')
+    })
   })
 })

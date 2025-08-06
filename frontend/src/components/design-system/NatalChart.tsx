@@ -3,8 +3,8 @@
  * Beautiful visualization of natal chart data with interactive elements
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { ZODIAC_SIGNS, PLANETS, ASPECTS, getAllZodiacSigns, getAllPlanets } from '../../design-system/icons';
+import React, { useState, useMemo } from 'react';
+import { ZODIAC_SIGNS, PLANETS, ASPECTS, getAllZodiacSigns } from '../../design-system/icons';
 
 export interface PlanetPosition {
   planet: keyof typeof PLANETS;
@@ -224,7 +224,6 @@ export const NatalChart: React.FC<NatalChartProps> = ({
     const pos1 = getPlanetPosition(planet1.degree, middleRadius);
     const pos2 = getPlanetPosition(planet2.degree, middleRadius);
     
-    const aspectInfo = ASPECTS[aspect.type];
     const opacity = Math.max(0.1, 1 - (aspect.orb / 10)); // Fade based on orb
     
     return (

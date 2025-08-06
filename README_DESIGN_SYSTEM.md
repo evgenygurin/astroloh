@@ -7,6 +7,7 @@ The Astroloh Design System is a comprehensive UI/UX framework specifically craft
 ## ✨ Features
 
 ### 🎯 Core Components
+
 - **Natal Charts**: Interactive circular birth chart visualizations
 - **Planet Cards**: Informative displays of planetary influences  
 - **Lunar Calendar**: Calendar with lunar phases and astrological events
@@ -14,6 +15,7 @@ The Astroloh Design System is a comprehensive UI/UX framework specifically craft
 - **Form Elements**: Styled inputs, selects, and buttons with cosmic themes
 
 ### 🌙 Mystical Design Language
+
 - **Dark cosmic backgrounds** with starfield effects
 - **Golden accent colors** representing celestial illumination
 - **Cinzel typography** for mystical headers
@@ -21,12 +23,14 @@ The Astroloh Design System is a comprehensive UI/UX framework specifically craft
 - **Smooth animations** with floating particles and glowing effects
 
 ### 📱 Multi-Platform Support
+
 - **Web Interface**: Full desktop experience with responsive design
 - **Mobile Apps**: Touch-optimized with 44px minimum targets
 - **Yandex Alice**: Voice-first with rich visual cards
 - **Telegram Bot**: Compact design for messaging context
 
 ### ♿ Accessibility First
+
 - **WCAG 2.1 AA compliant** with high contrast ratios
 - **Keyboard navigation** with clear focus indicators  
 - **Screen reader support** with semantic HTML and ARIA labels
@@ -86,16 +90,19 @@ function App() {
 ## 📚 Documentation
 
 ### Design System Files
+
 - 📄 **[Design System Guide](./docs/DESIGN_SYSTEM.md)** - Complete component library and usage guidelines
 - 📋 **[UX Guidelines](./docs/UX_GUIDELINES.md)** - User experience principles and patterns
 - 🎨 **[Figma Assets](./design-assets/)** - Visual design files and prototypes *(coming soon)*
 
 ### Component Documentation
+
 - 🔮 **[NatalChart](./frontend/src/components/design-system/NatalChart.tsx)** - Interactive birth chart component
 - 🪐 **[PlanetCard](./frontend/src/components/design-system/PlanetCard.tsx)** - Planet information display
 - 🌙 **[LunarCalendar](./frontend/src/components/design-system/LunarCalendar.tsx)** - Lunar phase calendar
 
 ### Design Tokens
+
 - 🎯 **[tokens.css](./frontend/src/design-system/tokens.css)** - Core design variables
 - 🔤 **[typography.css](./frontend/src/design-system/typography.css)** - Typography system
 - 🧩 **[components.css](./frontend/src/design-system/components.css)** - Component styles
@@ -103,21 +110,27 @@ function App() {
 ## 🎨 Design Philosophy
 
 ### Mystical Aesthetics
+
 Our design embraces the wonder and mystery of astrology through:
+
 - Deep space-inspired color palettes
 - Celestial golden accents and glowing effects
 - Authentic astrological symbolism
 - Floating particle animations
 
 ### Accessibility & Usability
+
 While mystical, the interface remains highly usable:
+
 - High contrast ratios (4.5:1 minimum)
 - Large touch targets (44px minimum)
 - Clear typography hierarchy
 - Intuitive navigation patterns
 
 ### Platform Adaptation
+
 The design system adapts seamlessly across contexts:
+
 - **Desktop**: Rich layouts with detailed visualizations
 - **Mobile**: Touch-optimized single-column layouts
 - **Voice**: High-contrast cards for screen-based voice assistants
@@ -126,6 +139,7 @@ The design system adapts seamlessly across contexts:
 ## 🛠️ Development
 
 ### Project Structure
+
 ```
 frontend/src/design-system/
 ├── tokens.css          # Design tokens and CSS variables
@@ -142,6 +156,7 @@ frontend/src/components/design-system/
 ```
 
 ### Available Scripts
+
 ```bash
 # Development
 npm run dev          # Start development server
@@ -154,6 +169,7 @@ npm run type-check   # Run TypeScript checking
 ```
 
 ### CSS Architecture
+
 The design system uses a modular CSS approach:
 
 1. **Design Tokens**: Core variables and design decisions
@@ -162,6 +178,7 @@ The design system uses a modular CSS approach:
 4. **Typography**: Text styling and font loading
 
 ### Browser Support
+
 - ✅ Chrome 80+
 - ✅ Firefox 75+
 - ✅ Safari 13+
@@ -172,6 +189,7 @@ The design system uses a modular CSS approach:
 ## 🎯 Platform Implementations
 
 ### Web Application
+
 ```tsx
 <div className="platform-web">
   <div className="web-dashboard-grid">
@@ -186,6 +204,7 @@ The design system uses a modular CSS approach:
 ```
 
 ### Mobile Application
+
 ```tsx
 <div className="platform-mobile">
   <div className="mobile-single-column">
@@ -200,6 +219,7 @@ The design system uses a modular CSS approach:
 ```
 
 ### Yandex Alice Integration
+
 ```tsx
 <div className="platform-yandex">
   <div className="yandex-rich-content">
@@ -212,6 +232,7 @@ The design system uses a modular CSS approach:
 ```
 
 ### Telegram Bot Cards
+
 ```tsx
 <div className="platform-telegram">
   <div className="telegram-keyboard">
@@ -226,6 +247,7 @@ The design system uses a modular CSS approach:
 ## 🎭 Design Tokens Reference
 
 ### Colors
+
 ```css
 /* Primary - Mystical Gold */
 --color-primary-400: #fbbf24;  /* Main brand */
@@ -242,6 +264,7 @@ The design system uses a modular CSS approach:
 ```
 
 ### Typography
+
 ```css
 /* Fonts */
 --font-mystical: 'Cinzel', serif;    /* Headers */
@@ -254,6 +277,7 @@ The design system uses a modular CSS approach:
 ```
 
 ### Spacing
+
 ```css
 --space-2: 0.5rem;    /* 8px */
 --space-4: 1rem;      /* 16px - Base unit */
@@ -263,17 +287,20 @@ The design system uses a modular CSS approach:
 ## 🧪 Testing
 
 ### Visual Testing
+
 - Component screenshots in different themes
 - Responsive behavior validation
 - Cross-browser compatibility testing
 
 ### Accessibility Testing  
+
 - Screen reader navigation
 - Keyboard-only interaction
 - Color contrast validation
 - WCAG 2.1 compliance checking
 
 ### Performance Testing
+
 - Bundle size optimization
 - Animation performance
 - Mobile device testing
@@ -281,18 +308,21 @@ The design system uses a modular CSS approach:
 ## 🤝 Contributing
 
 ### Design Contributions
+
 1. Follow the established mystical aesthetic
 2. Maintain accessibility standards
 3. Test across all supported platforms
 4. Update documentation with changes
 
 ### Development Guidelines
+
 1. Use TypeScript for all new components
 2. Follow existing naming conventions
 3. Include comprehensive prop types
 4. Add JSDoc documentation
 
 ### Review Process
+
 1. **Design Review**: Visual consistency and brand alignment
 2. **Code Review**: Technical implementation and performance
 3. **UX Review**: Usability and accessibility validation
@@ -300,7 +330,7 @@ The design system uses a modular CSS approach:
 
 ## 📞 Support
 
-- 📧 **Email**: design-system@astroloh.com
+- 📧 **Email**: <design-system@astroloh.com>
 - 💬 **Discord**: [Astroloh Community](https://discord.gg/astroloh)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/evgenygurin/astroloh/issues)
 - 📖 **Wiki**: [Design System Wiki](https://github.com/evgenygurin/astroloh/wiki)
@@ -308,18 +338,21 @@ The design system uses a modular CSS approach:
 ## 📈 Roadmap
 
 ### Version 1.1 (Q1 2025)
+
 - [ ] Advanced chart animations
 - [ ] Dark/light theme switching
 - [ ] Additional astrological symbols
 - [ ] Performance optimizations
 
-### Version 1.2 (Q2 2025) 
+### Version 1.2 (Q2 2025)
+
 - [ ] Figma design kit
 - [ ] Storybook component library
 - [ ] Advanced accessibility features
 - [ ] Mobile app components
 
 ### Version 2.0 (Q3 2025)
+
 - [ ] 3D chart visualizations
 - [ ] AR constellation overlays
 - [ ] Voice UI enhancements

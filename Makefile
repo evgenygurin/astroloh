@@ -87,6 +87,15 @@ help:
 	@echo "    make check-env  - Проверка окружения разработки"
 	@echo "    make validate   - Полная валидация проекта"
 	@echo "    make debug      - Диагностика и отладка"
+	@echo ""
+	@echo "  $(YELLOW)Docker команды:$(RESET)"
+	@echo "    make docker-dev    - 🔧 Запуск development окружения (hot reload)"
+	@echo "    make docker-prod   - 🏭 Запуск production окружения"
+	@echo "    make docker-up     - Запуск production сервисов"
+	@echo "    make docker-down   - Остановка всех Docker сервисов"
+	@echo "    make docker-build  - Сборка Docker образов"
+	@echo "    make docker-rebuild - Пересборка образов без кэша"
+	@echo "    make docker-logs   - Просмотр логов сервисов"
 	@echo "-------------------------------------------------------------------"
 
 # ------------------------------------------------------------------------------
@@ -277,7 +286,7 @@ coverage:
 # Запуск приложения
 # ------------------------------------------------------------------------------
 
-.PHONY: run kill
+.PHONY: run kill docker-up docker-down docker-dev docker-prod docker-logs docker-build docker-rebuild
 
 kill:
 	@echo "$(BLUE)🔪 Остановка процессов на порту 8000...$(RESET)"
@@ -299,6 +308,52 @@ run:
 	else \
 		$(UV) run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload; \
 	fi
+
+# ------------------------------------------------------------------------------
+# Docker команды
+# ------------------------------------------------------------------------------
+
+docker-build:
+	@echo "$(BLUE)🏗️  Сборка Docker образов...$(RESET)"
+	@docker-compose build
+	@echo "$(GREEN)✅ Образы собраны$(RESET)"
+
+docker-rebuild:
+	@echo "$(BLUE)🔄 Пересборка Docker образов без кэша...$(RESET)"
+	@docker-compose build --no-cache
+	@echo "$(GREEN)✅ Образы пересобраны$(RESET)"
+
+docker-up:
+	@echo "$(BLUE)🚀 Запуск production окружения в Docker...$(RESET)"
+	@docker-compose up -d
+	@echo "$(GREEN)✅ Сервисы запущены:$(RESET)"
+	@echo "  - Frontend: http://localhost"
+	@echo "  - Backend API: http://localhost:8000"
+	@echo "  - API Docs: http://localhost:8000/docs"
+	@docker-compose ps
+
+docker-dev:
+	@echo "$(BLUE)🔧 Запуск development окружения в Docker...$(RESET)"
+	@docker-compose -f docker-compose.dev.yml up
+	@echo "$(GREEN)✅ Development сервисы запущены:$(RESET)"
+	@echo "  - Frontend (hot reload): http://localhost:3000"
+	@echo "  - Backend API: http://localhost:8000"
+	@echo "  - API Docs: http://localhost:8000/docs"
+
+docker-down:
+	@echo "$(BLUE)⏹️  Остановка Docker сервисов...$(RESET)"
+	@docker-compose down
+	@docker-compose -f docker-compose.dev.yml down 2>/dev/null || true
+	@echo "$(GREEN)✅ Сервисы остановлены$(RESET)"
+
+docker-logs:
+	@echo "$(BLUE)📋 Просмотр логов Docker сервисов...$(RESET)"
+	@docker-compose logs -f
+
+docker-prod:
+	@echo "$(BLUE)🏭 Запуск production окружения...$(RESET)"
+	@$(MAKE) docker-build
+	@$(MAKE) docker-up
 
 # ==============================================================================
 # Сборные команды для различных workflow сценариев

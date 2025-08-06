@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Moon, ChevronLeft, ChevronRight, Calendar, Star, Info, TrendingUp } from 'lucide-react'
+import { Moon, ChevronLeft, ChevronRight, Star, Info, TrendingUp } from 'lucide-react'
 import { lunarApi } from '../services/api'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns'
 import { ru } from 'date-fns/locale'
@@ -48,16 +48,17 @@ export default function LunarCalendarPage() {
     waning_crescent: '🌘'
   }
 
-  const phaseColors = {
-    new_moon: '#1f2937',
-    waxing_crescent: '#374151',
-    first_quarter: '#4b5563',
-    waxing_gibbous: '#6b7280',
-    full_moon: '#fbbf24',
-    waning_gibbous: '#d97706',
-    last_quarter: '#b45309',
-    waning_crescent: '#92400e'
-  }
+  // Phase colors (used for styling)
+  // const phaseColors = {
+  //   new_moon: '#1f2937',
+  //   waxing_crescent: '#374151',
+  //   first_quarter: '#4b5563',
+  //   waxing_gibbous: '#6b7280',
+  //   full_moon: '#fbbf24',
+  //   waning_gibbous: '#d97706',
+  //   last_quarter: '#b45309',
+  //   waning_crescent: '#92400e'
+  // }
 
   const energyColors = {
     low: '#6b7280',

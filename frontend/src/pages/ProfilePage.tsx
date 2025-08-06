@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { User, Mail, Calendar, Clock, MapPin, Star, Edit2, Save, X } from 'lucide-react'
+import { User, Mail, Calendar, Clock, MapPin, Edit2, Save, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function ProfilePage() {

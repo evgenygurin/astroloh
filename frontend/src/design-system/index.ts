@@ -139,21 +139,21 @@ export const designUtils = {
   /**
    * Get element color for astrological elements
    */
-  getElementColor: (element: Element) => {
-    const colors = {
+  getElementColor: (element: string): string => {
+    const colors: Record<string, string> = {
       fire: '#ef4444',
       earth: '#10b981',
       air: '#06b6d4',
       water: '#3b82f6'
     };
-    return colors[element];
+    return colors[element] || '#6b7280';
   },
 
   /**
    * Get planet color for visualization
    */
-  getPlanetColor: (planet: Planet) => {
-    const colors = {
+  getPlanetColor: (planet: string): string => {
+    const colors: Record<string, string> = {
       sun: '#f59e0b',
       moon: '#e5e7eb',
       mercury: '#06b6d4',
@@ -167,7 +167,7 @@ export const designUtils = {
       northNode: '#a855f7',
       southNode: '#9333ea'
     };
-    return colors[planet];
+    return colors[planet] || '#6b7280';
   }
 };
 

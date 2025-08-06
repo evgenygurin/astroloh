@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NatalChart } from '../NatalChart'
 import type { PlanetPosition, AspectData } from '../NatalChart'
@@ -41,7 +41,6 @@ describe('NatalChart', () => {
       
       // Check for planet symbols in the SVG
       mockPlanets.forEach(planet => {
-        const planetSymbol = container.querySelector(`text:contains("${planet.planet}")`)
         // Check that the planet is rendered (we'll look for the degree markers instead)
         expect(container.textContent).toContain(`${Math.round(planet.degree)}°`)
       })

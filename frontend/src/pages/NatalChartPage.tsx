@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import * as d3 from 'd3'
+// D3 removed - using manual SVG creation instead
 import { Calendar, Clock, MapPin, Star, Download, Info } from 'lucide-react'
 import { astrologyApi } from '../services/api'
 
@@ -25,7 +25,6 @@ interface NatalChartData {
 }
 
 export default function NatalChartPage() {
-  const [chartData, setChartData] = useState<NatalChartData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
@@ -33,8 +32,7 @@ export default function NatalChartPage() {
     birthTime: '',
     birthPlace: ''
   })
-  
-  const svgRef = useRef<SVGSVGElement>(null)
+
 
   const planets: Planet[] = [
     { name: 'Sun', symbol: '☉', degree: 45, sign: 'Aries', house: 1, color: '#FFD700' },
@@ -64,137 +62,162 @@ export default function NatalChartPage() {
     { name: 'Pisces', symbol: '♓', degrees: 330 }
   ]
 
-  useEffect(() => {
-    if (svgRef.current) {
-      drawNatalChart()
-    }
-  }, [])
+  // Chart is now rendered directly in JSX
 
-  const drawNatalChart = () => {
-    const svg = d3.select(svgRef.current)
-    svg.selectAll("*").remove()
+  const createChartSVG = () => {
+    const width = 400;
+    const height = 400;
+    const radius = 180;
+    const center = { x: width / 2, y: height / 2 };
 
-    const width = 400
-    const height = 400
-    const radius = 180
-    const center = { x: width / 2, y: height / 2 }
-
-    svg.attr('width', width).attr('height', height)
+    // Create SVG elements programmatically
+    const svgElements = [];
 
     // Outer circle (zodiac)
-    svg.append('circle')
-      .attr('cx', center.x)
-      .attr('cy', center.y)
-      .attr('r', radius)
-      .attr('fill', 'none')
-      .attr('stroke', '#fbbf24')
-      .attr('stroke-width', 2)
+    svgElements.push(
+      <circle
+        key="outer-circle"
+        cx={center.x}
+        cy={center.y}
+        r={radius}
+        fill="none"
+        stroke="#fbbf24"
+        strokeWidth={2}
+      />
+    );
 
     // Inner circle (houses)
-    svg.append('circle')
-      .attr('cx', center.x)
-      .attr('cy', center.y)
-      .attr('r', radius * 0.7)
-      .attr('fill', 'none')
-      .attr('stroke', '#fbbf24')
-      .attr('stroke-width', 1)
-      .attr('opacity', 0.5)
+    svgElements.push(
+      <circle
+        key="inner-circle"
+        cx={center.x}
+        cy={center.y}
+        r={radius * 0.7}
+        fill="none"
+        stroke="#fbbf24"
+        strokeWidth={1}
+        opacity={0.5}
+      />
+    );
 
     // Zodiac divisions
     for (let i = 0; i < 12; i++) {
-      const angle = (i * 30 - 90) * (Math.PI / 180)
-      const x1 = center.x + Math.cos(angle) * radius * 0.7
-      const y1 = center.y + Math.sin(angle) * radius * 0.7
-      const x2 = center.x + Math.cos(angle) * radius
-      const y2 = center.y + Math.sin(angle) * radius
+      const angle = (i * 30 - 90) * (Math.PI / 180);
+      const x1 = center.x + Math.cos(angle) * radius * 0.7;
+      const y1 = center.y + Math.sin(angle) * radius * 0.7;
+      const x2 = center.x + Math.cos(angle) * radius;
+      const y2 = center.y + Math.sin(angle) * radius;
 
-      svg.append('line')
-        .attr('x1', x1)
-        .attr('y1', y1)
-        .attr('x2', x2)
-        .attr('y2', y2)
-        .attr('stroke', '#fbbf24')
-        .attr('stroke-width', 1)
-        .attr('opacity', 0.3)
+      svgElements.push(
+        <line
+          key={`division-${i}`}
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke="#fbbf24"
+          strokeWidth={1}
+          opacity={0.3}
+        />
+      );
     }
 
     // Zodiac signs
-    zodiacSigns.forEach((sign, i) => {
-      const angle = (sign.degrees + 15 - 90) * (Math.PI / 180)
-      const x = center.x + Math.cos(angle) * radius * 0.85
-      const y = center.y + Math.sin(angle) * radius * 0.85
+    zodiacSigns.forEach((sign, index) => {
+      const angle = (sign.degrees + 15 - 90) * (Math.PI / 180);
+      const x = center.x + Math.cos(angle) * radius * 0.85;
+      const y = center.y + Math.sin(angle) * radius * 0.85;
 
-      svg.append('text')
-        .attr('x', x)
-        .attr('y', y)
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('font-size', '18px')
-        .attr('fill', '#fbbf24')
-        .attr('opacity', 0.8)
-        .text(sign.symbol)
-    })
+      svgElements.push(
+        <text
+          key={`zodiac-${index}`}
+          x={x}
+          y={y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="18px"
+          fill="#fbbf24"
+          opacity={0.8}
+        >
+          {sign.symbol}
+        </text>
+      );
+    });
 
     // House numbers
     for (let i = 1; i <= 12; i++) {
-      const angle = ((i - 1) * 30 + 15 - 90) * (Math.PI / 180)
-      const x = center.x + Math.cos(angle) * radius * 0.55
-      const y = center.y + Math.sin(angle) * radius * 0.55
+      const angle = ((i - 1) * 30 + 15 - 90) * (Math.PI / 180);
+      const x = center.x + Math.cos(angle) * radius * 0.55;
+      const y = center.y + Math.sin(angle) * radius * 0.55;
 
-      svg.append('text')
-        .attr('x', x)
-        .attr('y', y)
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('font-size', '12px')
-        .attr('fill', '#e5e7eb')
-        .attr('opacity', 0.6)
-        .text(i.toString())
+      svgElements.push(
+        <text
+          key={`house-${i}`}
+          x={x}
+          y={y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="12px"
+          fill="#e5e7eb"
+          opacity={0.6}
+        >
+          {i}
+        </text>
+      );
     }
 
     // Planets
-    planets.forEach((planet, i) => {
-      const angle = (planet.degree - 90) * (Math.PI / 180)
-      const x = center.x + Math.cos(angle) * radius * 0.9
-      const y = center.y + Math.sin(angle) * radius * 0.9
+    planets.forEach((planet, index) => {
+      const angle = (planet.degree - 90) * (Math.PI / 180);
+      const x = center.x + Math.cos(angle) * radius * 0.9;
+      const y = center.y + Math.sin(angle) * radius * 0.9;
 
-      // Planet circle
-      svg.append('circle')
-        .attr('cx', x)
-        .attr('cy', y)
-        .attr('r', 8)
-        .attr('fill', planet.color)
-        .attr('stroke', '#1e1b4b')
-        .attr('stroke-width', 2)
-
-      // Planet symbol
-      svg.append('text')
-        .attr('x', x)
-        .attr('y', y)
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('font-size', '12px')
-        .attr('fill', '#1e1b4b')
-        .attr('font-weight', 'bold')
-        .text(planet.symbol)
-
-      // Connection line to center
-      svg.append('line')
-        .attr('x1', center.x)
-        .attr('y1', center.y)
-        .attr('x2', x)
-        .attr('y2', y)
-        .attr('stroke', planet.color)
-        .attr('stroke-width', 1)
-        .attr('opacity', 0.3)
-    })
+      svgElements.push(
+        <g key={`planet-${index}`}>
+          <circle
+            cx={x}
+            cy={y}
+            r={8}
+            fill={planet.color}
+            stroke="#1e1b4b"
+            strokeWidth={2}
+          />
+          <text
+            x={x}
+            y={y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="12px"
+            fill="#1e1b4b"
+            fontWeight="bold"
+          >
+            {planet.symbol}
+          </text>
+          <line
+            x1={center.x}
+            y1={center.y}
+            x2={x}
+            y2={y}
+            stroke={planet.color}
+            strokeWidth={1}
+            opacity={0.3}
+          />
+        </g>
+      );
+    });
 
     // Center point
-    svg.append('circle')
-      .attr('cx', center.x)
-      .attr('cy', center.y)
-      .attr('r', 3)
-      .attr('fill', '#fbbf24')
+    svgElements.push(
+      <circle
+        key="center-point"
+        cx={center.x}
+        cy={center.y}
+        r={3}
+        fill="#fbbf24"
+      />
+    );
+
+    return svgElements;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -208,7 +231,7 @@ export default function NatalChartPage() {
         time: formData.birthTime,
         location: formData.birthPlace
       })
-      setChartData(data)
+      console.log('Chart data received:', data)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Ошибка получения натальной карты')
     } finally {
@@ -358,9 +381,12 @@ export default function NatalChartPage() {
 
             <div className="flex justify-center">
               <svg
-                ref={svgRef}
+                width={400}
+                height={400}
                 className="border border-mystical-gold/20 rounded-lg bg-dark-300/30"
-              />
+              >
+                {createChartSVG()}
+              </svg>
             </div>
           </div>
         </motion.div>
