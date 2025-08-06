@@ -263,10 +263,11 @@ class TestYandexGPTClient:
     @pytest.mark.asyncio
     async def test_generate_text_timeout_error(self):
         """Тест обработки таймаута."""
-        mock_session = AsyncMock()
-        mock_session.post.side_effect = ClientTimeout()
 
-        self.client._get_session = AsyncMock(return_value=mock_session)
+        async def mock_get_session():
+            raise ClientTimeout()
+
+        self.client._get_session = mock_get_session
 
         result = await self.client.generate_text(prompt="Тест таймаута")
         assert result is None
@@ -274,10 +275,11 @@ class TestYandexGPTClient:
     @pytest.mark.asyncio
     async def test_generate_text_client_error(self):
         """Тест обработки клиентской ошибки."""
-        mock_session = AsyncMock()
-        mock_session.post.side_effect = ClientError("Connection failed")
 
-        self.client._get_session = AsyncMock(return_value=mock_session)
+        async def mock_get_session():
+            raise ClientError("Connection failed")
+
+        self.client._get_session = mock_get_session
 
         result = await self.client.generate_text(prompt="Тест клиентской ошибки")
         assert result is None
@@ -285,10 +287,11 @@ class TestYandexGPTClient:
     @pytest.mark.asyncio
     async def test_generate_text_general_exception(self):
         """Тест обработки общих исключений."""
-        mock_session = AsyncMock()
-        mock_session.post.side_effect = Exception("Unexpected error")
 
-        self.client._get_session = AsyncMock(return_value=mock_session)
+        async def mock_get_session():
+            raise Exception("Unexpected error")
+
+        self.client._get_session = mock_get_session
 
         result = await self.client.generate_text(prompt="Тест общего исключения")
         assert result is None

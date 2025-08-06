@@ -32,11 +32,11 @@ from app.services.personalization_service import (
 from app.services.ml_analytics_service import ChurnPredictionModel, EngagementOptimizer
 
 
-@pytest.mark.asyncio
 @pytest.mark.unit
 class TestCollaborativeFiltering:
     """Tests for collaborative filtering algorithm."""
 
+    @pytest.mark.asyncio
     async def test_find_similar_users_empty_db(self, db_session: AsyncSession):
         """Test similar users search with empty database."""
         collaborative = CollaborativeFiltering(db_session)
@@ -46,6 +46,7 @@ class TestCollaborativeFiltering:
 
         assert similar_users == []
 
+    @pytest.mark.asyncio
     async def test_find_similar_users_with_data(self, db_session: AsyncSession):
         """Test similar users search with sample data."""
         collaborative = CollaborativeFiltering(db_session)
@@ -319,11 +320,11 @@ class TestDynamicHoroscopeGenerator:
         assert situation["emotional_state"] in ["positive", "neutral", "negative"]
 
 
-@pytest.mark.asyncio
 @pytest.mark.unit
 class TestInterestProfilingSystem:
     """Tests for interest profiling system."""
 
+    @pytest.mark.asyncio
     async def test_update_user_profile_no_interactions(self, db_session: AsyncSession):
         """Test profile update with no interactions."""
         profiler = InterestProfilingSystem(db_session)
@@ -333,6 +334,7 @@ class TestInterestProfilingSystem:
 
         assert interests == {}
 
+    @pytest.mark.asyncio
     async def test_update_user_profile_with_interactions(
         self, db_session: AsyncSession
     ):
@@ -392,11 +394,11 @@ class TestInterestProfilingSystem:
         assert interest == "health"
 
 
-@pytest.mark.asyncio
 @pytest.mark.unit
 class TestCommunicationStyleAdapter:
     """Tests for communication style adaptation."""
 
+    @pytest.mark.asyncio
     async def test_adapt_content_style_no_preferences(self, db_session: AsyncSession):
         """Test style adaptation without user preferences."""
         adapter = CommunicationStyleAdapter(db_session)
@@ -409,6 +411,7 @@ class TestCommunicationStyleAdapter:
         # Should return original content if no preferences
         assert adapted == content
 
+    @pytest.mark.asyncio
     async def test_adapt_content_style_with_preferences(self, db_session: AsyncSession):
         """Test style adaptation with user preferences."""
         adapter = CommunicationStyleAdapter(db_session)

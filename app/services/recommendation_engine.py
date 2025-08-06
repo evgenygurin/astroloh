@@ -48,7 +48,7 @@ class CollaborativeFiltering:
         # Получаем данные текущего пользователя
         result = await self.db.execute(
             select(User, UserPreference)
-            .outerjoin(UserPreference)
+            .outerjoin(UserPreference, UserPreference.user_id == User.id)
             .where(User.id == user_id)
         )
         current_user_data = result.first()
@@ -61,9 +61,8 @@ class CollaborativeFiltering:
         # Получаем всех других пользователей с их предпочтениями
         result = await self.db.execute(
             select(User, UserPreference)
-            .outerjoin(UserPreference)
+            .outerjoin(UserPreference, UserPreference.user_id == User.id)
             .where(User.id != user_id)
-            .options(selectinload(User.user_interactions))
         )
         other_users = result.all()
 
@@ -89,31 +88,42 @@ class CollaborativeFiltering:
     ) -> float:
         """Вычисляет схожесть между двумя пользователями."""
         similarity_score = 0.0
-        factors = 0
+        total_weight = 0.0
 
-        # Схожесть по знаку зодиака
+        # Схожесть по знаку зодиака (вес 0.3)
         if user1.zodiac_sign and user2.zodiac_sign:
             if user1.zodiac_sign == user2.zodiac_sign:
                 similarity_score += 0.3
-            factors += 1
+            total_weight += 0.3
 
-        # Схожесть по полу
+        # Схожесть по полу (вес 0.1)
         if user1.gender and user2.gender:
             if user1.gender == user2.gender:
                 similarity_score += 0.1
-            factors += 1
+            total_weight += 0.1
 
-        # Схожесть по предпочтениям
+        # Схожесть по предпочтениям (общий вес 0.6)
         if prefs1 and prefs2:
-            if prefs1.communication_style == prefs2.communication_style:
-                similarity_score += 0.2
-            if prefs1.complexity_level == prefs2.complexity_level:
-                similarity_score += 0.2
-            if prefs1.cultural_context == prefs2.cultural_context:
-                similarity_score += 0.2
-            factors += 3
+            # Стиль общения (вес 0.2)
+            if prefs1.communication_style and prefs2.communication_style:
+                if prefs1.communication_style == prefs2.communication_style:
+                    similarity_score += 0.2
+                total_weight += 0.2
 
-        return similarity_score / factors if factors > 0 else 0.0
+            # Уровень сложности (вес 0.2)
+            if prefs1.complexity_level and prefs2.complexity_level:
+                if prefs1.complexity_level == prefs2.complexity_level:
+                    similarity_score += 0.2
+                total_weight += 0.2
+
+            # Культурный контекст (вес 0.2)
+            if prefs1.cultural_context and prefs2.cultural_context:
+                if prefs1.cultural_context == prefs2.cultural_context:
+                    similarity_score += 0.2
+                total_weight += 0.2
+
+        # Возвращаем нормализованный результат
+        return similarity_score / total_weight if total_weight > 0 else 0.0
 
 
 class ContentBasedFiltering:
