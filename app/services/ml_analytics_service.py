@@ -3,12 +3,10 @@ Machine Learning analytics service for user behavior analysis and predictions.
 """
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
-import numpy as np
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,8 +15,7 @@ from app.models.database import (
     UserInteraction, 
     UserPreference,
     UserSession,
-    HoroscopeRequest,
-    RecommendationMetrics
+    HoroscopeRequest
 )
 
 
@@ -147,7 +144,7 @@ class PreferenceLearningEngine:
         """Анализирует предпочтения по типам контента."""
         
         content_scores = {}
-        total_interactions = len(interactions)
+        len(interactions)
         
         for interaction in interactions:
             content_type = interaction.content_type
@@ -287,7 +284,7 @@ class PreferenceLearningEngine:
         
         # Метрики вовлеченности
         total_interactions = len(interactions)
-        positive_ratings = sum(
+        sum(
             1 for interaction in interactions
             if interaction.rating and interaction.rating >= 4
         )

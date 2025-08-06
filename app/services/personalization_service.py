@@ -3,18 +3,16 @@ Personalization service for dynamic content generation and style adaptation.
 """
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.database import User, UserPreference, UserInteraction, Recommendation
+from app.models.database import User, UserPreference, UserInteraction
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.horoscope_generator import HoroscopeGenerator
-from app.services.user_manager import UserManager
 
 
 class DynamicHoroscopeGenerator:
@@ -544,11 +542,6 @@ class CommunicationStyleAdapter:
     def _make_friendly(self, content: str) -> str:
         """Делает контент более дружелюбным."""
         
-        friendly_additions = [
-            "😊 ",
-            "✨ ",
-            "🌟 "
-        ]
         
         friendly_phrases = [
             "Дорогой друг, ",

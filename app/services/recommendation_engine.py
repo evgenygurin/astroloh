@@ -8,7 +8,6 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
 from sqlalchemy import desc, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -20,8 +19,7 @@ from app.models.database import (
     Recommendation,
     UserCluster,
     ABTestGroup,
-    RecommendationMetrics,
-    HoroscopeRequest
+    RecommendationMetrics
 )
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.user_manager import UserManager
@@ -66,7 +64,7 @@ class CollaborativeFiltering:
             select(User, UserPreference)
             .outerjoin(UserPreference)
             .where(User.id != user_id)
-            .options(selectinload(User.interactions))
+            .options(selectinload(User.user_interactions))
         )
         other_users = result.all()
         
@@ -686,8 +684,8 @@ class UserClusteringManager:
         # Получаем всех активных пользователей
         result = await self.db.execute(
             select(User)
-            .options(selectinload(User.interactions))
-            .where(User.data_consent == True)
+            .options(selectinload(User.user_interactions))
+            .where(User.data_consent)
         )
         users = result.scalars().all()
         
@@ -784,16 +782,16 @@ class UserClusteringManager:
         """Извлекает поведенческие признаки пользователя."""
         
         # Анализируем взаимодействия пользователя
-        total_interactions = len(user.interactions)
+        total_interactions = len(user.user_interactions)
         positive_interactions = sum(
-            1 for interaction in user.interactions
+            1 for interaction in user.user_interactions
             if interaction.rating and interaction.rating >= 4
         )
         
         avg_session_duration = 0
-        if user.interactions:
+        if user.user_interactions:
             durations = [
-                interaction.session_duration for interaction in user.interactions
+                interaction.session_duration for interaction in user.user_interactions
                 if interaction.session_duration
             ]
             if durations:
@@ -849,7 +847,7 @@ class ABTestManager:
                 and_(
                     ABTestGroup.user_id == user_id,
                     ABTestGroup.test_name == test_name,
-                    ABTestGroup.is_active == True
+                    ABTestGroup.is_active
                 )
             )
         )

@@ -105,6 +105,21 @@ class User(Base):
     horoscope_requests = relationship(
         "HoroscopeRequest", back_populates="user", cascade="all, delete-orphan"
     )
+    user_interactions = relationship(
+        "UserInteraction", back_populates="user", cascade="all, delete-orphan"
+    )
+    user_recommendations = relationship(
+        "Recommendation", back_populates="user", cascade="all, delete-orphan"
+    )
+    user_preferences = relationship(
+        "UserPreference", back_populates="user", cascade="all, delete-orphan"
+    )
+    user_clusters = relationship(
+        "UserCluster", back_populates="user", cascade="all, delete-orphan"
+    )
+    user_ab_tests = relationship(
+        "ABTestGroup", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class UserSession(Base):
@@ -257,12 +272,15 @@ class UserPreference(Base):
     content_length_preference = Column(String(20), default="medium")  # short, medium, long
     detail_level = Column(String(20), default="standard")  # brief, standard, detailed
     
+    # Изученные предпочтения (машинное обучение)
+    preferences = Column(JSON, nullable=True)  # Хранит изученные предпочтения из ML
+    
     # Метаданные
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Связи
-    user = relationship("User", backref="preferences")
+    user = relationship("User", back_populates="user_preferences")
 
 
 class UserInteraction(Base):
@@ -292,7 +310,7 @@ class UserInteraction(Base):
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Связи
-    user = relationship("User", backref="interactions")
+    user = relationship("User", back_populates="user_interactions")
 
 
 class Recommendation(Base):
@@ -331,7 +349,7 @@ class Recommendation(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Связи
-    user = relationship("User", backref="recommendations")
+    user = relationship("User", back_populates="user_recommendations")
 
 
 class UserCluster(Base):
@@ -358,7 +376,7 @@ class UserCluster(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Связи
-    user = relationship("User", backref="clusters")
+    user = relationship("User", back_populates="user_clusters")
 
 
 class ABTestGroup(Base):
@@ -387,7 +405,7 @@ class ABTestGroup(Base):
     assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Связи
-    user = relationship("User", backref="ab_tests")
+    user = relationship("User", back_populates="user_ab_tests")
 
 
 class RecommendationMetrics(Base):

@@ -1,10 +1,8 @@
 """
 Comprehensive tests for the recommendation and personalization system.
 """
-import json
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Any
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,9 +12,7 @@ from app.models.database import (
     UserPreference, 
     UserInteraction, 
     Recommendation,
-    UserCluster,
-    ABTestGroup,
-    RecommendationMetrics
+    ABTestGroup
 )
 from app.services.recommendation_engine import (
     CollaborativeFiltering,
@@ -30,15 +26,11 @@ from app.services.recommendation_engine import (
 from app.services.personalization_service import (
     DynamicHoroscopeGenerator,
     InterestProfilingSystem,
-    CommunicationStyleAdapter,
-    ComplexityLevelAdjuster,
-    CulturalSensitivityManager
+    CommunicationStyleAdapter
 )
 from app.services.ml_analytics_service import (
-    PreferenceLearningEngine,
     ChurnPredictionModel,
-    EngagementOptimizer,
-    AnomalyDetectionSystem
+    EngagementOptimizer
 )
 
 

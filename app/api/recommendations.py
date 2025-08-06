@@ -3,7 +3,6 @@ API endpoints for recommendation and personalization system.
 """
 import logging
 from typing import Any, Dict, List, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
