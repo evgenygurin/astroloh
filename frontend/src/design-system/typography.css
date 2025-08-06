@@ -1,0 +1,394 @@
+/**
+ * Astroloh Design System - Typography
+ * Mystical typography system with astrological character
+ */
+
+/* === FONT IMPORTS === */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* === BASE TYPOGRAPHY === */
+
+.astro-text {
+  font-family: var(--font-body);
+  color: var(--color-mystical-silver);
+  line-height: var(--line-height-normal);
+}
+
+/* === HEADINGS === */
+
+.astro-heading {
+  font-family: var(--font-mystical);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-mystical-gold);
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.025em;
+}
+
+.astro-heading--1 {
+  font-size: var(--font-size-6xl);
+  font-weight: var(--font-weight-bold);
+  background: var(--gradient-golden);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.astro-heading--2 {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.astro-heading--3 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.astro-heading--4 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-medium);
+}
+
+.astro-heading--5 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+}
+
+.astro-heading--6 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* === BODY TEXT === */
+
+.astro-body {
+  font-family: var(--font-body);
+  color: var(--color-mystical-silver);
+}
+
+.astro-body--large {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+}
+
+.astro-body--base {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
+
+.astro-body--small {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.astro-body--xs {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+}
+
+/* === SPECIAL TEXT STYLES === */
+
+.astro-text--mystical {
+  font-family: var(--font-mystical);
+  color: var(--color-mystical-gold);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.025em;
+}
+
+.astro-text--secondary {
+  color: rgba(229, 231, 235, 0.7);
+}
+
+.astro-text--muted {
+  color: rgba(229, 231, 235, 0.5);
+}
+
+.astro-text--accent {
+  color: var(--color-mystical-gold);
+}
+
+.astro-text--purple {
+  color: var(--color-mystical-purple);
+}
+
+.astro-text--success {
+  color: var(--color-success);
+}
+
+.astro-text--warning {
+  color: var(--color-warning);
+}
+
+.astro-text--error {
+  color: var(--color-error);
+}
+
+/* === SPECIAL EFFECTS === */
+
+.astro-text--glow {
+  text-shadow: 0 0 10px currentColor;
+}
+
+.astro-text--gradient {
+  background: var(--gradient-golden);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.astro-text--shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-mystical-silver) 25%,
+    var(--color-mystical-gold) 50%,
+    var(--color-mystical-silver) 75%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 3s ease-in-out infinite;
+}
+
+/* === ASTROLOGICAL SYMBOLS === */
+
+.astro-symbol {
+  font-family: var(--font-mystical);
+  color: var(--color-mystical-gold);
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.astro-symbol--planet {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gradient-golden);
+  color: var(--color-dark-900);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  box-shadow: var(--shadow-gold-glow);
+}
+
+.astro-symbol--zodiac {
+  font-size: var(--font-size-2xl);
+  opacity: 0.8;
+  transition: all var(--duration-300) var(--ease-in-out);
+}
+
+.astro-symbol--zodiac:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  text-shadow: 0 0 10px currentColor;
+}
+
+.astro-symbol--house {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-mystical-purple);
+}
+
+/* === QUOTES AND CALLOUTS === */
+
+.astro-quote {
+  font-family: var(--font-mystical);
+  font-size: var(--font-size-lg);
+  font-style: italic;
+  color: var(--color-mystical-gold);
+  text-align: center;
+  position: relative;
+  padding: var(--space-6) var(--space-8);
+  margin: var(--space-6) 0;
+}
+
+.astro-quote::before,
+.astro-quote::after {
+  content: '"';
+  font-size: var(--font-size-4xl);
+  color: var(--color-mystical-purple);
+  position: absolute;
+  opacity: 0.5;
+}
+
+.astro-quote::before {
+  top: 0;
+  left: var(--space-2);
+}
+
+.astro-quote::after {
+  bottom: -var(--space-4);
+  right: var(--space-2);
+}
+
+.astro-callout {
+  background: rgba(99, 102, 241, 0.1);
+  border-left: 4px solid var(--color-mystical-purple);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-4) var(--space-6);
+  margin: var(--space-4) 0;
+}
+
+.astro-callout__title {
+  font-family: var(--font-mystical);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-mystical-purple);
+  margin-bottom: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.astro-callout__content {
+  font-size: var(--font-size-sm);
+  color: var(--color-mystical-silver);
+  line-height: var(--line-height-relaxed);
+}
+
+/* === LISTS === */
+
+.astro-list {
+  margin: var(--space-4) 0;
+  padding-left: var(--space-6);
+}
+
+.astro-list--unordered {
+  list-style: none;
+}
+
+.astro-list--unordered li::before {
+  content: '✦';
+  color: var(--color-mystical-gold);
+  font-size: var(--font-size-sm);
+  margin-right: var(--space-2);
+  margin-left: -var(--space-4);
+}
+
+.astro-list--ordered {
+  list-style: none;
+  counter-reset: astro-counter;
+}
+
+.astro-list--ordered li {
+  counter-increment: astro-counter;
+  position: relative;
+}
+
+.astro-list--ordered li::before {
+  content: counter(astro-counter);
+  position: absolute;
+  left: -var(--space-6);
+  width: var(--space-5);
+  height: var(--space-5);
+  background: var(--gradient-golden);
+  color: var(--color-dark-900);
+  border-radius: 50%;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.astro-list li {
+  margin-bottom: var(--space-2);
+  color: var(--color-mystical-silver);
+  line-height: var(--line-height-relaxed);
+}
+
+/* === CODE AND MONOSPACE === */
+
+.astro-code {
+  font-family: var(--font-mono);
+  background: rgba(17, 17, 27, 0.8);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-mystical-gold);
+}
+
+.astro-code-block {
+  font-family: var(--font-mono);
+  background: rgba(17, 17, 27, 0.9);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-4);
+  margin: var(--space-4) 0;
+  overflow-x: auto;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-mystical-silver);
+}
+
+/* === RESPONSIVE TYPOGRAPHY === */
+
+/* Mobile */
+@media (max-width: 640px) {
+  .astro-heading--1 {
+    font-size: var(--font-size-4xl);
+  }
+  
+  .astro-heading--2 {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .astro-heading--3 {
+    font-size: var(--font-size-xl);
+  }
+  
+  .astro-quote {
+    font-size: var(--font-size-base);
+    padding: var(--space-4) var(--space-6);
+  }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .astro-heading--1 {
+    font-size: var(--font-size-5xl);
+  }
+}
+
+/* === ANIMATIONS === */
+
+@keyframes text-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* === UTILITY CLASSES === */
+
+.astro-text--center { text-align: center; }
+.astro-text--left { text-align: left; }
+.astro-text--right { text-align: right; }
+.astro-text--justify { text-align: justify; }
+
+.astro-text--uppercase { text-transform: uppercase; }
+.astro-text--lowercase { text-transform: lowercase; }
+.astro-text--capitalize { text-transform: capitalize; }
+
+.astro-text--thin { font-weight: var(--font-weight-thin); }
+.astro-text--light { font-weight: var(--font-weight-light); }
+.astro-text--normal { font-weight: var(--font-weight-normal); }
+.astro-text--medium { font-weight: var(--font-weight-medium); }
+.astro-text--semibold { font-weight: var(--font-weight-semibold); }
+.astro-text--bold { font-weight: var(--font-weight-bold); }
+.astro-text--extrabold { font-weight: var(--font-weight-extrabold); }
+
+.astro-text--italic { font-style: italic; }
+.astro-text--not-italic { font-style: normal; }
+
+.astro-text--underline { text-decoration: underline; }
+.astro-text--no-underline { text-decoration: none; }
+
+.astro-text--truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
