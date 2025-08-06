@@ -1,26 +1,114 @@
+# Git
 .git
 .gitignore
-README.md
-Dockerfile
+.gitattributes
+
+# Documentation
+*.md
+README*
+docs/
+CHANGELOG*
+LICENSE*
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
 .dockerignore
-docker-compose.yml
-.env
-.env.example
-.pytest_cache
-__pycache__
-*.pyc
-*.pyo
-*.pyd
+
+# Environment files
+.env*
+!.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 .Python
-pip-log.txt
-pip-delete-this-directory.txt
-.tox
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Testing
+.pytest_cache/
 .coverage
 .coverage.*
-.cache
-nosetests.xml
+.tox/
+htmlcov/
+.nox/
 coverage.xml
 *.cover
+.hypothesis/
+nosetests.xml
+tests/
+
+# Database files
+*.db
+*.sqlite3
+astroloh.db
+
+# Logs
 *.log
-.mypy_cache
-.ruff_cache
+logs/
+
+# Cache
+.cache/
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# Frontend (separate build)
+frontend/
+node_modules/
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+pip-log.txt
+pip-delete-this-directory.txt
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Large data files
+*.bsp
+de*.eph
+
+# Backup files
+*.bak
+*.backup
+*.orig

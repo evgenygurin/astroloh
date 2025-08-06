@@ -18,9 +18,8 @@ from app.core.database import get_db_session
 from app.core.config import settings
 from app.models.database import User
 from app.utils.validators import PasswordValidator
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

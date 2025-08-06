@@ -9,24 +9,29 @@ Astroloh is a voice skill for Yandex Alice that provides personalized astrologic
 ## Development Environment Setup
 
 ### Installation
+
 For development work, use the appropriate installation command based on your system:
 
 **Linux/Windows (full installation):**
+
 ```bash
 pip install -e ".[full,dev]"
 ```
 
 **macOS (without C library compilation):**
+
 ```bash
 pip install -e ".[macos,dev]"
 ```
 
 **Minimal installation:**
+
 ```bash
 pip install -e ".[minimal,dev]"
 ```
 
 ### Running the Application
+
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -34,26 +39,33 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ## Code Quality and Testing
 
 ### Formatting
+
 Always run code formatting before committing:
+
 ```bash
 black app/ tests/
 isort app/ tests/
 ```
 
 ### Linting
+
 Run linting to ensure code quality:
+
 ```bash
 flake8 app/ tests/
 mypy app/
 ```
 
 ### Testing
+
 Run the full test suite:
+
 ```bash
 pytest
 ```
 
 The project maintains 80% test coverage minimum. Tests are organized by categories:
+
 - Unit tests: `pytest -m unit`
 - Integration tests: `pytest -m integration`
 - Performance tests: `pytest -m performance`
@@ -95,6 +107,7 @@ astroloh/
 ## Astronomical Libraries
 
 The project supports multiple astronomical calculation libraries with automatic fallbacks:
+
 - **pyswisseph**: Primary library (high accuracy, requires C compilation)
 - **skyfield**: Alternative (good accuracy, pure Python)
 - **astropy**: Professional astronomy (full-featured)
