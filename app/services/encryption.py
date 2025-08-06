@@ -16,6 +16,11 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from app.core.config import settings
 
 
+class EncryptionError(Exception):
+    """Exception raised when encryption/decryption operations fail."""
+    pass
+
+
 class EncryptionService:
     """
     Сервис шифрования для защиты персональных данных пользователей.
@@ -51,7 +56,9 @@ class EncryptionService:
         Returns:
             Производный ключ для шифрования
         """
-        salt = b"astroloh_salt_2024"  # Фиксированная соль для воспроизводимости
+        # Use configurable salt or generate from settings
+        salt_str = getattr(settings, 'ENCRYPTION_SALT', 'astroloh_salt_2024')
+        salt = salt_str.encode() if isinstance(salt_str, str) else salt_str
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,

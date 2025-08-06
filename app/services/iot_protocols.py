@@ -23,6 +23,71 @@ except ImportError:
     logger.warning("CoAP client not available. Install with: pip install aiocoap")
 
 
+class MQTTConnectionPool:
+    """Connection pool for MQTT clients."""
+    
+    def __init__(self, max_connections: int = 10):
+        self.max_connections = max_connections
+        self.available_connections: List['MQTTManager'] = []
+        self.active_connections: Dict[str, 'MQTTManager'] = {}
+        self._lock = asyncio.Lock()
+    
+    async def get_connection(
+        self,
+        broker_host: str,
+        broker_port: int = 1883,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        use_ssl: bool = False,
+    ) -> 'MQTTManager':
+        """Get or create an MQTT connection."""
+        connection_key = f"{broker_host}:{broker_port}:{username}:{use_ssl}"
+        
+        async with self._lock:
+            # Check if we have an active connection
+            if connection_key in self.active_connections:
+                connection = self.active_connections[connection_key]
+                if connection.connected:
+                    return connection
+            
+            # Try to reuse an available connection
+            if self.available_connections:
+                connection = self.available_connections.pop()
+                connection.reconfigure(broker_host, broker_port, username, password, use_ssl)
+            else:
+                # Create new connection if under limit
+                if len(self.active_connections) < self.max_connections:
+                    connection = MQTTManager(broker_host, broker_port, username, password, use_ssl)
+                else:
+                    raise ConnectionError("Maximum MQTT connections reached")
+            
+            # Connect and add to active connections
+            if await connection.connect():
+                self.active_connections[connection_key] = connection
+                return connection
+            else:
+                raise ConnectionError("Failed to connect to MQTT broker")
+    
+    async def release_connection(self, connection: 'MQTTManager'):
+        """Release a connection back to the pool."""
+        async with self._lock:
+            # Find and remove from active connections
+            for key, active_conn in list(self.active_connections.items()):
+                if active_conn is connection:
+                    del self.active_connections[key]
+                    break
+            
+            # Add to available connections if under limit
+            if len(self.available_connections) < self.max_connections // 2:
+                self.available_connections.append(connection)
+            else:
+                await connection.disconnect()
+
+
+# Global connection pool instance
+mqtt_connection_pool = MQTTConnectionPool()
+
+
 class MQTTManager:
     """MQTT protocol manager for IoT device communication."""
 
@@ -47,6 +112,24 @@ class MQTTManager:
         self.connected = False
         self.subscriptions: Dict[str, Callable] = {}
         self.message_handlers: Dict[str, Callable] = {}
+        self.connection_retries = 0
+        self.max_retries = 3
+    
+    def reconfigure(
+        self,
+        broker_host: str,
+        broker_port: int,
+        username: Optional[str],
+        password: Optional[str],
+        use_ssl: bool,
+    ):
+        """Reconfigure connection parameters for connection reuse."""
+        self.broker_host = broker_host
+        self.broker_port = broker_port
+        self.username = username
+        self.password = password
+        self.use_ssl = use_ssl
+        self.connected = False
 
     async def connect(self) -> bool:
         """Connect to MQTT broker."""

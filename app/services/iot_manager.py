@@ -18,6 +18,7 @@ from app.models.iot_models import (
 )
 from app.services.encryption import EncryptionService
 from app.services.lunar_calendar import LunarCalendarService
+from app.services.cache_service import cache_service
 
 
 class IoTDeviceManager:
@@ -61,6 +62,9 @@ class IoTDeviceManager:
             await self.db.commit()
             await self.db.refresh(device)
 
+            # Invalidate user devices cache
+            await cache_service.invalidate_user_devices(user_id)
+            
             logger.info(f"Registered IoT device: {device.name} ({device.device_id})")
             return device
 
@@ -74,6 +78,13 @@ class IoTDeviceManager:
     ) -> List[IoTDevice]:
         """Get all devices for a user."""
         try:
+            # Try cache first (only for requests without type filter for simplicity)
+            if not device_type:
+                cached_devices = await cache_service.get_user_devices(user_id)
+                if cached_devices is not None:
+                    logger.debug(f"Retrieved {len(cached_devices)} devices from cache for user {user_id}")
+                    return [IoTDevice(**device_data) for device_data in cached_devices]
+            
             query = select(IoTDevice).where(IoTDevice.user_id == user_id)
             
             if device_type:
@@ -83,6 +94,7 @@ class IoTDeviceManager:
             devices = result.scalars().all()
 
             # Decrypt configurations for response
+            device_list = []
             for device in devices:
                 if device.configuration:
                     try:
@@ -93,8 +105,35 @@ class IoTDeviceManager:
                     except Exception as e:
                         logger.warning(f"Failed to decrypt device config: {e}")
                         device.configuration = {}
+                
+                device_list.append(device)
 
-            return list(devices)
+            # Cache the result if no type filter
+            if not device_type and device_list:
+                device_data_list = [
+                    {
+                        'id': d.id,
+                        'user_id': d.user_id,
+                        'device_id': d.device_id,
+                        'name': d.name,
+                        'device_type': d.device_type,
+                        'protocol': d.protocol,
+                        'manufacturer': d.manufacturer,
+                        'model': d.model,
+                        'status': d.status,
+                        'capabilities': d.capabilities,
+                        'configuration': d.configuration,
+                        'location': d.location,
+                        'room': d.room,
+                        'last_seen': d.last_seen.isoformat() if d.last_seen else None,
+                        'created_at': d.created_at.isoformat() if d.created_at else None,
+                    }
+                    for d in device_list
+                ]
+                await cache_service.set_user_devices(user_id, device_data_list)
+                logger.debug(f"Cached {len(device_list)} devices for user {user_id}")
+
+            return device_list
 
         except Exception as e:
             logger.error(f"Failed to get user devices: {e}")
@@ -137,6 +176,9 @@ class IoTDeviceManager:
             await self.db.commit()
             await self.db.refresh(device)
 
+            # Invalidate user devices cache
+            await cache_service.invalidate_user_devices(user_id)
+
             logger.info(f"Updated device: {device.name}")
             return device
 
@@ -146,17 +188,24 @@ class IoTDeviceManager:
             return None
 
     async def send_command(
-        self, device_id: str, command: DeviceCommand
+        self, device_id: str, command: DeviceCommand, user_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """Send command to IoT device."""
         try:
-            # Find device
-            query = select(IoTDevice).where(IoTDevice.device_id == device_id)
+            # Find device and verify user ownership if user_id provided
+            if user_id:
+                query = select(IoTDevice).where(
+                    and_(IoTDevice.device_id == device_id, IoTDevice.user_id == user_id)
+                )
+            else:
+                query = select(IoTDevice).where(IoTDevice.device_id == device_id)
+            
             result = await self.db.execute(query)
             device = result.scalar_one_or_none()
 
             if not device:
-                return {"success": False, "error": "Device not found"}
+                error_msg = "Device not found" if not user_id else "Device not found or access denied"
+                raise PermissionError(error_msg)
 
             if device.status != DeviceStatus.ONLINE.value:
                 return {"success": False, "error": "Device offline"}

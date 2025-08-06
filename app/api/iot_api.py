@@ -4,8 +4,10 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
+from pydantic import ValidationError
 
 from app.core.database import get_db
+from app.core.auth import get_current_user_id, get_optional_user_id
 from app.services.iot_manager import IoTDeviceManager
 from app.services.smart_lighting_service import SmartLightingService
 from app.services.smart_home_voice_integration import SmartHomeVoiceIntegration
@@ -101,7 +103,7 @@ async def get_analytics_service(
 @router.post("/devices", response_model=Dict[str, Any])
 async def register_device(
     device_data: IoTDeviceCreate,
-    user_id: int = Query(..., description="User ID"),
+    user_id: int = Depends(get_current_user_id),
     iot_manager: IoTDeviceManager = Depends(get_iot_manager)
 ):
     """Register a new IoT device."""
@@ -118,21 +120,45 @@ async def register_device(
                 "status": device.status,
             }
         }
+    except ValidationError as e:
+        logger.warning(f"Invalid device data: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid device data provided"
+        )
+    except ValueError as e:
+        logger.warning(f"Invalid device configuration: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid device configuration"
+        )
     except Exception as e:
         logger.error(f"Failed to register device: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error occurred"
+        )
 
 
 @router.get("/devices", response_model=List[IoTDeviceResponse])
 async def get_user_devices(
-    user_id: int = Query(..., description="User ID"),
+    user_id: int = Depends(get_current_user_id),
     device_type: Optional[str] = Query(None, description="Filter by device type"),
     iot_manager: IoTDeviceManager = Depends(get_iot_manager)
 ):
     """Get all devices for a user."""
     try:
         from app.models.iot_models import DeviceType
-        type_filter = DeviceType(device_type) if device_type else None
+        type_filter = None
+        if device_type:
+            try:
+                type_filter = DeviceType(device_type)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid device type: {device_type}"
+                )
+        
         devices = await iot_manager.get_user_devices(user_id, type_filter)
         
         return [
@@ -154,23 +180,31 @@ async def get_user_devices(
             )
             for device in devices
         ]
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to get user devices: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user devices"
+        )
 
 
 @router.put("/devices/{device_id}", response_model=Dict[str, Any])
 async def update_device(
     device_id: int = Path(..., description="Device ID"),
     update_data: IoTDeviceUpdate = ...,
-    user_id: int = Query(..., description="User ID"),
+    user_id: int = Depends(get_current_user_id),
     iot_manager: IoTDeviceManager = Depends(get_iot_manager)
 ):
     """Update device information."""
     try:
         device = await iot_manager.update_device(device_id, user_id, update_data)
         if not device:
-            raise HTTPException(status_code=404, detail="Device not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Device not found or access denied"
+            )
         
         return {
             "success": True,
@@ -183,24 +217,50 @@ async def update_device(
         }
     except HTTPException:
         raise
+    except ValidationError as e:
+        logger.warning(f"Invalid update data: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid update data provided"
+        )
     except Exception as e:
         logger.error(f"Failed to update device: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update device"
+        )
 
 
 @router.post("/devices/{device_id}/command", response_model=Dict[str, Any])
 async def send_device_command(
     device_id: str = Path(..., description="Device ID"),
     command: DeviceCommand = ...,
+    user_id: int = Depends(get_current_user_id),
     iot_manager: IoTDeviceManager = Depends(get_iot_manager)
 ):
     """Send command to IoT device."""
     try:
-        result = await iot_manager.send_command(device_id, command)
+        # Verify user owns the device before sending command
+        result = await iot_manager.send_command(device_id, command, user_id)
         return result
+    except ValueError as e:
+        logger.warning(f"Invalid command for device {device_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid device command"
+        )
+    except PermissionError as e:
+        logger.warning(f"Access denied for device {device_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied to device"
+        )
     except Exception as e:
         logger.error(f"Failed to send device command: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send device command"
+        )
 
 
 @router.get("/devices/{device_id}/capabilities", response_model=Dict[str, Any])
@@ -240,7 +300,7 @@ async def discover_devices(
 # Smart Lighting Endpoints
 @router.post("/lighting/lunar", response_model=Dict[str, Any])
 async def apply_lunar_lighting(
-    user_id: int = Query(..., description="User ID"),
+    user_id: int = Depends(get_current_user_id),
     room: Optional[str] = Query(None, description="Room name"),
     lighting_service: SmartLightingService = Depends(get_lighting_service)
 ):
@@ -248,25 +308,47 @@ async def apply_lunar_lighting(
     try:
         result = await lighting_service.apply_lunar_lighting(user_id, room)
         return result
+    except ValueError as e:
+        logger.warning(f"Invalid lighting configuration: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid lighting configuration"
+        )
     except Exception as e:
         logger.error(f"Failed to apply lunar lighting: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to apply lunar lighting"
+        )
 
 
 @router.post("/lighting/mood", response_model=Dict[str, Any])
 async def create_mood_lighting(
     mood: str = Query(..., description="Mood type"),
-    user_id: int = Query(..., description="User ID"),
+    user_id: int = Depends(get_current_user_id),
     zodiac_sign: Optional[str] = Query(None, description="Zodiac sign for personalization"),
     lighting_service: SmartLightingService = Depends(get_lighting_service)
 ):
     """Create mood lighting based on astrological profile."""
     try:
+        # Validate mood parameter
+        valid_moods = ["relaxed", "energetic", "romantic", "focused", "meditative"]
+        if mood not in valid_moods:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid mood. Must be one of: {', '.join(valid_moods)}"
+            )
+            
         result = await lighting_service.create_mood_lighting(user_id, mood, zodiac_sign)
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to create mood lighting: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create mood lighting"
+        )
 
 
 @router.post("/lighting/sunrise-sunset", response_model=Dict[str, Any])
@@ -304,8 +386,8 @@ async def get_lighting_state(
 # Voice Integration Endpoints
 @router.post("/voice/yandex", response_model=Dict[str, Any])
 async def handle_yandex_command(
-    command: str = Query(..., description="Voice command"),
-    user_id: int = Query(..., description="User ID"),
+    command: str = Query(..., description="Voice command", min_length=1, max_length=500),
+    user_id: int = Depends(get_current_user_id),
     parameters: Optional[Dict[str, Any]] = None,
     voice_service: SmartHomeVoiceIntegration = Depends(get_voice_integration)
 ):
@@ -315,9 +397,18 @@ async def handle_yandex_command(
             user_id, command, parameters or {}
         )
         return result
+    except ValueError as e:
+        logger.warning(f"Invalid voice command: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid voice command format"
+        )
     except Exception as e:
         logger.error(f"Failed to handle Yandex command: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process voice command"
+        )
 
 
 @router.post("/voice/google", response_model=Dict[str, Any])
@@ -421,7 +512,7 @@ async def get_sleep_recommendations(
 # Home Automation Endpoints
 @router.post("/automation", response_model=Dict[str, Any])
 async def create_automation(
-    user_id: int = Query(..., description="User ID"),
+    user_id: int = Depends(get_current_user_id),
     automation_data: AutomationCreate = ...,
     automation_service: HomeAutomationService = Depends(get_automation_service)
 ):
@@ -429,14 +520,23 @@ async def create_automation(
     try:
         result = await automation_service.create_automation(user_id, automation_data)
         return result
+    except ValidationError as e:
+        logger.warning(f"Invalid automation data: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid automation configuration"
+        )
     except Exception as e:
         logger.error(f"Failed to create automation: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create automation rule"
+        )
 
 
 @router.get("/automation", response_model=List[Dict[str, Any]])
 async def get_user_automations(
-    user_id: int = Query(..., description="User ID"),
+    user_id: int = Depends(get_current_user_id),
     automation_service: HomeAutomationService = Depends(get_automation_service)
 ):
     """Get all automation rules for a user."""
@@ -456,7 +556,10 @@ async def get_user_automations(
         ]
     except Exception as e:
         logger.error(f"Failed to get user automations: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve automation rules"
+        )
 
 
 @router.post("/automation/morning-ritual", response_model=Dict[str, Any])
@@ -495,8 +598,8 @@ async def create_lunar_phase_automation(
 # Analytics Endpoints
 @router.get("/analytics/energy", response_model=Dict[str, Any])
 async def analyze_energy_consumption(
-    user_id: int = Query(..., description="User ID"),
-    period_days: int = Query(30, description="Analysis period in days"),
+    user_id: int = Depends(get_current_user_id),
+    period_days: int = Query(30, description="Analysis period in days", ge=1, le=365),
     analytics_service: IoTAnalyticsService = Depends(get_analytics_service)
 ):
     """Analyze energy consumption patterns and correlations with lunar cycles."""
@@ -505,7 +608,10 @@ async def analyze_energy_consumption(
         return result
     except Exception as e:
         logger.error(f"Failed to analyze energy consumption: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to analyze energy consumption"
+        )
 
 
 @router.get("/analytics/wellness", response_model=Dict[str, Any])
