@@ -1,6 +1,7 @@
 """
 Конфигурация приложения.
 """
+
 import secrets
 from typing import List, Optional
 
@@ -15,7 +16,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    
+
     # API настройки
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Astroloh"
@@ -26,7 +27,7 @@ class Settings(BaseSettings):
     # Яндекс Диалоги
     YANDEX_SKILL_ID: Optional[str] = None
     YANDEX_OAUTH_TOKEN: Optional[str] = None
-    
+
     # Yandex GPT API
     YANDEX_API_KEY: Optional[str] = None
     YANDEX_FOLDER_ID: Optional[str] = None
@@ -37,13 +38,13 @@ class Settings(BaseSettings):
     # Секретные ключи
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     ENCRYPTION_KEY: str = ""
-    
+
     # CORS настройки
     CORS_ORIGINS: List[str] = ["*"]
 
     # Астрологические вычисления
     SWISS_EPHEMERIS_PATH: str = "/app/swisseph"
-    
+
     # AI настройки
     ENABLE_AI_GENERATION: bool = True
     AI_FALLBACK_ENABLED: bool = True
@@ -54,16 +55,16 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_fields(cls, values):
         """Validate fields, handling invalid values gracefully."""
-        if isinstance(values, dict) and 'DEBUG' in values:
-            debug_val = values['DEBUG']
+        if isinstance(values, dict) and "DEBUG" in values:
+            debug_val = values["DEBUG"]
             if isinstance(debug_val, str):
-                values['DEBUG'] = debug_val.lower() == 'true'
+                values["DEBUG"] = debug_val.lower() == "true"
             else:
-                values['DEBUG'] = bool(debug_val)
+                values["DEBUG"] = bool(debug_val)
         return values
 
     def __init__(self, **kwargs):

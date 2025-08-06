@@ -1,6 +1,7 @@
 """
 Tests for response formatter.
 """
+
 from unittest.mock import MagicMock
 
 from app.services.response_formatter import ResponseFormatter
@@ -71,9 +72,7 @@ class TestResponseFormatter:
             "advice": "Больше общайтесь",
         }
 
-        response = self.formatter.format_compatibility_response(
-            compatibility_data
-        )
+        response = self.formatter.format_compatibility_response(compatibility_data)
 
         assert response.text is not None
         assert len(response.text) > 0
@@ -87,9 +86,7 @@ class TestResponseFormatter:
             "description": "Средняя совместимость",
         }
 
-        response = self.formatter.format_compatibility_response(
-            compatibility_data
-        )
+        response = self.formatter.format_compatibility_response(compatibility_data)
 
         assert response.text is not None
         assert "50" in response.text or "средняя" in response.text.lower()
@@ -199,8 +196,7 @@ class TestResponseFormatter:
         assert response.text is not None
         assert len(response.text) > 0
         assert any(
-            word in response.text.lower()
-            for word in ["знак", "зодиак", "скажите"]
+            word in response.text.lower() for word in ["знак", "зодиак", "скажите"]
         )
         assert response.end_session is False
 
@@ -211,8 +207,7 @@ class TestResponseFormatter:
         assert response.text is not None
         assert len(response.text) > 0
         assert any(
-            word in response.text.lower()
-            for word in ["дата", "рождени", "когда"]
+            word in response.text.lower() for word in ["дата", "рождени", "когда"]
         )
         assert response.end_session is False
 
@@ -230,9 +225,11 @@ class TestResponseFormatter:
 
     def test_create_buttons(self):
         """Test button creation."""
-        buttons = self.formatter._create_buttons(
-            ["Мой гороскоп", "Совместимость", "Помощь"]
-        )
+        buttons = self.formatter._create_buttons([
+            "Мой гороскоп",
+            "Совместимость",
+            "Помощь",
+        ])
 
         assert len(buttons) == 3
         assert all(hasattr(button, "title") for button in buttons)
@@ -343,22 +340,18 @@ class TestResponseFormatter:
             response = method()
             assert response.text.strip() != ""
 
-
-
     def test_format_natal_chart_request_response(self):
         """Test natal chart request response formatting."""
         response = self.formatter.format_natal_chart_request_response()
-        
+
         assert response.text is not None
         assert len(response.text) > 0
         assert response.end_session is False
 
-
-
     def test_format_error_recovery_response(self):
         """Test error recovery response formatting."""
         context = {"previous_intent": "horoscope", "attempt_count": 2}
-        
+
         try:
             response = self.formatter.format_error_recovery_response(context)
             assert response.text is not None
@@ -372,11 +365,11 @@ class TestResponseFormatter:
         """Test clarification response formatting."""
         context = {
             "unclear_request": "гороскоп на завтра",
-            "clarification_options": ["daily", "weekly", "monthly"]
+            "clarification_options": ["daily", "weekly", "monthly"],
         }
-        
+
         response = self.formatter.format_clarification_response(context)
-        
+
         assert response.text is not None
         assert len(response.text) > 0
         assert response.end_session is False

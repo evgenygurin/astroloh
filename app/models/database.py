@@ -1,6 +1,7 @@
 """
 Database models and configuration for secure data storage.
 """
+
 import uuid
 from datetime import datetime
 
@@ -27,16 +28,16 @@ Base = declarative_base()
 
 class GUID(TypeDecorator):
     """Platform-independent GUID type.
-    
+
     Uses PostgreSQL's UUID type when available, otherwise uses
     CHAR(36) storing as stringified hex values.
     """
-    
+
     impl = CHAR
     cache_ok = True
 
     def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
+        if dialect.name == "postgresql":
             return dialect.type_descriptor(PostgreSQL_UUID(as_uuid=True))
         else:
             return dialect.type_descriptor(CHAR(36))
@@ -44,7 +45,7 @@ class GUID(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return value
-        elif dialect.name == 'postgresql':
+        elif dialect.name == "postgresql":
             return value
         else:
             if not isinstance(value, uuid.UUID):
@@ -70,9 +71,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    yandex_user_id = Column(
-        String(255), unique=True, index=True, nullable=False
-    )
+    yandex_user_id = Column(String(255), unique=True, index=True, nullable=False)
 
     # Зашифрованные персональные данные
     encrypted_birth_date = Column(LargeBinary, nullable=True)
@@ -87,15 +86,13 @@ class User(Base):
     # Настройки приватности
     data_consent = Column(Boolean, default=False, nullable=False)
     data_retention_days = Column(Integer, default=365, nullable=False)
-    
+
     # Пользовательские настройки и предпочтения (JSON)
     preferences = Column(JSON, nullable=True)
 
     # Метаданные
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_accessed = Column(DateTime, default=datetime.utcnow)
 
     # Связи
@@ -130,16 +127,12 @@ class UserSession(Base):
     __tablename__ = "user_sessions"
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id = Column(
-        GUID(), ForeignKey("users.id"), nullable=False
-    )
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
     session_id = Column(String(255), unique=True, index=True, nullable=False)
 
     # Состояние диалога
     current_state = Column(String(50), default="initial", nullable=False)
-    context_data = Column(
-        Text, nullable=True
-    )  # JSON string with session context
+    context_data = Column(Text, nullable=True)  # JSON string with session context
 
     # Безопасность сессии
     is_active = Column(Boolean, default=True, nullable=False)
@@ -147,9 +140,7 @@ class UserSession(Base):
 
     # Метаданные
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    last_activity = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    last_activity = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", back_populates="sessions")
 
@@ -162,9 +153,7 @@ class HoroscopeRequest(Base):
     __tablename__ = "horoscope_requests"
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id = Column(
-        GUID(), ForeignKey("users.id"), nullable=False
-    )
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
 
     # Тип запроса
     request_type = Column(
@@ -192,9 +181,7 @@ class DataDeletionRequest(Base):
     __tablename__ = "data_deletion_requests"
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id = Column(
-        GUID(), ForeignKey("users.id"), nullable=False
-    )
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
 
     # Статус запроса
     status = Column(
@@ -254,27 +241,37 @@ class UserPreference(Base):
     user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
 
     # Категории интересов
-    interests = Column(JSON, nullable=True)  # {"career": 0.8, "love": 0.9, "health": 0.6}
-    
+    interests = Column(
+        JSON, nullable=True
+    )  # {"career": 0.8, "love": 0.9, "health": 0.6}
+
     # Предпочтения контента
-    communication_style = Column(String(20), default="balanced")  # formal, casual, friendly, mystical
-    complexity_level = Column(String(20), default="intermediate")  # beginner, intermediate, advanced
-    
+    communication_style = Column(
+        String(20), default="balanced"
+    )  # formal, casual, friendly, mystical
+    complexity_level = Column(
+        String(20), default="intermediate"
+    )  # beginner, intermediate, advanced
+
     # Временные предпочтения
-    preferred_time_slots = Column(JSON, nullable=True)  # [{"start": "09:00", "end": "12:00"}]
+    preferred_time_slots = Column(
+        JSON, nullable=True
+    )  # [{"start": "09:00", "end": "12:00"}]
     timezone = Column(String(50), nullable=True)
-    
+
     # Культурные настройки
     cultural_context = Column(String(20), nullable=True)  # western, vedic, chinese
     language_preference = Column(String(10), default="ru")
-    
+
     # Персонализация контента
-    content_length_preference = Column(String(20), default="medium")  # short, medium, long
+    content_length_preference = Column(
+        String(20), default="medium"
+    )  # short, medium, long
     detail_level = Column(String(20), default="standard")  # brief, standard, detailed
-    
+
     # Изученные предпочтения (машинное обучение)
     preferences = Column(JSON, nullable=True)  # Хранит изученные предпочтения из ML
-    
+
     # Метаданные
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -294,18 +291,20 @@ class UserInteraction(Base):
     user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
 
     # Тип взаимодействия
-    interaction_type = Column(String(50), nullable=False)  # view, like, dislike, save, share
+    interaction_type = Column(
+        String(50), nullable=False
+    )  # view, like, dislike, save, share
     content_type = Column(String(50), nullable=False)  # horoscope, compatibility, lunar
     content_id = Column(String(255), nullable=True)
-    
+
     # Контекст взаимодействия
     session_duration = Column(Integer, nullable=True)  # секунды
     rating = Column(Integer, nullable=True)  # 1-5
     feedback_text = Column(Text, nullable=True)
-    
+
     # Астрологические данные на момент взаимодействия
     astronomical_data = Column(JSON, nullable=True)  # позиции планет, транзиты
-    
+
     # Временная метка
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -326,25 +325,27 @@ class Recommendation(Base):
     # Тип рекомендации
     recommendation_type = Column(String(50), nullable=False)  # content, action, timing
     content_type = Column(String(50), nullable=False)  # daily, weekly, compatibility
-    
+
     # Содержание рекомендации
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     recommendation_data = Column(JSON, nullable=True)
-    
+
     # Скоринг
     confidence_score = Column(Integer, nullable=False)  # 0-100
     priority = Column(Integer, default=1)  # 1-5
-    
+
     # Алгоритм и модель
-    algorithm_used = Column(String(50), nullable=False)  # collaborative, content_based, hybrid
+    algorithm_used = Column(
+        String(50), nullable=False
+    )  # collaborative, content_based, hybrid
     model_version = Column(String(20), nullable=False)
-    
+
     # Статус
     status = Column(String(20), default="active")  # active, shown, dismissed, expired
     expires_at = Column(DateTime, nullable=True)
     shown_at = Column(DateTime, nullable=True)
-    
+
     # Временная метка
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -365,11 +366,11 @@ class UserCluster(Base):
     # Кластер
     cluster_id = Column(String(50), nullable=False)
     cluster_name = Column(String(100), nullable=True)
-    
+
     # Характеристики кластера
     cluster_features = Column(JSON, nullable=True)  # астрологические признаки
     similarity_score = Column(Integer, nullable=False)  # 0-100
-    
+
     # Метаданные
     algorithm_version = Column(String(20), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -392,15 +393,15 @@ class ABTestGroup(Base):
     # Тест
     test_name = Column(String(100), nullable=False)
     group_name = Column(String(50), nullable=False)  # control, variant_a, variant_b
-    
+
     # Параметры теста
     test_parameters = Column(JSON, nullable=True)
     test_start_date = Column(DateTime, nullable=False)
     test_end_date = Column(DateTime, nullable=True)
-    
+
     # Статус
     is_active = Column(Boolean, default=True)
-    
+
     # Временная метка
     assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -422,11 +423,11 @@ class RecommendationMetrics(Base):
     # Метрики
     metric_name = Column(String(50), nullable=False)  # ctr, conversion, satisfaction
     metric_value = Column(Integer, nullable=False)
-    
+
     # Контекст
     context_data = Column(JSON, nullable=True)
     session_id = Column(String(255), nullable=True)
-    
+
     # Временная метка
     recorded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -455,20 +456,16 @@ class DatabaseManager:
 
         # Add pool settings only for PostgreSQL
         if not self.database_url.startswith("sqlite"):
-            engine_kwargs.update(
-                {
-                    "pool_size": 20,
-                    "max_overflow": 0,
-                    "pool_pre_ping": True,
-                    "pool_recycle": 300,
-                }
-            )
+            engine_kwargs.update({
+                "pool_size": 20,
+                "max_overflow": 0,
+                "pool_pre_ping": True,
+                "pool_recycle": 300,
+            })
 
         self.engine = create_async_engine(self.database_url, **engine_kwargs)
 
-        self.async_session = async_sessionmaker(
-            self.engine, expire_on_commit=False
-        )
+        self.async_session = async_sessionmaker(self.engine, expire_on_commit=False)
 
     async def create_tables(self):
         """Создание таблиц в базе данных."""

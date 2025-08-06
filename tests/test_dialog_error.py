@@ -1,6 +1,7 @@
 """
 Tests for dialog error handling.
 """
+
 import pytest
 
 from app.services.dialog_error import (
@@ -142,12 +143,9 @@ class TestDialogError:
         )
         assert ValidationError("msg").error_type == ErrorType.VALIDATION_ERROR
         assert DataMissingError("msg").error_type == ErrorType.DATA_MISSING
+        assert CalculationError("msg").error_type == ErrorType.CALCULATION_ERROR
         assert (
-            CalculationError("msg").error_type == ErrorType.CALCULATION_ERROR
-        )
-        assert (
-            ExternalServiceError("msg").error_type
-            == ErrorType.EXTERNAL_SERVICE_ERROR
+            ExternalServiceError("msg").error_type == ErrorType.EXTERNAL_SERVICE_ERROR
         )
 
     def test_empty_message_handling(self):

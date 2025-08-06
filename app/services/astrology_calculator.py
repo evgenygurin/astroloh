@@ -2,6 +2,7 @@
 Сервис астрологических вычислений с поддержкой множественных астрономических библиотек.
 Автоматическое переключение между pyswisseph, skyfield и astropy в зависимости от доступности.
 """
+
 import logging
 import math
 from datetime import date, datetime
@@ -69,13 +70,14 @@ class AstrologyCalculator:
         elif self.backend == "swisseph" and swe is None:
             # Fallback if swisseph backend was selected but import failed
             import importlib.util
+
             if importlib.util.find_spec("skyfield"):
                 self.backend = "skyfield"
             elif importlib.util.find_spec("astropy"):
                 self.backend = "astropy"
             else:
                 self.backend = None
-        
+
         # Initialize the selected backend properly
         if self.backend == "skyfield":
             # Инициализация Skyfield
@@ -84,12 +86,11 @@ class AstrologyCalculator:
 
                 self.skyfield_loader = load
                 self.skyfield_ts = load.timescale()
-                self.skyfield_planets = load(
-                    "de421.bsp"
-                )  # JPL planetary ephemeris
+                self.skyfield_planets = load("de421.bsp")  # JPL planetary ephemeris
             except (ImportError, Exception):
                 # Fallback to astropy or None if skyfield not available
                 import importlib.util
+
                 if importlib.util.find_spec("astropy"):
                     self.backend = "astropy"
                 else:
@@ -262,9 +263,7 @@ class AstrologyCalculator:
                     }
 
                 except Exception:
-                    positions[planet_name] = self._get_fallback_position(
-                        planet_name
-                    )
+                    positions[planet_name] = self._get_fallback_position(planet_name)
 
         elif self.backend == "skyfield":
             positions = self._calculate_positions_skyfield(
@@ -279,9 +278,7 @@ class AstrologyCalculator:
         else:
             # Fallback: используем упрощенные позиции
             for planet_name in self.planets_universal:
-                positions[planet_name] = self._get_fallback_position(
-                    planet_name
-                )
+                positions[planet_name] = self._get_fallback_position(planet_name)
 
         return positions
 
@@ -291,9 +288,7 @@ class AstrologyCalculator:
         """Вычисляет позиции планет с использованием Skyfield."""
         positions = {}
         try:
-            t = self.skyfield_ts.from_datetime(
-                birth_datetime.replace(tzinfo=pytz.UTC)
-            )
+            t = self.skyfield_ts.from_datetime(birth_datetime.replace(tzinfo=pytz.UTC))
 
             # Получаем позиции планет
             planet_mapping = {
@@ -328,16 +323,12 @@ class AstrologyCalculator:
                         "sign_number": sign_num,
                     }
                 except Exception:
-                    positions[planet_name] = self._get_fallback_position(
-                        planet_name
-                    )
+                    positions[planet_name] = self._get_fallback_position(planet_name)
 
         except Exception:
             # Fallback для всех планет
             for planet_name in self.planets_universal:
-                positions[planet_name] = self._get_fallback_position(
-                    planet_name
-                )
+                positions[planet_name] = self._get_fallback_position(planet_name)
 
         return positions
 
@@ -379,15 +370,11 @@ class AstrologyCalculator:
                 "Neptune",
                 "Pluto",
             ]:
-                positions[planet_name] = self._get_fallback_position(
-                    planet_name
-                )
+                positions[planet_name] = self._get_fallback_position(planet_name)
 
         except Exception:
             for planet_name in self.planets_universal:
-                positions[planet_name] = self._get_fallback_position(
-                    planet_name
-                )
+                positions[planet_name] = self._get_fallback_position(planet_name)
 
         return positions
 
@@ -480,7 +467,7 @@ class AstrologyCalculator:
             # Fallback: создаем упрощенную систему домов для не-swisseph бэкендов
             # Добавляем зависимость от широты для получения разных результатов для разных локаций
             latitude_offset = int(latitude) % 30  # Используем широту для сдвига
-            
+
             for i in range(12):
                 cusp_longitude = (i * 30 + latitude_offset) % 360
                 sign_num = int(cusp_longitude / 30)
@@ -538,16 +525,14 @@ class AstrologyCalculator:
                 for aspect_angle, orb in aspect_orbs.items():
                     if abs(angle - aspect_angle) <= orb:
                         aspect_name = self._get_aspect_name(aspect_angle)
-                        aspects.append(
-                            {
-                                "planet1": planet1,
-                                "planet2": planet2,
-                                "aspect": aspect_name,
-                                "angle": aspect_angle,
-                                "orb": abs(angle - aspect_angle),
-                                "exact_angle": angle,
-                            }
-                        )
+                        aspects.append({
+                            "planet1": planet1,
+                            "planet2": planet2,
+                            "aspect": aspect_name,
+                            "angle": aspect_angle,
+                            "orb": abs(angle - aspect_angle),
+                            "exact_angle": angle,
+                        })
                         break
 
         return aspects
@@ -578,9 +563,7 @@ class AstrologyCalculator:
                     angle += 360
 
             elif self.backend == "skyfield":
-                t = self.skyfield_ts.from_datetime(
-                    target_date.replace(tzinfo=pytz.UTC)
-                )
+                t = self.skyfield_ts.from_datetime(target_date.replace(tzinfo=pytz.UTC))
                 sun = self.skyfield_planets["sun"].at(t)
                 moon = self.skyfield_planets["moon"].at(t)
 
@@ -705,9 +688,7 @@ class AstrologyCalculator:
         total_score = (element_compatibility + quality_compatibility) / 2
 
         return {
-            "score": round(
-                total_score, 1
-            ),  # For backward compatibility with tests
+            "score": round(total_score, 1),  # For backward compatibility with tests
             "total_score": round(total_score, 1),
             "element_score": element_compatibility,
             "quality_score": quality_compatibility,
@@ -718,9 +699,7 @@ class AstrologyCalculator:
             "description": self._get_compatibility_description(total_score),
         }
 
-    def _calculate_element_compatibility(
-        self, element1: str, element2: str
-    ) -> float:
+    def _calculate_element_compatibility(self, element1: str, element2: str) -> float:
         """Вычисляет совместимость по элементам."""
         # Совместимость элементов (0-100)
         compatibility_matrix = {
@@ -743,9 +722,7 @@ class AstrologyCalculator:
 
         return score
 
-    def _calculate_quality_compatibility(
-        self, quality1: str, quality2: str
-    ) -> float:
+    def _calculate_quality_compatibility(self, quality1: str, quality2: str) -> float:
         """Вычисляет совместимость по качествам."""
         compatibility_matrix = {
             ("cardinal", "cardinal"): 75,

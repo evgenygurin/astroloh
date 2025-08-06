@@ -1,6 +1,7 @@
 """
 API router for Google Assistant integration.
 """
+
 import json
 import logging
 from typing import Any, Dict
@@ -115,8 +116,7 @@ async def google_assistant_webhook(
         # Handle error gracefully with proper Google response format
         try:
             error_text = (
-                "Извините, произошла ошибка. "
-                "Попробуйте еще раз или скажите 'помощь'."
+                "Извините, произошла ошибка. Попробуйте еще раз или скажите 'помощь'."
             )
 
             # Return proper error response based on request format

@@ -1,6 +1,7 @@
 """
 Сервис расчета и интерпретации натальной карты.
 """
+
 from datetime import date, datetime, time, timedelta
 from typing import Any, Dict, List, Optional
 
@@ -270,9 +271,7 @@ class NatalChartCalculator:
         return {
             "birth_info": {
                 "date": birth_date.isoformat(),
-                "time": birth_time.strftime("%H:%M")
-                if birth_time
-                else "12:00",
+                "time": birth_time.strftime("%H:%M") if birth_time else "12:00",
                 "place": birth_place,
                 "timezone": timezone_str,
             },
@@ -280,12 +279,8 @@ class NatalChartCalculator:
             "houses": houses,
             "aspects": aspects,
             "interpretation": interpretation,
-            "chart_signature": self._calculate_chart_signature(
-                planet_positions
-            ),
-            "dominant_elements": self._calculate_dominant_elements(
-                planet_positions
-            ),
+            "chart_signature": self._calculate_chart_signature(planet_positions),
+            "dominant_elements": self._calculate_dominant_elements(planet_positions),
             "chart_shape": self._determine_chart_shape(planet_positions),
         }
 
@@ -327,9 +322,7 @@ class NatalChartCalculator:
 
         return personality
 
-    def _get_personality_description(
-        self, sun_sign: str, moon_sign: str
-    ) -> str:
+    def _get_personality_description(self, sun_sign: str, moon_sign: str) -> str:
         """Генерирует описание личности."""
 
         sun_descriptions = {
@@ -378,9 +371,7 @@ class NatalChartCalculator:
         # Ищем аспекты между Венерой и Марсом
         venus_mars_aspect = None
         for aspect in aspects:
-            if (
-                aspect["planet1"] == "Venus" and aspect["planet2"] == "Mars"
-            ) or (
+            if (aspect["planet1"] == "Venus" and aspect["planet2"] == "Mars") or (
                 aspect["planet1"] == "Mars" and aspect["planet2"] == "Venus"
             ):
                 venus_mars_aspect = aspect["aspect"]
@@ -401,9 +392,7 @@ class NatalChartCalculator:
     ) -> str:
         """Дает советы по отношениям."""
 
-        base_advice = (
-            "В отношениях важно найти баланс между чувствами и страстью."
-        )
+        base_advice = "В отношениях важно найти баланс между чувствами и страстью."
 
         if venus_mars_aspect:
             aspect_advice = {
@@ -443,9 +432,7 @@ class NatalChartCalculator:
             "Рыбы": "искусство, духовность, помощь людям",
         }
 
-        career_field = career_suggestions.get(
-            midheaven_sign, "разнообразные области"
-        )
+        career_field = career_suggestions.get(midheaven_sign, "разнообразные области")
 
         return {
             "career_direction": f"Ваш средний небесный в {midheaven_sign} указывает на склонность к {career_field}.",
@@ -453,9 +440,7 @@ class NatalChartCalculator:
             "success_factors": "Используйте свои природные таланты и следуйте своему призванию.",
         }
 
-    def _interpret_challenges(
-        self, aspects: List[Dict[str, Any]]
-    ) -> List[str]:
+    def _interpret_challenges(self, aspects: List[Dict[str, Any]]) -> List[str]:
         """Интерпретирует вызовы на основе напряженных аспектов."""
 
         challenges = []
@@ -492,9 +477,7 @@ class NatalChartCalculator:
                 strengths.append(strength_text)
 
         if not strengths:
-            strengths.append(
-                "У вас есть уникальные таланты, которые стоит развивать."
-            )
+            strengths.append("У вас есть уникальные таланты, которые стоит развивать.")
 
         return strengths[:3]  # Ограничиваем тремя основными сильными сторонами
 
@@ -632,46 +615,46 @@ class NatalChartCalculator:
         timezone_str: str = "Europe/Moscow",
     ) -> Dict[str, Any]:
         """Вычисляет прогрессии натальной карты."""
-        
+
         if progression_date is None:
             progression_date = date.today()
-            
+
         if birth_time is None:
             birth_time = time(12, 0)
-            
+
         if birth_place is None:
             birth_place = {"latitude": 55.7558, "longitude": 37.6176}
-            
+
         # Вычисляем количество дней от рождения до даты прогрессии
         days_since_birth = (progression_date - birth_date).days
-        
+
         # В символических прогрессиях 1 день = 1 год
         # Поэтому прогрессированная дата = дата рождения + количество лет в днях
         progressed_birth_date = birth_date + timedelta(days=days_since_birth)
         progressed_datetime = datetime.combine(progressed_birth_date, birth_time)
-        
+
         # Устанавливаем временную зону
         try:
             timezone = pytz.timezone(timezone_str)
             progressed_datetime = timezone.localize(progressed_datetime)
         except Exception:
             progressed_datetime = pytz.UTC.localize(progressed_datetime)
-            
+
         # Вычисляем прогрессированные позиции планет
         progressed_positions = self.astro_calc.calculate_planet_positions(
             progressed_datetime, birth_place["latitude"], birth_place["longitude"]
         )
-        
+
         # Вычисляем прогрессированные дома (только для быстро движущихся точек)
         progressed_houses = self.astro_calc.calculate_houses(
             progressed_datetime, birth_place["latitude"], birth_place["longitude"]
         )
-        
+
         # Создаем интерпретацию прогрессий
         progression_interpretation = self._interpret_progressions(
             progressed_positions, progression_date, birth_date
         )
-        
+
         return {
             "birth_date": birth_date.isoformat(),
             "progression_date": progression_date.isoformat(),
@@ -689,15 +672,15 @@ class NatalChartCalculator:
         birth_date: date,
     ) -> Dict[str, Any]:
         """Интерпретирует прогрессии."""
-        
+
         age = (progression_date - birth_date).days // 365
-        
+
         # Анализируем прогрессированное Солнце
         prog_sun_sign = progressed_positions.get("Sun", {}).get("sign", "Овен")
-        
+
         # Анализируем прогрессированную Луну
         prog_moon_sign = progressed_positions.get("Moon", {}).get("sign", "Рак")
-        
+
         interpretation = {
             "current_age": age,
             "life_stage": self._get_life_stage_description(age),
@@ -711,12 +694,12 @@ class NatalChartCalculator:
             },
             "general_trends": self._get_progression_trends(age, progressed_positions),
         }
-        
+
         return interpretation
 
     def _get_life_stage_description(self, age: int) -> str:
         """Возвращает описание жизненного этапа."""
-        
+
         if age < 7:
             return "Раннее детство - формирование базовой личности"
         elif age < 14:
@@ -736,7 +719,7 @@ class NatalChartCalculator:
 
     def _get_progressed_sun_meaning(self, sun_sign: str) -> str:
         """Возвращает значение прогрессированного Солнца."""
-        
+
         meanings = {
             "Овен": "Период активности и новых начинаний",
             "Телец": "Время стабилизации и материального роста",
@@ -751,12 +734,12 @@ class NatalChartCalculator:
             "Водолей": "Инновации и социальная активность",
             "Рыбы": "Духовное развитие и сострадание",
         }
-        
+
         return meanings.get(sun_sign, "Период личностного развития")
 
     def _get_progressed_moon_meaning(self, moon_sign: str) -> str:
         """Возвращает значение прогрессированной Луны."""
-        
+
         meanings = {
             "Овен": "Эмоциональная независимость и спонтанность",
             "Телец": "Потребность в стабильности и комфорте",
@@ -771,16 +754,16 @@ class NatalChartCalculator:
             "Водолей": "Необычный взгляд на чувства и отношения",
             "Рыбы": "Повышенная чувствительность и интуиция",
         }
-        
+
         return meanings.get(moon_sign, "Эмоциональное развитие")
 
     def _get_progression_trends(
         self, age: int, progressed_positions: Dict[str, Dict[str, Any]]
     ) -> List[str]:
         """Определяет основные тенденции прогрессий."""
-        
+
         trends = []
-        
+
         # Анализируем ключевые возрастные периоды
         if 28 <= age <= 30:
             trends.append("Возвращение Сатурна - время важных жизненных решений")
@@ -788,35 +771,35 @@ class NatalChartCalculator:
             trends.append("Кризис среднего возраста - переосмысление жизненных целей")
         elif 56 <= age <= 60:
             trends.append("Второе возвращение Сатурна - мудрость и авторитет")
-            
+
         # Анализируем прогрессированные аспекты (упрощенно)
         prog_sun = progressed_positions.get("Sun", {}).get("longitude", 0)
         prog_moon = progressed_positions.get("Moon", {}).get("longitude", 0)
-        
+
         sun_moon_angle = abs(prog_sun - prog_moon)
         if sun_moon_angle > 180:
             sun_moon_angle = 360 - sun_moon_angle
-            
+
         if sun_moon_angle <= 10:
             trends.append("Гармония между сознанием и эмоциями")
         elif 170 <= sun_moon_angle <= 190:
             trends.append("Необходимость баланса между разумом и чувствами")
-            
+
         return trends
 
     def _analyze_progression_changes(
         self, progressed_positions: Dict[str, Dict[str, Any]]
     ) -> List[str]:
         """Анализирует ключевые изменения в прогрессиях."""
-        
+
         changes = []
-        
+
         # Анализируем быстро движущиеся планеты
         fast_planets = ["Sun", "Moon", "Mercury", "Venus", "Mars"]
-        
+
         for planet in fast_planets:
             if planet in progressed_positions:
                 sign = progressed_positions[planet]["sign"]
                 changes.append(f"Прогрессированный {planet} в {sign}")
-                
+
         return changes[:3]  # Ограничиваем тремя основными изменениями

@@ -1,6 +1,7 @@
 """
 API роутер для интеграции с Яндекс.Диалогами.
 """
+
 import logging
 from typing import Any
 
@@ -79,9 +80,7 @@ async def health_check() -> dict[str, Any]:
     """
     try:
         # Проверяем доступность основных компонентов
-        active_sessions = (
-            dialog_handler.session_manager.get_active_sessions_count()
-        )
+        active_sessions = dialog_handler.session_manager.get_active_sessions_count()
 
         return {
             "status": "healthy",
@@ -105,9 +104,7 @@ async def cleanup_sessions() -> dict[str, Any]:
     Эндпоинт для принудительной очистки устаревших сессий.
     """
     try:
-        cleaned_count = (
-            dialog_handler.session_manager.cleanup_expired_sessions()
-        )
+        cleaned_count = dialog_handler.session_manager.cleanup_expired_sessions()
         return {"status": "success", "cleaned_sessions": cleaned_count}
     except Exception as e:
         logger.error(f"Session cleanup failed: {str(e)}")

@@ -1,6 +1,7 @@
 """
 Валидаторы данных для навыка Яндекс.Диалогов.
 """
+
 import re
 from datetime import date
 from typing import Optional, Tuple
@@ -64,9 +65,7 @@ class DateValidator:
         # Проверяем разумные границы (не старше 150 лет)
         min_date = date(today.year - 150, today.month, today.day)
         if birth_date < min_date:
-            raise ValidationSkillError(
-                "Дата рождения слишком давняя", "birth_date"
-            )
+            raise ValidationSkillError("Дата рождения слишком давняя", "birth_date")
 
         return True
 
@@ -204,14 +203,10 @@ class YandexRequestValidator:
 
         # Проверяем подполя
         if "command" not in request_data["request"]:
-            raise ValidationSkillError(
-                "Отсутствует команда в запросе", "command"
-            )
+            raise ValidationSkillError("Отсутствует команда в запросе", "command")
 
         if "session_id" not in request_data["session"]:
-            raise ValidationSkillError(
-                "Отсутствует идентификатор сессии", "session_id"
-            )
+            raise ValidationSkillError("Отсутствует идентификатор сессии", "session_id")
 
         return True
 

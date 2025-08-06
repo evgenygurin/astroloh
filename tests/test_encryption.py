@@ -1,6 +1,7 @@
 """
 Tests for encryption service.
 """
+
 from unittest.mock import patch
 
 import pytest
@@ -217,9 +218,7 @@ class TestEncryptionService:
         ) as mock_derive:
             mock_derive.return_value = b"derived_key_32_bytes_long_test"
 
-            result = self.encryption_service._derive_key_from_secret(
-                "test_password"
-            )
+            result = self.encryption_service._derive_key_from_secret("test_password")
 
             assert result == b"derived_key_32_bytes_long_test"
             mock_derive.assert_called_once_with("test_password")
@@ -362,9 +361,7 @@ class TestSecurityUtils:
 
     def test_hash_user_agent(self):
         """Test user agent hashing."""
-        user_agent = (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        )
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
         hashed = SecurityUtils.hash_user_agent(user_agent)
 
@@ -396,17 +393,17 @@ class TestSecurityUtils:
 
     def test_encryption_service_fallback_key_derivation(self):
         """Test encryption service with fallback key derivation from SECRET_KEY."""
-        with patch('app.core.config.settings') as mock_settings:
+        with patch("app.core.config.settings") as mock_settings:
             # Set up mock settings to trigger fallback key derivation
             mock_settings.ENCRYPTION_KEY = None
             mock_settings.SECRET_KEY = "test_secret_key_for_fallback"
-            
+
             # Create service without explicit encryption key
             service = EncryptionService()
-            
+
             # Test that encryption/decryption still works
             test_data = "test data for fallback encryption"
             encrypted = service.encrypt(test_data)
             decrypted = service.decrypt(encrypted)
-            
+
             assert decrypted == test_data

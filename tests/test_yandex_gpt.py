@@ -1,6 +1,7 @@
 """
 Тесты для Yandex GPT клиента.
 """
+
 import pytest
 from unittest.mock import AsyncMock, patch
 from aiohttp import ClientError, ClientTimeout
@@ -13,18 +14,18 @@ class TestYandexGPTClient:
 
     def setup_method(self):
         """Настройка перед каждым тестом."""
-        with patch('app.services.yandex_gpt.settings') as mock_settings:
+        with patch("app.services.yandex_gpt.settings") as mock_settings:
             mock_settings.YANDEX_API_KEY = "test_api_key"
             mock_settings.YANDEX_FOLDER_ID = "test_folder_id"
             mock_settings.YANDEX_CATALOG_ID = "test_catalog_id"
-            
+
             self.client = YandexGPTClient()
 
     @pytest.mark.asyncio
     async def test_get_session_creates_new_session(self):
         """Тест создания новой HTTP сессии."""
         session = await self.client._get_session()
-        
+
         assert session is not None
         assert not session.closed
         assert session.timeout.total == 30
@@ -36,7 +37,7 @@ class TestYandexGPTClient:
         """Тест переиспользования существующей сессии."""
         session1 = await self.client._get_session()
         session2 = await self.client._get_session()
-        
+
         assert session1 is session2
 
     @pytest.mark.asyncio
@@ -44,74 +45,67 @@ class TestYandexGPTClient:
         """Тест закрытия HTTP сессии."""
         session = await self.client._get_session()
         await self.client.close()
-        
+
         assert session.closed
 
     @pytest.mark.asyncio
     async def test_generate_text_success(self):
         """Тест успешной генерации текста."""
         mock_response_data = {
-            "result": {
-                "alternatives": [
-                    {
-                        "message": {
-                            "text": "Сгенерированный текст"
-                        }
-                    }
-                ]
-            }
+            "result": {"alternatives": [{"message": {"text": "Сгенерированный текст"}}]}
         }
-        
+
         # Mock HTTP session
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value=mock_response_data)
-        
+
         # Create proper async context manager mock
         class MockContextManager:
             def __init__(self, response):
                 self.response = response
-            
+
             async def __aenter__(self):
                 return self.response
-            
+
             async def __aexit__(self, exc_type, exc_val, exc_tb):
                 return None
-        
+
         # Create mock session that returns the context manager
         mock_session = AsyncMock()
-        
+
         # Create a simple mock function that returns context manager
         def post_mock(*args, **kwargs):
             return MockContextManager(mock_response)
-        
+
         # Track calls manually
         post_mock.call_args = None
         post_mock.call_count = 0
-        
+
         original_post = post_mock
+
         def tracking_post(*args, **kwargs):
             post_mock.call_args = (args, kwargs)
             post_mock.call_count += 1
             return original_post(*args, **kwargs)
-        
+
         mock_session.post = tracking_post
-        
+
         self.client._get_session = AsyncMock(return_value=mock_session)
-        
+
         result = await self.client.generate_text(
             prompt="Тестовый запрос",
             system_prompt="Системный промпт",
             temperature=0.5,
-            max_tokens=500
+            max_tokens=500,
         )
-        
+
         assert result == "Сгенерированный текст"
-        
+
         # Проверяем, что запрос был сформирован правильно
         call_args = post_mock.call_args
         assert call_args[0][0] == self.client.completion_url
-        
+
         request_json = call_args[1]["json"]
         assert request_json["modelUri"] == "gpt://test_folder_id/yandexgpt-lite/latest"
         assert request_json["completionOptions"]["temperature"] == 0.5
@@ -125,59 +119,53 @@ class TestYandexGPTClient:
         """Тест генерации текста без системного промпта."""
         mock_response_data = {
             "result": {
-                "alternatives": [
-                    {
-                        "message": {
-                            "text": "Ответ без системного промпта"
-                        }
-                    }
-                ]
+                "alternatives": [{"message": {"text": "Ответ без системного промпта"}}]
             }
         }
-        
+
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value=mock_response_data)
-        
+
         # Create proper async context manager mock
         class MockContextManager:
             def __init__(self, response):
                 self.response = response
-            
+
             async def __aenter__(self):
                 return self.response
-            
+
             async def __aexit__(self, exc_type, exc_val, exc_tb):
                 return None
-        
+
         # Create mock session that returns the context manager
         mock_session = AsyncMock()
-        
+
         # Create a simple mock function that returns context manager
         def post_mock(*args, **kwargs):
             return MockContextManager(mock_response)
-        
+
         # Track calls manually
         post_mock.call_args = None
         post_mock.call_count = 0
-        
+
         original_post = post_mock
+
         def tracking_post(*args, **kwargs):
             post_mock.call_args = (args, kwargs)
             post_mock.call_count += 1
             return original_post(*args, **kwargs)
-        
+
         mock_session.post = tracking_post
-        
+
         self.client._get_session = AsyncMock(return_value=mock_session)
-        
+
         result = await self.client.generate_text(
-            prompt="Только пользовательский запрос",
-            system_prompt=None
+            prompt="Только пользовательский запрос", system_prompt=None
         )
-        
+
         assert result == "Ответ без системного промпта"
-        
+
         # Проверяем, что только одно сообщение в запросе
         call_args = post_mock.call_args
         request_json = call_args[1]["json"]
@@ -190,85 +178,85 @@ class TestYandexGPTClient:
         mock_response = AsyncMock()
         mock_response.status = 400
         mock_response.text = AsyncMock(return_value="Bad Request")
-        
+
         # Create proper async context manager mock
         class MockContextManager:
             def __init__(self, response):
                 self.response = response
-            
+
             async def __aenter__(self):
                 return self.response
-            
+
             async def __aexit__(self, exc_type, exc_val, exc_tb):
                 return None
-        
+
         # Create mock session that returns the context manager
         mock_session = AsyncMock()
-        
+
         # Create a simple mock function that returns context manager
         def post_mock(*args, **kwargs):
             return MockContextManager(mock_response)
-        
+
         # Track calls manually
         post_mock.call_args = None
         post_mock.call_count = 0
-        
+
         original_post = post_mock
+
         def tracking_post(*args, **kwargs):
             post_mock.call_args = (args, kwargs)
             post_mock.call_count += 1
             return original_post(*args, **kwargs)
-        
+
         mock_session.post = tracking_post
-        
+
         self.client._get_session = AsyncMock(return_value=mock_session)
-        
+
         result = await self.client.generate_text(prompt="Тест ошибки")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_generate_text_unexpected_format(self):
         """Тест обработки неожиданного формата ответа."""
-        mock_response_data = {
-            "unexpected": "format"
-        }
-        
+        mock_response_data = {"unexpected": "format"}
+
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value=mock_response_data)
-        
+
         # Create proper async context manager mock
         class MockContextManager:
             def __init__(self, response):
                 self.response = response
-            
+
             async def __aenter__(self):
                 return self.response
-            
+
             async def __aexit__(self, exc_type, exc_val, exc_tb):
                 return None
-        
+
         # Create mock session that returns the context manager
         mock_session = AsyncMock()
-        
+
         # Create a simple mock function that returns context manager
         def post_mock(*args, **kwargs):
             return MockContextManager(mock_response)
-        
+
         # Track calls manually
         post_mock.call_args = None
         post_mock.call_count = 0
-        
+
         original_post = post_mock
+
         def tracking_post(*args, **kwargs):
             post_mock.call_args = (args, kwargs)
             post_mock.call_count += 1
             return original_post(*args, **kwargs)
-        
+
         mock_session.post = tracking_post
-        
+
         self.client._get_session = AsyncMock(return_value=mock_session)
-        
+
         result = await self.client.generate_text(prompt="Тест неожиданного формата")
         assert result is None
 
@@ -277,9 +265,9 @@ class TestYandexGPTClient:
         """Тест обработки таймаута."""
         mock_session = AsyncMock()
         mock_session.post.side_effect = ClientTimeout()
-        
+
         self.client._get_session = AsyncMock(return_value=mock_session)
-        
+
         result = await self.client.generate_text(prompt="Тест таймаута")
         assert result is None
 
@@ -288,9 +276,9 @@ class TestYandexGPTClient:
         """Тест обработки клиентской ошибки."""
         mock_session = AsyncMock()
         mock_session.post.side_effect = ClientError("Connection failed")
-        
+
         self.client._get_session = AsyncMock(return_value=mock_session)
-        
+
         result = await self.client.generate_text(prompt="Тест клиентской ошибки")
         assert result is None
 
@@ -299,9 +287,9 @@ class TestYandexGPTClient:
         """Тест обработки общих исключений."""
         mock_session = AsyncMock()
         mock_session.post.side_effect = Exception("Unexpected error")
-        
+
         self.client._get_session = AsyncMock(return_value=mock_session)
-        
+
         result = await self.client.generate_text(prompt="Тест общего исключения")
         assert result is None
 
@@ -309,9 +297,9 @@ class TestYandexGPTClient:
     async def test_generate_horoscope_success(self):
         """Тест успешной генерации гороскопа."""
         expected_horoscope = "Ваш гороскоп на сегодня..."
-        
+
         self.client.generate_text = AsyncMock(return_value=expected_horoscope)
-        
+
         result = await self.client.generate_horoscope(
             zodiac_sign="овен",
             period="день",
@@ -319,12 +307,12 @@ class TestYandexGPTClient:
             additional_context={
                 "moon_phase": "Полнолуние",
                 "season": "Весна",
-                "energy_level": 80
-            }
+                "energy_level": 80,
+            },
         )
-        
+
         assert result == expected_horoscope
-        
+
         # Проверяем параметры вызова generate_text
         call_args = self.client.generate_text.call_args
         assert "овен" in call_args[1]["prompt"]
@@ -338,13 +326,13 @@ class TestYandexGPTClient:
     async def test_generate_horoscope_minimal_params(self):
         """Тест генерации гороскопа с минимальными параметрами."""
         expected_horoscope = "Минимальный гороскоп"
-        
+
         self.client.generate_text = AsyncMock(return_value=expected_horoscope)
-        
+
         result = await self.client.generate_horoscope(zodiac_sign="телец")
-        
+
         assert result == expected_horoscope
-        
+
         # Проверяем, что системный промпт содержит инструкции для астролога
         call_args = self.client.generate_text.call_args
         system_prompt = call_args[1]["system_prompt"]
@@ -355,17 +343,15 @@ class TestYandexGPTClient:
     async def test_generate_compatibility_analysis_success(self):
         """Тест успешной генерации анализа совместимости."""
         expected_analysis = "Анализ совместимости знаков"
-        
+
         self.client.generate_text = AsyncMock(return_value=expected_analysis)
-        
+
         result = await self.client.generate_compatibility_analysis(
-            sign1="овен",
-            sign2="лев",
-            context={"relationship_type": "романтические"}
+            sign1="овен", sign2="лев", context={"relationship_type": "романтические"}
         )
-        
+
         assert result == expected_analysis
-        
+
         # Проверяем параметры вызова
         call_args = self.client.generate_text.call_args
         assert "овен" in call_args[1]["prompt"]
@@ -378,34 +364,30 @@ class TestYandexGPTClient:
     async def test_generate_compatibility_analysis_without_context(self):
         """Тест генерации анализа совместимости без контекста."""
         expected_analysis = "Базовый анализ совместимости"
-        
+
         self.client.generate_text = AsyncMock(return_value=expected_analysis)
-        
+
         result = await self.client.generate_compatibility_analysis(
-            sign1="рак",
-            sign2="скорпион"
+            sign1="рак", sign2="скорпион"
         )
-        
+
         assert result == expected_analysis
 
     @pytest.mark.asyncio
     async def test_generate_advice_success(self):
         """Тест успешной генерации совета."""
         expected_advice = "Астрологический совет"
-        
+
         self.client.generate_text = AsyncMock(return_value=expected_advice)
-        
+
         result = await self.client.generate_advice(
             zodiac_sign="дева",
             topic="карьера",
-            context={
-                "mood": "оптимистичное",
-                "current_challenges": "новый проект"
-            }
+            context={"mood": "оптимистичное", "current_challenges": "новый проект"},
         )
-        
+
         assert result == expected_advice
-        
+
         # Проверяем параметры вызова
         call_args = self.client.generate_text.call_args
         prompt = call_args[1]["prompt"]
@@ -420,13 +402,13 @@ class TestYandexGPTClient:
     async def test_generate_advice_without_topic_and_context(self):
         """Тест генерации совета без темы и контекста."""
         expected_advice = "Общий совет"
-        
+
         self.client.generate_text = AsyncMock(return_value=expected_advice)
-        
+
         result = await self.client.generate_advice(zodiac_sign="весы")
-        
+
         assert result == expected_advice
-        
+
         call_args = self.client.generate_text.call_args
         system_prompt = call_args[1]["system_prompt"]
         assert "300 символов" in system_prompt
@@ -435,10 +417,10 @@ class TestYandexGPTClient:
     async def test_is_available_success(self):
         """Тест успешной проверки доступности."""
         self.client.generate_text = AsyncMock(return_value="Привет")
-        
+
         result = await self.client.is_available()
         assert result is True
-        
+
         # Проверяем, что был вызван тестовый запрос
         call_args = self.client.generate_text.call_args
         assert call_args[1]["prompt"] == "Привет"
@@ -449,15 +431,15 @@ class TestYandexGPTClient:
     async def test_is_available_no_credentials(self):
         """Тест проверки доступности без учетных данных."""
         self.client.api_key = None
-        
+
         result = await self.client.is_available()
         assert result is False
 
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     async def test_is_available_no_folder_id(self):
         """Тест проверки доступности без folder_id."""
         self.client.folder_id = None
-        
+
         result = await self.client.is_available()
         assert result is False
 
@@ -465,7 +447,7 @@ class TestYandexGPTClient:
     async def test_is_available_api_error(self):
         """Тест проверки доступности с ошибкой API."""
         self.client.generate_text = AsyncMock(return_value=None)
-        
+
         result = await self.client.is_available()
         assert result is False
 
@@ -473,14 +455,14 @@ class TestYandexGPTClient:
     async def test_is_available_exception(self):
         """Тест проверки доступности с исключением."""
         self.client.generate_text = AsyncMock(side_effect=Exception("API Error"))
-        
+
         result = await self.client.is_available()
         assert result is False
 
     def test_yandex_gpt_message_model(self):
         """Тест модели YandexGPTMessage."""
         message = YandexGPTMessage(role="user", text="Тестовое сообщение")
-        
+
         assert message.role == "user"
         assert message.text == "Тестовое сообщение"
 
@@ -488,28 +470,28 @@ class TestYandexGPTClient:
         """Тест модели YandexGPTRequest."""
         messages = [
             YandexGPTMessage(role="system", text="Системное сообщение"),
-            YandexGPTMessage(role="user", text="Пользовательское сообщение")
+            YandexGPTMessage(role="user", text="Пользовательское сообщение"),
         ]
-        
+
         request = YandexGPTRequest(
             modelUri="gpt://test/model/latest",
             completionOptions={"temperature": 0.7, "maxTokens": "1000"},
-            messages=messages
+            messages=messages,
         )
-        
+
         assert request.modelUri == "gpt://test/model/latest"
         assert request.completionOptions["temperature"] == 0.7
         assert len(request.messages) == 2
 
     def test_client_initialization(self):
         """Тест инициализации клиента."""
-        with patch('app.services.yandex_gpt.settings') as mock_settings:
+        with patch("app.services.yandex_gpt.settings") as mock_settings:
             mock_settings.YANDEX_API_KEY = "test_key"
             mock_settings.YANDEX_FOLDER_ID = "test_folder"
             mock_settings.YANDEX_CATALOG_ID = "test_catalog"
-            
+
             client = YandexGPTClient()
-            
+
             assert client.api_key == "test_key"
             assert client.folder_id == "test_folder"
             assert client.catalog_id == "test_catalog"
@@ -518,13 +500,13 @@ class TestYandexGPTClient:
 
     def test_client_initialization_without_catalog_id(self):
         """Тест инициализации клиента без catalog_id."""
-        with patch('app.services.yandex_gpt.settings') as mock_settings:
+        with patch("app.services.yandex_gpt.settings") as mock_settings:
             mock_settings.YANDEX_API_KEY = "test_key"
             mock_settings.YANDEX_FOLDER_ID = "test_folder"
             mock_settings.YANDEX_CATALOG_ID = None
-            
+
             client = YandexGPTClient()
-            
+
             assert client.catalog_id == "test_folder"  # Should fallback to folder_id
 
     @pytest.mark.asyncio
@@ -532,10 +514,10 @@ class TestYandexGPTClient:
         """Тест пересоздания сессии после закрытия."""
         session1 = await self.client._get_session()
         await self.client.close()
-        
+
         # После закрытия должна создаться новая сессия
         session2 = await self.client._get_session()
-        
+
         assert session1 is not session2
         assert session1.closed
         assert not session2.closed

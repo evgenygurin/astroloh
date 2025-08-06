@@ -1,6 +1,7 @@
 """
 Тесты для валидаторов данных.
 """
+
 from datetime import date
 
 import pytest

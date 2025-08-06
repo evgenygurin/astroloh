@@ -1,6 +1,7 @@
 """
 Тесты для расширенной системы распознавания интентов Stage 5.
 """
+
 from datetime import date, timedelta
 
 import pytest
@@ -45,9 +46,7 @@ class TestEnhancedIntentRecognition:
     def test_multiple_pattern_bonus(self, recognizer, user_context):
         """Тест бонуса за множественные совпадения."""
         # Запрос с несколькими паттернами должен иметь высокую уверенность
-        request = recognizer.recognize_intent(
-            "мой гороскоп на сегодня", user_context
-        )
+        request = recognizer.recognize_intent("мой гороскоп на сегодня", user_context)
         assert request.intent == YandexIntent.HOROSCOPE
         assert request.confidence > 0.9
 
@@ -110,9 +109,7 @@ class TestEnhancedIntentRecognition:
         ]
 
         for text, expected_dates in test_cases:
-            request = recognizer.recognize_intent(
-                f"гороскоп {text}", user_context
-            )
+            request = recognizer.recognize_intent(f"гороскоп {text}", user_context)
             if expected_dates:
                 assert "dates" in request.entities
                 # Проверяем что хотя бы одна дата извлечена
@@ -137,9 +134,7 @@ class TestEnhancedIntentRecognition:
             request = recognizer.recognize_intent(text, user_context)
             if expected_signs:
                 assert "zodiac_signs" in request.entities
-                assert len(request.entities["zodiac_signs"]) == len(
-                    expected_signs
-                )
+                assert len(request.entities["zodiac_signs"]) == len(expected_signs)
                 for sign in expected_signs:
                     assert sign in request.entities["zodiac_signs"]
 
@@ -200,9 +195,7 @@ class TestEnhancedIntentRecognition:
             intent=YandexIntent.HOROSCOPE,
         )
 
-        request = recognizer.recognize_intent(
-            "15 марта 1990", awaiting_context
-        )
+        request = recognizer.recognize_intent("15 марта 1990", awaiting_context)
 
         assert request.intent == YandexIntent.HOROSCOPE
         assert request.confidence == 1.0
@@ -224,9 +217,7 @@ class TestEnhancedIntentRecognition:
 
     def test_fallback_processing(self, recognizer):
         """Тест обработки fallback при неполных данных."""
-        awaiting_context = UserContext(
-            user_id="test_user", awaiting_data="birth_date"
-        )
+        awaiting_context = UserContext(user_id="test_user", awaiting_data="birth_date")
 
         # Запрос без ожидаемых данных
         request = recognizer.recognize_intent("помощь", awaiting_context)

@@ -1,6 +1,7 @@
 """
 User management and session security system.
 """
+
 from __future__ import annotations
 
 import json

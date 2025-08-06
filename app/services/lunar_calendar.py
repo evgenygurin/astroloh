@@ -1,6 +1,7 @@
 """
 Сервис лунного календаря и лунных рекомендаций.
 """
+
 import calendar
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -383,9 +384,7 @@ class LunarCalendar:
         lunar_day = int(moon_angle / 12.2) + 1
         return max(1, min(30, lunar_day))
 
-    def get_monthly_lunar_calendar(
-        self, year: int, month: int
-    ) -> Dict[str, Any]:
+    def get_monthly_lunar_calendar(self, year: int, month: int) -> Dict[str, Any]:
         """Получает лунный календарь на месяц."""
 
         # Получаем все дни месяца
@@ -419,9 +418,7 @@ class LunarCalendar:
             "monthly_advice": self._get_monthly_advice(year, month),
         }
 
-    def _find_key_lunar_dates(
-        self, year: int, month: int
-    ) -> Dict[str, List[int]]:
+    def _find_key_lunar_dates(self, year: int, month: int) -> Dict[str, List[int]]:
         """Находит ключевые лунные даты в месяце."""
 
         days_in_month = calendar.monthrange(year, month)[1]
@@ -502,9 +499,7 @@ class LunarCalendar:
             "recommendation": specific_recommendation,
             "favorability": favorability,
             "energy_level": energy_level,
-            "additional_advice": self._get_additional_advice(
-                activity_type, lunar_info
-            ),
+            "additional_advice": self._get_additional_advice(activity_type, lunar_info),
         }
 
     def _determine_favorability(
@@ -546,9 +541,7 @@ class LunarCalendar:
             },
         }
 
-        base_score = favorability_matrix.get(activity_type, {}).get(
-            phase_name, 3
-        )
+        base_score = favorability_matrix.get(activity_type, {}).get(phase_name, 3)
 
         # Корректируем по уровню энергии
         energy_modifiers = {
@@ -622,23 +615,17 @@ class LunarCalendar:
 
         for day in range(1, days_in_month + 1):
             target_date = datetime(year, month, day)
-            recommendations = self.get_lunar_recommendations(
-                activity_type, target_date
-            )
+            recommendations = self.get_lunar_recommendations(activity_type, target_date)
 
             if recommendations["favorability"]["score"] >= 4:
-                best_days.append(
-                    {
-                        "date": target_date.strftime("%Y-%m-%d"),
-                        "day": day,
-                        "score": recommendations["favorability"]["score"],
-                        "description": recommendations["favorability"][
-                            "description"
-                        ],
-                        "lunar_day": recommendations["lunar_day"],
-                        "moon_phase": recommendations["moon_phase"],
-                    }
-                )
+                best_days.append({
+                    "date": target_date.strftime("%Y-%m-%d"),
+                    "day": day,
+                    "score": recommendations["favorability"]["score"],
+                    "description": recommendations["favorability"]["description"],
+                    "lunar_day": recommendations["lunar_day"],
+                    "moon_phase": recommendations["moon_phase"],
+                })
 
         # Сортируем по убыванию благоприятности
         best_days.sort(key=lambda x: x["score"], reverse=True)

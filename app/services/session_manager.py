@@ -1,6 +1,7 @@
 """
 Сервис управления сессиями пользователей с интеграцией безопасного хранения.
 """
+
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
@@ -21,18 +22,16 @@ class SessionManager:
         self._sessions: Dict[str, Dict[str, Any]] = {}
         self._session_timeout = timedelta(hours=1)
         self._conversation_timeout = timedelta(minutes=10)  # Alice conversation timeout
-        
+
         # Счетчики для аналитики
         self._session_stats = {
             "total_sessions": 0,
             "active_conversations": 0,
-            "completed_flows": 0
+            "completed_flows": 0,
         }
 
         # Новый безопасный менеджер сессий
-        self._secure_manager = (
-            SecureSessionManager(db_session) if db_session else None
-        )
+        self._secure_manager = SecureSessionManager(db_session) if db_session else None
 
     def get_user_context(self, session: YandexSession) -> UserContext:
         """Получает контекст пользователя из сессии с Alice-совместимым управлением."""
@@ -54,44 +53,42 @@ class SessionManager:
         # Обновляем активность для Alice
         session_data["last_activity"] = datetime.utcnow().isoformat()
         session_data["message_count"] = session_data.get("message_count", 0) + 1
-        
+
         context_data = session_data.get("context", {})
         context = UserContext(**context_data)
-        
+
         # Проверяем, не слишком ли долго длится разговор без прогресса
         if self._is_conversation_stalled(session_data):
             context.awaiting_data = None
             context.conversation_step = 0
-            
+
         return context
 
-    def update_user_context(
-        self, session: YandexSession, context: UserContext
-    ) -> None:
+    def update_user_context(self, session: YandexSession, context: UserContext) -> None:
         """Обновляет контекст пользователя в сессии с улучшенным отслеживанием."""
         session_key = self._get_session_key(session)
         now = datetime.utcnow().isoformat()
-        
+
         # Получаем существующие данные или создаем новые
         existing_data = self._sessions.get(session_key, {})
-        
+
         session_data = {
             "context": context.dict(),
             "last_activity": now,
             "session_id": session.session_id,
             "user_id": session.user_id,
-            
             # Alice-специфичные поля
             "message_count": existing_data.get("message_count", 0),
             "conversation_start": existing_data.get("conversation_start", now),
             "last_intent": context.intent.value if context.intent else None,
             "session_new": session.new,
             "successful_interactions": existing_data.get("successful_interactions", 0),
-            
             # Для отслеживания зависших состояний
-            "awaiting_data_since": now if context.awaiting_data and not existing_data.get("awaiting_data_since") else existing_data.get("awaiting_data_since"),
+            "awaiting_data_since": now
+            if context.awaiting_data and not existing_data.get("awaiting_data_since")
+            else existing_data.get("awaiting_data_since"),
         }
-        
+
         # Очищаем awaiting_data_since если больше не ждем данных
         if not context.awaiting_data:
             session_data["awaiting_data_since"] = None
@@ -120,9 +117,7 @@ class SessionManager:
         context.conversation_step += 1
         self.update_user_context(session, context)
 
-    def clear_awaiting_data(
-        self, session: YandexSession, context: UserContext
-    ) -> None:
+    def clear_awaiting_data(self, session: YandexSession, context: UserContext) -> None:
         """Очищает ожидание данных."""
         context.awaiting_data = None
         context.conversation_step += 1
@@ -130,13 +125,9 @@ class SessionManager:
 
     def is_new_session(self, session: YandexSession) -> bool:
         """Проверяет, является ли сессия новой."""
-        return (
-            session.new or self._get_session_key(session) not in self._sessions
-        )
+        return session.new or self._get_session_key(session) not in self._sessions
 
-    def get_session_history(
-        self, session: YandexSession
-    ) -> Optional[Dict[str, Any]]:
+    def get_session_history(self, session: YandexSession) -> Optional[Dict[str, Any]]:
         """Получает историю сессии."""
         session_key = self._get_session_key(session)
         return self._sessions.get(session_key)
@@ -162,8 +153,10 @@ class SessionManager:
             self._cleanup_expired_session(session_key)
 
         # Обновляем статистику
-        self._session_stats["active_conversations"] = len(self._sessions) - len(expired_sessions)
-        
+        self._session_stats["active_conversations"] = len(self._sessions) - len(
+            expired_sessions
+        )
+
         return len(expired_sessions)
 
     def get_active_sessions_count(self) -> int:
@@ -177,30 +170,28 @@ class SessionManager:
     def _is_session_expired(self, session_data: Dict[str, Any]) -> bool:
         """Проверяет, истекла ли сессия."""
         try:
-            last_activity = datetime.fromisoformat(
-                session_data["last_activity"]
-            )
+            last_activity = datetime.fromisoformat(session_data["last_activity"])
             return datetime.utcnow() - last_activity > self._session_timeout
         except (KeyError, ValueError):
             return True
-    
+
     def _is_conversation_stalled(self, session_data: Dict[str, Any]) -> bool:
         """Проверяет, зависла ли беседа в ожидании данных."""
         try:
             awaiting_since = session_data.get("awaiting_data_since")
             if not awaiting_since:
                 return False
-                
+
             awaiting_time = datetime.fromisoformat(awaiting_since)
             return datetime.utcnow() - awaiting_time > self._conversation_timeout
         except (ValueError, TypeError):
             return False
-    
+
     def _initialize_new_session(self, session: YandexSession) -> None:
         """Инициализирует новую сессию."""
         self._session_stats["total_sessions"] += 1
         self._session_stats["active_conversations"] += 1
-        
+
     def _cleanup_expired_session(self, session_key: str) -> None:
         """Очищает истекшую сессию с обновлением статистики."""
         if session_key in self._sessions:
@@ -209,26 +200,34 @@ class SessionManager:
             if session_data.get("successful_interactions", 0) > 0:
                 self._session_stats["completed_flows"] += 1
             del self._sessions[session_key]
-            
+
     def get_session_analytics(self) -> Dict[str, Any]:
         """Возвращает аналитику сессий для мониторинга Alice compliance."""
         active_count = len(self._sessions)
         avg_message_count = 0
         stalled_count = 0
-        
+
         if self._sessions:
-            total_messages = sum(session.get("message_count", 0) for session in self._sessions.values())
+            total_messages = sum(
+                session.get("message_count", 0) for session in self._sessions.values()
+            )
             avg_message_count = total_messages / active_count
-            stalled_count = sum(1 for session in self._sessions.values() if self._is_conversation_stalled(session))
-        
+            stalled_count = sum(
+                1
+                for session in self._sessions.values()
+                if self._is_conversation_stalled(session)
+            )
+
         return {
             **self._session_stats,
             "active_sessions": active_count,
             "average_messages_per_session": round(avg_message_count, 2),
             "stalled_conversations": stalled_count,
             "success_rate": (
-                self._session_stats["completed_flows"] / max(1, self._session_stats["total_sessions"])
-            ) * 100
+                self._session_stats["completed_flows"]
+                / max(1, self._session_stats["total_sessions"])
+            )
+            * 100,
         }
 
 

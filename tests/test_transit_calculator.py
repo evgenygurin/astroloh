@@ -1,6 +1,7 @@
 """
 Тесты для сервиса расчета транзитов.
 """
+
 import pytest
 from datetime import date, datetime
 from unittest.mock import patch
@@ -14,14 +15,14 @@ class TestTransitCalculator:
     def setup_method(self):
         """Настройка для каждого теста."""
         self.transit_calc = TransitCalculator()
-        
+
         # Мок натальных планет для тестирования
         self.mock_natal_planets = {
             "Sun": {"longitude": 120.5, "sign": "Лев", "degree_in_sign": 0.5},
             "Moon": {"longitude": 45.2, "sign": "Телец", "degree_in_sign": 15.2},
             "Mercury": {"longitude": 95.8, "sign": "Рак", "degree_in_sign": 5.8},
             "Venus": {"longitude": 200.1, "sign": "Весы", "degree_in_sign": 20.1},
-            "Mars": {"longitude": 310.7, "sign": "Водолей", "degree_in_sign": 10.7}
+            "Mars": {"longitude": 310.7, "sign": "Водолей", "degree_in_sign": 10.7},
         }
 
     @pytest.mark.unit
@@ -36,18 +37,19 @@ class TestTransitCalculator:
     def test_calculate_current_transits_basic(self):
         """Тест базового расчета транзитов."""
         with patch.object(
-            self.transit_calc.astro_calc, 
-            'calculate_planet_positions'
+            self.transit_calc.astro_calc, "calculate_planet_positions"
         ) as mock_positions:
             # Мок текущих позиций планет
             mock_positions.return_value = {
                 "Sun": {"longitude": 125.0, "sign": "Лев", "degree_in_sign": 5.0},
                 "Jupiter": {"longitude": 120.0, "sign": "Лев", "degree_in_sign": 0.0},
-                "Saturn": {"longitude": 45.0, "sign": "Телец", "degree_in_sign": 15.0}
+                "Saturn": {"longitude": 45.0, "sign": "Телец", "degree_in_sign": 15.0},
             }
-            
-            result = self.transit_calc.calculate_current_transits(self.mock_natal_planets)
-            
+
+            result = self.transit_calc.calculate_current_transits(
+                self.mock_natal_planets
+            )
+
             assert "date" in result
             assert "active_transits" in result
             assert "approaching_transits" in result
@@ -61,11 +63,11 @@ class TestTransitCalculator:
         """Тест расчета транзитных аспектов."""
         transit_data = {"longitude": 120.0, "sign": "Лев"}
         natal_data = {"longitude": 120.5, "sign": "Лев"}
-        
+
         aspects = self.transit_calc._calculate_transit_aspects(
             transit_data, natal_data, "Jupiter", "Sun"
         )
-        
+
         assert isinstance(aspects, list)
         if aspects:  # Если найдены аспекты
             aspect = aspects[0]
@@ -111,7 +113,7 @@ class TestTransitCalculator:
         influence = self.transit_calc._get_transit_influence("Sun", "Sun", "Соединение")
         assert isinstance(influence, str)
         assert len(influence) > 0
-        
+
         # Тест общих влияний
         influence = self.transit_calc._get_transit_influence("Jupiter", "Mars", "Трин")
         assert isinstance(influence, str)
@@ -123,21 +125,23 @@ class TestTransitCalculator:
         # Пустой список транзитов
         empty_summary = self.transit_calc._create_transit_summary([])
         assert "Спокойный период" in empty_summary
-        
+
         # Транзиты со слабыми аспектами
         weak_transits = [
             {"strength": "слабый", "nature": "гармония"},
-            {"strength": "слабый", "nature": "напряжение"}
+            {"strength": "слабый", "nature": "напряжение"},
         ]
         weak_summary = self.transit_calc._create_transit_summary(weak_transits)
         assert "слабых транзитных влияний" in weak_summary
-        
+
         # Сильные гармоничные транзиты
         harmonious_transits = [
             {"strength": "сильный", "nature": "гармония"},
-            {"strength": "очень сильный", "nature": "поток"}
+            {"strength": "очень сильный", "nature": "поток"},
         ]
-        harmonious_summary = self.transit_calc._create_transit_summary(harmonious_transits)
+        harmonious_summary = self.transit_calc._create_transit_summary(
+            harmonious_transits
+        )
         assert "Благоприятный период" in harmonious_summary
 
     @pytest.mark.unit
@@ -145,28 +149,26 @@ class TestTransitCalculator:
         """Тест базового расчета соляра."""
         birth_date = date(1990, 3, 15)
         year = 2024
-        
-        with patch.object(
-            self.transit_calc.astro_calc, 
-            'calculate_planet_positions'
-        ) as mock_positions, \
-        patch.object(
-            self.transit_calc.astro_calc,
-            'calculate_houses'
-        ) as mock_houses, \
-        patch.object(
-            self.transit_calc.astro_calc,
-            'calculate_aspects'
-        ) as mock_aspects:
-            
+
+        with (
+            patch.object(
+                self.transit_calc.astro_calc, "calculate_planet_positions"
+            ) as mock_positions,
+            patch.object(
+                self.transit_calc.astro_calc, "calculate_houses"
+            ) as mock_houses,
+            patch.object(
+                self.transit_calc.astro_calc, "calculate_aspects"
+            ) as mock_aspects,
+        ):
             mock_positions.return_value = self.mock_natal_planets
             mock_houses.return_value = {1: {"cusp_longitude": 0, "sign": "Овен"}}
             mock_aspects.return_value = [
                 {"aspect": "Трин", "orb": 3, "planet1": "Sun", "planet2": "Jupiter"}
             ]
-            
+
             result = self.transit_calc.calculate_solar_return(birth_date, year)
-            
+
             assert "year" in result
             assert "date" in result
             assert "planets" in result
@@ -190,9 +192,9 @@ class TestTransitCalculator:
             ("Стрелец", "расширения"),
             ("Козерог", "достижений"),
             ("Водолей", "инноваций"),
-            ("Рыбы", "духовного развития")
+            ("Рыбы", "духовного развития"),
         ]
-        
+
         for sign, expected_keyword in themes:
             theme = self.transit_calc._get_year_theme(sign)
             assert isinstance(theme, str)
@@ -204,26 +206,22 @@ class TestTransitCalculator:
         birth_date = date(1990, 3, 15)
         month = 12
         year = 2024
-        
-        with patch.object(
-            self.transit_calc.astro_calc,
-            'calculate_planet_positions'
-        ) as mock_positions, \
-        patch.object(
-            self.transit_calc.astro_calc,
-            'calculate_houses'
-        ) as mock_houses, \
-        patch.object(
-            self.transit_calc,
-            '_find_new_moon'
-        ) as mock_new_moon:
-            
+
+        with (
+            patch.object(
+                self.transit_calc.astro_calc, "calculate_planet_positions"
+            ) as mock_positions,
+            patch.object(
+                self.transit_calc.astro_calc, "calculate_houses"
+            ) as mock_houses,
+            patch.object(self.transit_calc, "_find_new_moon") as mock_new_moon,
+        ):
             mock_positions.return_value = self.mock_natal_planets
             mock_houses.return_value = {1: {"cusp_longitude": 0, "sign": "Рак"}}
             mock_new_moon.return_value = datetime(2024, 12, 15)
-            
+
             result = self.transit_calc.calculate_lunar_return(birth_date, month, year)
-            
+
             assert "month" in result
             assert "year" in result
             assert "new_moon_date" in result
@@ -238,16 +236,14 @@ class TestTransitCalculator:
     def test_find_new_moon(self):
         """Тест поиска новолуния."""
         with patch.object(
-            self.transit_calc.astro_calc,
-            'calculate_moon_phase'
+            self.transit_calc.astro_calc, "calculate_moon_phase"
         ) as mock_phase:
-            
             # Тест новолуния
             mock_phase.return_value = {"angle": 15}
             result = self.transit_calc._find_new_moon(2024, 12)
             assert result is not None
             assert isinstance(result, datetime)
-            
+
             # Тест случая когда не новолуние
             mock_phase.return_value = {"angle": 180}
             result = self.transit_calc._find_new_moon(2024, 12)
@@ -256,11 +252,8 @@ class TestTransitCalculator:
     @pytest.mark.unit
     def test_get_monthly_themes(self):
         """Тест получения тем месяца."""
-        positions = {
-            "Moon": {"sign": "Рак"},
-            "Mercury": {"sign": "Близнецы"}
-        }
-        
+        positions = {"Moon": {"sign": "Рак"}, "Mercury": {"sign": "Близнецы"}}
+
         themes = self.transit_calc._get_monthly_themes(positions)
         assert isinstance(themes, list)
         assert len(themes) > 0
@@ -272,15 +265,21 @@ class TestTransitCalculator:
         # Используем реальные данные для более полного тестирования
         natal_planets = {
             "Sun": {"longitude": 100.0, "sign": "Рак", "degree_in_sign": 10.0},
-            "Moon": {"longitude": 200.0, "sign": "Весы", "degree_in_sign": 20.0}
+            "Moon": {"longitude": 200.0, "sign": "Весы", "degree_in_sign": 20.0},
         }
-        
+
         # Не мочим astro_calc для интеграционного теста
         result = self.transit_calc.calculate_current_transits(natal_planets)
-        
+
         # Проверяем структуру результата
         assert isinstance(result, dict)
-        required_keys = ["date", "active_transits", "approaching_transits", "summary", "daily_influences"]
+        required_keys = [
+            "date",
+            "active_transits",
+            "approaching_transits",
+            "summary",
+            "daily_influences",
+        ]
         for key in required_keys:
             assert key in result
 
@@ -288,15 +287,15 @@ class TestTransitCalculator:
     def test_transit_calculation_performance(self):
         """Тест производительности расчета транзитов."""
         import time
-        
+
         start_time = time.time()
-        
+
         # Выполняем несколько расчетов
         for _ in range(10):
             self.transit_calc.calculate_current_transits(self.mock_natal_planets)
-            
+
         end_time = time.time()
         execution_time = end_time - start_time
-        
+
         # Проверяем, что расчеты выполняются достаточно быстро
         assert execution_time < 5.0  # Менее 5 секунд для 10 расчетов

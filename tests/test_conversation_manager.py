@@ -1,6 +1,7 @@
 """
 Tests for conversation manager functionality.
 """
+
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -91,27 +92,19 @@ class TestConversationManager:
     def test_calculate_personalization_level(self):
         """Test personalization level calculation."""
         # New user
-        level = self.conversation_manager.calculate_personalization_level(
-            0, None
-        )
+        level = self.conversation_manager.calculate_personalization_level(0, None)
         assert level == 0
 
         # User with some conversations
-        level = self.conversation_manager.calculate_personalization_level(
-            5, None
-        )
+        level = self.conversation_manager.calculate_personalization_level(5, None)
         assert 0 < level <= 30
 
         # Frequent user
-        level = self.conversation_manager.calculate_personalization_level(
-            20, None
-        )
+        level = self.conversation_manager.calculate_personalization_level(20, None)
         assert 30 < level <= 70
 
         # Very active user
-        level = self.conversation_manager.calculate_personalization_level(
-            50, None
-        )
+        level = self.conversation_manager.calculate_personalization_level(50, None)
         assert 70 < level <= 100
 
     def test_calculate_personalization_level_with_recent_interaction(self):
@@ -122,9 +115,7 @@ class TestConversationManager:
         )
 
         # Should get bonus for recent interaction
-        base_level = self.conversation_manager.calculate_personalization_level(
-            10, None
-        )
+        base_level = self.conversation_manager.calculate_personalization_level(10, None)
         assert level > base_level
 
     def test_enhance_context_with_history(self):
@@ -184,10 +175,8 @@ class TestConversationManager:
         ) as mock_history:
             mock_history.return_value = mock_conversations
 
-            patterns = (
-                await self.conversation_manager.analyze_conversation_patterns(
-                    "test_user_id", mock_db
-                )
+            patterns = await self.conversation_manager.analyze_conversation_patterns(
+                "test_user_id", mock_db
             )
 
         assert "most_common_intent" in patterns
@@ -258,19 +247,13 @@ class TestConversationManager:
     def test_get_conversation_sentiment(self):
         """Test conversation sentiment analysis."""
         positive_text = "спасибо, очень интересно!"
-        sentiment = self.conversation_manager.get_conversation_sentiment(
-            positive_text
-        )
+        sentiment = self.conversation_manager.get_conversation_sentiment(positive_text)
         assert sentiment in ["positive", "neutral", "negative"]
 
         negative_text = "это неправда, не нравится"
-        sentiment = self.conversation_manager.get_conversation_sentiment(
-            negative_text
-        )
+        sentiment = self.conversation_manager.get_conversation_sentiment(negative_text)
         assert sentiment in ["positive", "neutral", "negative"]
 
         neutral_text = "расскажи гороскоп"
-        sentiment = self.conversation_manager.get_conversation_sentiment(
-            neutral_text
-        )
+        sentiment = self.conversation_manager.get_conversation_sentiment(neutral_text)
         assert sentiment in ["positive", "neutral", "negative"]

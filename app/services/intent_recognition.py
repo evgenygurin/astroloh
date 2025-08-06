@@ -1,6 +1,7 @@
 """
 Сервис распознавания интентов для Яндекс.Диалогов.
 """
+
 import hashlib
 import re
 from typing import Any, Dict, List, Tuple
@@ -336,9 +337,7 @@ class IntentRecognizer:
         entities = self._extract_entities(text_lower)
 
         # Обновляем статистику
-        self._intent_frequency[intent] = (
-            self._intent_frequency.get(intent, 0) + 1
-        )
+        self._intent_frequency[intent] = self._intent_frequency.get(intent, 0) + 1
         user_id = getattr(user_context, "user_id", None)
         if user_id:
             if user_id not in self._user_patterns:
@@ -362,7 +361,7 @@ class IntentRecognizer:
 
         # Преобразуем текст для лучшей обработки голосового ввода
         processed_text = self._preprocess_voice_input(text)
-        
+
         best_intent = YandexIntent.UNKNOWN
         max_confidence = 0.0
 
@@ -381,7 +380,7 @@ class IntentRecognizer:
                         confidence += 0.9
                     else:
                         confidence += 0.4 + (0.6 / len(patterns))
-                
+
                 # Проверяем обработанный текст
                 elif re.search(pattern, processed_text):
                     matches += 1
@@ -390,7 +389,7 @@ class IntentRecognizer:
 
             # Бонус за множественные совпадения
             if matches > 1:
-                confidence *= (1.2 + (matches - 1) * 0.3)
+                confidence *= 1.2 + (matches - 1) * 0.3
 
             # Высокая уверенность для точных совпадений
             if exact_match:
@@ -548,12 +547,8 @@ class IntentRecognizer:
             r"болею",
         ]
 
-        positive_count = sum(
-            1 for word in positive_words if re.search(word, text)
-        )
-        negative_count = sum(
-            1 for word in negative_words if re.search(word, text)
-        )
+        positive_count = sum(1 for word in positive_words if re.search(word, text))
+        negative_count = sum(1 for word in negative_words if re.search(word, text))
 
         if positive_count > negative_count:
             return "positive"
@@ -633,13 +628,13 @@ class IntentRecognizer:
             r"совместимост": "совместимость",
             r"гороскоп.*ля.*льва": "гороскоп для льва",
         }
-        
+
         processed = text.lower()
         for pattern, replacement in voice_corrections.items():
             processed = re.sub(pattern, replacement, processed)
-        
+
         return processed
-    
+
     def get_user_preferences(self, user_id: str) -> List[YandexIntent]:
         """Получает предпочтения пользователя."""
         if user_id not in self._user_patterns:

@@ -1,6 +1,7 @@
 """
 Основной модуль FastAPI приложения для навыка "Астролог" Яндекс Алисы.
 """
+
 import logging
 
 from fastapi import FastAPI
@@ -42,8 +43,10 @@ app.include_router(recommendations_router, prefix="/api/v1")
 @app.get("/")
 async def root() -> dict[str, str | list[str]]:
     """Корневой эндпоинт для проверки работы API."""
-    return {"message": "Astroloh - Multi-Platform Astrological Assistant is running!", 
-            "platforms": ["Yandex Alice", "Telegram Bot", "Google Assistant"]}
+    return {
+        "message": "Astroloh - Multi-Platform Astrological Assistant is running!",
+        "platforms": ["Yandex Alice", "Telegram Bot", "Google Assistant"],
+    }
 
 
 @app.get("/health")
@@ -69,9 +72,7 @@ async def startup_event() -> None:
             await init_database()
             logger.info("Database initialized successfully")
         else:
-            logger.warning(
-                "DATABASE_URL not configured, running without database"
-            )
+            logger.warning("DATABASE_URL not configured, running without database")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
 

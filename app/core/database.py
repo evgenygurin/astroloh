@@ -1,6 +1,7 @@
 """
 Database initialization and dependency injection.
 """
+
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -26,7 +27,7 @@ async def init_database():
     db_manager = DatabaseManager(settings.DATABASE_URL)
     await db_manager.initialize()
     await db_manager.create_tables()
-    
+
     # Set for backward compatibility with tests
     async_session_factory = db_manager.async_session
 

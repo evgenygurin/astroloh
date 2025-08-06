@@ -1,6 +1,7 @@
 """
 Encryption and security utilities for protecting sensitive user data.
 """
+
 import base64
 import hashlib
 import secrets
@@ -50,9 +51,7 @@ class EncryptionService:
         Returns:
             Производный ключ для шифрования
         """
-        salt = (
-            b"astroloh_salt_2024"  # Фиксированная соль для воспроизводимости
-        )
+        salt = b"astroloh_salt_2024"  # Фиксированная соль для воспроизводимости
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
@@ -312,19 +311,13 @@ class DataProtectionManager:
         result = {}
 
         if encrypted_birth_date:
-            result["birth_date"] = self.encryption.decrypt(
-                encrypted_birth_date
-            )
+            result["birth_date"] = self.encryption.decrypt(encrypted_birth_date)
 
         if encrypted_birth_time:
-            result["birth_time"] = self.encryption.decrypt(
-                encrypted_birth_time
-            )
+            result["birth_time"] = self.encryption.decrypt(encrypted_birth_time)
 
         if encrypted_birth_location:
-            result["birth_location"] = self.encryption.decrypt(
-                encrypted_birth_location
-            )
+            result["birth_location"] = self.encryption.decrypt(encrypted_birth_location)
 
         return result
 

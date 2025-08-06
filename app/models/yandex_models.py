@@ -1,6 +1,7 @@
 """
 Модели данных для интеграции с Яндекс.Диалогами.
 """
+
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -56,7 +57,7 @@ class YandexButton(BaseModel):
     payload: Optional[Dict[str, Any]] = None
     url: Optional[str] = None
     hide: bool = True
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         # Ensure button title length complies with Alice limits (max 64 chars)
@@ -72,7 +73,7 @@ class YandexCard(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     button: Optional[YandexButton] = None
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         # Ensure title and description length comply with Alice limits
@@ -93,7 +94,7 @@ class YandexRequestMeta(BaseModel):
 
 class YandexApplication(BaseModel):
     """Данные приложения."""
-    
+
     application_id: str
 
 
@@ -142,7 +143,7 @@ class YandexResponse(BaseModel):
     buttons: Optional[List[YandexButton]] = None
     end_session: bool = False
     directives: Optional[Dict[str, Any]] = None
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         # Ensure Alice button limit compliance (max 5 buttons)
@@ -169,9 +170,7 @@ class UserContext(BaseModel):
 
     user_id: Optional[str] = None
     intent: Optional[YandexIntent] = None
-    awaiting_data: Optional[
-        str
-    ] = None  # Ожидаемые данные (дата рождения, знак и т.д.)
+    awaiting_data: Optional[str] = None  # Ожидаемые данные (дата рождения, знак и т.д.)
     birth_date: Optional[str] = None
     birth_time: Optional[str] = None
     birth_place: Optional[str] = None

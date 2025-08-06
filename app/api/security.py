@@ -1,6 +1,7 @@
 """
 Security and GDPR compliance API endpoints.
 """
+
 import uuid
 from typing import Dict, Optional
 
@@ -41,9 +42,7 @@ class ProcessingRestrictionRequest(BaseModel):
 
 
 @router.get("/user/{user_id}/data-summary")
-async def get_user_data_summary(
-    user_id: str, db: AsyncSession = Depends(get_database)
-):
+async def get_user_data_summary(user_id: str, db: AsyncSession = Depends(get_database)):
     """
     Get user data summary (GDPR Article 15 - Right of access).
 
@@ -66,9 +65,7 @@ async def get_user_data_summary(
             raise HTTPException(status_code=404, detail="User not found")
 
         gdpr_service = GDPRComplianceService(db)
-        summary = await gdpr_service.get_user_data_summary(
-            uuid.UUID(user_record[0])
-        )
+        summary = await gdpr_service.get_user_data_summary(uuid.UUID(user_record[0]))
 
         if not summary:
             raise HTTPException(status_code=404, detail="User data not found")
@@ -120,9 +117,7 @@ async def export_user_data(
         return export_data
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to export data: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to export data: {str(e)}")
 
 
 @router.post("/user/{user_id}/consent")
@@ -162,9 +157,7 @@ async def update_consent(
         )
 
         if not success:
-            raise HTTPException(
-                status_code=500, detail="Failed to update consent"
-            )
+            raise HTTPException(status_code=500, detail="Failed to update consent")
 
         return {
             "status": "success",
@@ -216,9 +209,7 @@ async def rectify_user_data(
         )
 
         if not success:
-            raise HTTPException(
-                status_code=500, detail="Failed to rectify data"
-            )
+            raise HTTPException(status_code=500, detail="Failed to rectify data")
 
         return {
             "status": "success",
@@ -227,9 +218,7 @@ async def rectify_user_data(
         }
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to rectify data: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to rectify data: {str(e)}")
 
 
 @router.post("/user/{user_id}/delete-request")
@@ -405,9 +394,7 @@ async def get_compliance_report(
         end_date = datetime.utcnow()
 
         gdpr_service = GDPRComplianceService(db)
-        report = await gdpr_service.generate_compliance_report(
-            start_date, end_date
-        )
+        report = await gdpr_service.generate_compliance_report(start_date, end_date)
 
         return report
 
@@ -439,6 +426,4 @@ async def cleanup_expired_data(db: AsyncSession = Depends(get_database)):
         }
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to cleanup data: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to cleanup data: {str(e)}")

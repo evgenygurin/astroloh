@@ -1,6 +1,7 @@
 """
 Tests for natal chart calculation functionality.
 """
+
 from datetime import date, time
 
 from app.services.natal_chart import NatalChartCalculator

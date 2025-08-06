@@ -1,6 +1,7 @@
 """
 Централизованная система обработки ошибок для диалогов.
 """
+
 from typing import Any, Dict, Optional
 
 from app.services.error_recovery import ErrorType

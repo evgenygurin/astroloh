@@ -1,6 +1,7 @@
 """
 Pytest configuration and shared fixtures.
 """
+
 import asyncio
 import os
 import secrets
@@ -42,7 +43,7 @@ async def mock_database():
 async def db_session():
     """Create a real database session for testing."""
     from app.models.database import Base
-    
+
     # Create in-memory SQLite database for testing
     engine = create_async_engine(
         "sqlite+aiosqlite:///:memory:",
@@ -50,19 +51,19 @@ async def db_session():
         poolclass=StaticPool,
         connect_args={"check_same_thread": False},
     )
-    
+
     # Create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     # Create session factory
     async_session_factory = async_sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False
     )
-    
+
     async with async_session_factory() as session:
         yield session
-    
+
     # Clean up
     await engine.dispose()
 
@@ -274,11 +275,12 @@ async def reset_database_state():
     """Reset global database state before each test."""
     # Reset global db_manager to None before each test
     import app.core.database
+
     app.core.database.db_manager = None
     app.core.database.async_session_factory = None
-    
+
     yield
-    
+
     # Clean up after test
     if app.core.database.db_manager:
         try:

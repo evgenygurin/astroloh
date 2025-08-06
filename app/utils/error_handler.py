@@ -1,6 +1,7 @@
 """
 Обработчик ошибок для навыка Яндекс.Диалогов.
 """
+
 import logging
 from functools import wraps
 from typing import Any, Dict, Optional
@@ -76,9 +77,7 @@ class ErrorHandler:
         self, error: SkillError, context: Optional[Dict[str, Any]] = None
     ) -> YandexResponse:
         """Обрабатывает ошибки навыка."""
-        logger.warning(
-            f"Skill error: {error.message}", extra={"context": context}
-        )
+        logger.warning(f"Skill error: {error.message}", extra={"context": context})
 
         error_type = self.error_mappings.get(error.error_type, "general")
         return self.response_formatter.format_error_response(error_type)
@@ -87,9 +86,7 @@ class ErrorHandler:
         self, error: ValidationError, context: Optional[Dict[str, Any]] = None
     ) -> YandexResponse:
         """Обрабатывает ошибки валидации Pydantic."""
-        logger.warning(
-            f"Validation error: {error}", extra={"context": context}
-        )
+        logger.warning(f"Validation error: {error}", extra={"context": context})
 
         return self.response_formatter.format_error_response("invalid_data")
 
@@ -149,9 +146,7 @@ def handle_skill_errors(error_handler: Optional[ErrorHandler] = None):
             except Exception as e:
                 context = {
                     "function": func.__name__,
-                    "args": str(args)[
-                        :500
-                    ],  # Ограничиваем размер для безопасности
+                    "args": str(args)[:500],  # Ограничиваем размер для безопасности
                     "kwargs": str(kwargs)[:500],
                 }
                 return error_handler.handle_error(e, context)

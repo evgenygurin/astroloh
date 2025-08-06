@@ -1,6 +1,7 @@
 """
 Сервис генерации персональных гороскопов.
 """
+
 import random
 from datetime import date, datetime
 from enum import Enum
@@ -221,9 +222,7 @@ class HoroscopeGenerator:
         sign_info = self.sign_characteristics.get(zodiac_sign, {})
 
         # Получаем текущие астрологические влияния
-        astrological_influences = self._get_current_influences(
-            target_date, zodiac_sign
-        )
+        astrological_influences = self._get_current_influences(target_date, zodiac_sign)
 
         # Генерируем прогноз по сферам
         spheres_forecast = self._generate_spheres_forecast(
@@ -252,9 +251,7 @@ class HoroscopeGenerator:
             "energy_level": energy_level,
             "lucky_numbers": lucky_elements["numbers"],
             "lucky_colors": lucky_elements["colors"],
-            "advice": self._generate_advice(
-                zodiac_sign, astrological_influences
-            ),
+            "advice": self._generate_advice(zodiac_sign, astrological_influences),
             "astrological_influences": astrological_influences,
         }
 
@@ -270,9 +267,7 @@ class HoroscopeGenerator:
         planetary_hours = self.astro_calc.get_planetary_hours(target_date)
 
         # Упрощенное определение важных транзитов
-        important_transits = self._get_simplified_transits(
-            target_date, zodiac_sign
-        )
+        important_transits = self._get_simplified_transits(target_date, zodiac_sign)
 
         return {
             "moon_phase": moon_phase,
@@ -293,35 +288,29 @@ class HoroscopeGenerator:
         # Меркурий (цикл ~88 дней)
         mercury_phase = (day_of_year % 88) / 88
         if mercury_phase < 0.33:
-            transits.append(
-                {
-                    "planet": "Меркурий",
-                    "aspect": "благоприятный",
-                    "description": "Отличное время для общения и обучения",
-                }
-            )
+            transits.append({
+                "planet": "Меркурий",
+                "aspect": "благоприятный",
+                "description": "Отличное время для общения и обучения",
+            })
 
         # Венера (цикл ~225 дней)
         venus_phase = (day_of_year % 225) / 225
         if venus_phase < 0.4:
-            transits.append(
-                {
-                    "planet": "Венера",
-                    "aspect": "гармоничный",
-                    "description": "Благоприятно для любви и творчества",
-                }
-            )
+            transits.append({
+                "planet": "Венера",
+                "aspect": "гармоничный",
+                "description": "Благоприятно для любви и творчества",
+            })
 
         # Марс (цикл ~687 дней, упрощаем до 365)
         mars_phase = (day_of_year % 365) / 365
         if 0.2 < mars_phase < 0.6:
-            transits.append(
-                {
-                    "planet": "Марс",
-                    "aspect": "энергичный",
-                    "description": "Время активных действий и инициатив",
-                }
-            )
+            transits.append({
+                "planet": "Марс",
+                "aspect": "энергичный",
+                "description": "Время активных действий и инициатив",
+            })
 
         return transits
 
@@ -359,9 +348,7 @@ class HoroscopeGenerator:
 
         for sphere in ["love", "career", "health", "finances"]:
             sphere_templates = self.horoscope_templates[sphere]
-            base_text = random.choice(sphere_templates).format(
-                period=period_str
-            )
+            base_text = random.choice(sphere_templates).format(period=period_str)
 
             # Добавляем влияние Луны
             moon_modifier = self._get_moon_modifier(sphere, moon_influence)
@@ -369,9 +356,7 @@ class HoroscopeGenerator:
                 base_text += f" {moon_modifier}"
 
             # Рассчитываем рейтинг сферы (1-5 звезд)
-            rating = self._calculate_sphere_rating(
-                sphere, zodiac_sign, influences
-            )
+            rating = self._calculate_sphere_rating(sphere, zodiac_sign, influences)
 
             spheres[sphere] = {
                 "forecast": base_text,
@@ -381,9 +366,7 @@ class HoroscopeGenerator:
 
         return spheres
 
-    def _get_moon_modifier(
-        self, sphere: str, moon_phase: str
-    ) -> Optional[str]:
+    def _get_moon_modifier(self, sphere: str, moon_phase: str) -> Optional[str]:
         """Получает модификатор влияния Луны на сферу."""
         moon_modifiers = {
             "Новолуние": {
@@ -525,9 +508,7 @@ class HoroscopeGenerator:
             },
         }
 
-        return sphere_advice.get(sphere, {}).get(
-            rating, "Следуйте своей интуиции."
-        )
+        return sphere_advice.get(sphere, {}).get(rating, "Следуйте своей интуиции.")
 
     def _generate_general_forecast(
         self,
@@ -592,9 +573,7 @@ class HoroscopeGenerator:
         element_bonus = element_bonuses.get(element, 5)
 
         # Рассчитываем итоговый уровень
-        total_energy = (
-            base_energy + moon_bonus + seasonal_bonus + element_bonus
-        )
+        total_energy = base_energy + moon_bonus + seasonal_bonus + element_bonus
         total_energy = max(10, min(100, total_energy))  # Ограничиваем 10-100%
 
         # Определяем описание уровня энергии
@@ -616,13 +595,9 @@ class HoroscopeGenerator:
     def _get_energy_advice(self, energy_level: float) -> str:
         """Получает совет по уровню энергии."""
         if energy_level >= 80:
-            return (
-                "Используйте высокую энергию для достижения амбициозных целей."
-            )
+            return "Используйте высокую энергию для достижения амбициозных целей."
         elif energy_level >= 60:
-            return (
-                "Отличное время для активной деятельности и новых начинаний."
-            )
+            return "Отличное время для активной деятельности и новых начинаний."
         elif energy_level >= 40:
             return "Поддерживайте умеренную активность, не перегружайте себя."
         else:
@@ -638,9 +613,7 @@ class HoroscopeGenerator:
 
         # Модифицируем числа на основе даты
         day_modifier = target_date.day % 10
-        modified_numbers = [
-            (num + day_modifier) % 50 + 1 for num in base_numbers[:3]
-        ]
+        modified_numbers = [(num + day_modifier) % 50 + 1 for num in base_numbers[:3]]
 
         # Добавляем дополнительное число на основе дня недели
         weekday_number = target_date.weekday() * 7 + day_modifier
