@@ -12,7 +12,8 @@ from loguru import logger
 
 from app.core.database import get_db_session
 from app.services.astrology_calculator import AstrologyCalculator
-from app.services.horoscope_generator import HoroscopeGenerator
+from app.services.horoscope_generator import HoroscopeGenerator, HoroscopePeriod
+from app.models.yandex_models import YandexZodiacSign
 from app.services.natal_chart import NatalChartCalculator
 from app.models.database import User
 from app.api.auth import get_current_user
@@ -136,20 +137,51 @@ async def get_horoscope(
         # Initialize horoscope generator
         horoscope_generator = HoroscopeGenerator()
         
-        # Generate horoscope (no user authentication required for public horoscopes)
-        horoscope_data = await horoscope_generator.generate_horoscope(
-            zodiac_sign=sign.lower(),
-            horoscope_type=type,
-            user_id=None
+        # Map English sign names to Russian YandexZodiacSign enum values
+        sign_mapping = {
+            "aries": YandexZodiacSign.ARIES,
+            "taurus": YandexZodiacSign.TAURUS,
+            "gemini": YandexZodiacSign.GEMINI,
+            "cancer": YandexZodiacSign.CANCER,
+            "leo": YandexZodiacSign.LEO,
+            "virgo": YandexZodiacSign.VIRGO,
+            "libra": YandexZodiacSign.LIBRA,
+            "scorpio": YandexZodiacSign.SCORPIO,
+            "sagittarius": YandexZodiacSign.SAGITTARIUS,
+            "capricorn": YandexZodiacSign.CAPRICORN,
+            "aquarius": YandexZodiacSign.AQUARIUS,
+            "pisces": YandexZodiacSign.PISCES,
+        }
+        
+        # Map period types
+        period_mapping = {
+            "daily": HoroscopePeriod.DAILY,
+            "weekly": HoroscopePeriod.WEEKLY,
+            "monthly": HoroscopePeriod.MONTHLY,
+        }
+        
+        zodiac_sign_enum = sign_mapping.get(sign.lower())
+        period_enum = period_mapping.get(type.lower(), HoroscopePeriod.DAILY)
+        
+        if not zodiac_sign_enum:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid zodiac sign: {sign}"
+            )
+            
+        # Generate horoscope using correct method name
+        horoscope_data = horoscope_generator.generate_personalized_horoscope(
+            zodiac_sign=zodiac_sign_enum,
+            period=period_enum
         )
         
         return HoroscopeResponse(
             sign=sign.lower(),
             period=type,
             date=datetime.now().strftime("%Y-%m-%d"),
-            horoscope=horoscope_data.get("text", ""),
-            lucky_numbers=horoscope_data.get("lucky_numbers"),
-            lucky_color=horoscope_data.get("lucky_color")
+            horoscope=horoscope_data.get("general_forecast", horoscope_data.get("forecast", "Гороскоп недоступен")),
+            lucky_numbers=horoscope_data.get("lucky_numbers", []),
+            lucky_color=horoscope_data.get("lucky_colors", ["белый"])[0] if horoscope_data.get("lucky_colors") else "белый"
         )
         
     except Exception as e:

@@ -145,8 +145,8 @@ async def get_current_phase(
         
         # Get general recommendations (no authentication required)
         recommendations = lunar_service.get_lunar_recommendations(
-            today, 
-            user_preferences=None
+            activity_type="general",
+            target_date=today
         )
         
         # Get lunar day and energy information
@@ -209,8 +209,8 @@ async def get_phase_recommendations(
         # Get recommendations for the phase (simplified)
         from datetime import datetime
         recommendations = lunar_service.get_lunar_recommendations(
-            datetime.now(),
-            user_preferences={"phase": phase_name}
+            activity_type=phase_name,
+            target_date=datetime.now()
         )
         
         return {
