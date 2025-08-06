@@ -70,6 +70,14 @@ export const PlanetCard: React.FC<PlanetCardProps> = ({
   className = ''
 }) => {
   const planetInfo = PLANETS[planet];
+  if (!planetInfo) {
+    return (
+      <div className="astro-card astro-card--error" role="alert">
+        <span className="text-error">Unknown Planet: {planet}</span>
+      </div>
+    );
+  }
+  
   const signInfo = sign ? ZODIAC_SIGNS[sign] : null;
   const planetColor = PLANET_COLORS[planet];
   const planetDescription = description || PLANET_DESCRIPTIONS[planet];
@@ -97,6 +105,15 @@ export const PlanetCard: React.FC<PlanetCardProps> = ({
         boxShadow: interactive 
           ? `0 10px 25px -5px ${planetColor}20, 0 10px 10px -5px ${planetColor}10`
           : undefined
+      }}
+      role={interactive ? "button" : "article"}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={`${planetInfo.name} planet card${signInfo ? ` in ${signInfo.name}` : ''}${house ? ` in house ${house}` : ''}`}
+      onKeyDown={(e) => {
+        if (interactive && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          // Handle card selection/interaction
+        }
       }}
     >
       {/* Planet Icon */}

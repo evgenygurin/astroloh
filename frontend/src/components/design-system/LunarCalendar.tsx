@@ -7,7 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { LUNAR_PHASES, ZODIAC_SIGNS } from '../../design-system/icons';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 
-interface LunarEvent {
+export interface LunarEvent {
   date: Date;
   type: 'phase' | 'transit' | 'aspect' | 'special';
   phase?: keyof typeof LUNAR_PHASES;
@@ -76,11 +76,21 @@ export const LunarCalendar: React.FC<LunarCalendarProps> = ({
   const eventsByDate = useMemo(() => {
     const grouped = new Map<string, LunarEvent[]>();
     events.forEach(event => {
-      const dateKey = format(event.date, 'yyyy-MM-dd');
-      if (!grouped.has(dateKey)) {
-        grouped.set(dateKey, []);
+      // Defensive programming: validate event data
+      if (!event || !event.date || isNaN(event.date.getTime())) {
+        return;
       }
-      grouped.get(dateKey)!.push(event);
+
+      try {
+        const dateKey = format(event.date, 'yyyy-MM-dd');
+        if (!grouped.has(dateKey)) {
+          grouped.set(dateKey, []);
+        }
+        grouped.get(dateKey)!.push(event);
+      } catch (error) {
+        // Silently skip invalid dates
+        return;
+      }
     });
     return grouped;
   }, [events]);

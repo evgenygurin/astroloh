@@ -100,6 +100,7 @@
   align-items: center;
   text-align: center;
   min-height: 200px;
+  will-change: transform, box-shadow;
 }
 
 .planet-card__icon {
@@ -114,6 +115,7 @@
   margin-bottom: var(--space-4);
   box-shadow: var(--shadow-gold-glow);
   animation: planet-pulse 3s ease-in-out infinite;
+  will-change: transform, box-shadow;
 }
 
 .planet-card__name {

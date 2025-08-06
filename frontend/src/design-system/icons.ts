@@ -191,6 +191,17 @@ export const getAllPlanets = () => Object.values(PLANETS);
 // Generate all lunar phases as array
 export const getAllLunarPhases = () => Object.values(LUNAR_PHASES);
 
+// Reverse lookup functions
+export const getPlanetBySymbol = (symbol: string) => {
+  const entry = Object.entries(PLANETS).find(([_, planet]) => planet.symbol === symbol);
+  return entry ? { key: entry[0] as Planet, planet: entry[1] } : undefined;
+};
+
+export const getZodiacBySymbol = (symbol: string) => {
+  const entry = Object.entries(ZODIAC_SIGNS).find(([_, sign]) => sign.symbol === symbol);
+  return entry ? { key: entry[0] as ZodiacSign, sign: entry[1] } : undefined;
+};
+
 // Type definitions
 export type ZodiacSign = keyof typeof ZODIAC_SIGNS;
 export type Planet = keyof typeof PLANETS;

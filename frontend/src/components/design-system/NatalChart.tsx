@@ -3,17 +3,17 @@
  * Beautiful visualization of natal chart data with interactive elements
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { ZODIAC_SIGNS, PLANETS, ASPECTS, getAllZodiacSigns, getAllPlanets } from '../../design-system/icons';
 
-interface PlanetPosition {
+export interface PlanetPosition {
   planet: keyof typeof PLANETS;
   sign: keyof typeof ZODIAC_SIGNS;
   degree: number;
   house: number;
 }
 
-interface AspectData {
+export interface AspectData {
   planet1: keyof typeof PLANETS;
   planet2: keyof typeof PLANETS;
   type: keyof typeof ASPECTS;
@@ -46,24 +46,34 @@ export const NatalChart: React.FC<NatalChartProps> = ({
     large: 'w-96 h-96'
   };
 
-  const centerX = 160;
-  const centerY = 160;
-  const outerRadius = 140;
-  const middleRadius = 110;
-  const innerRadius = 80;
+  // Chart dimensions - extracted constants for maintainability
+  const CHART_CENTER_X = 160;
+  const CHART_CENTER_Y = 160;
+  const CHART_OUTER_RADIUS = 140;
+  const CHART_MIDDLE_RADIUS = 110;
+  const CHART_INNER_RADIUS = 80;
+  
+  const centerX = CHART_CENTER_X;
+  const centerY = CHART_CENTER_Y;
+  const outerRadius = CHART_OUTER_RADIUS;
+  const middleRadius = CHART_MIDDLE_RADIUS;
+  const innerRadius = CHART_INNER_RADIUS;
 
-  // Calculate planet positions on the chart
-  const getPlanetPosition = useCallback((degree: number, radius: number) => {
+  // Calculate planet positions on the chart - memoized for performance
+  const getPlanetPosition = useMemo(() => (degree: number, radius: number) => {
     const radian = (degree - 90) * (Math.PI / 180); // -90 to start from top
     return {
       x: centerX + radius * Math.cos(radian),
       y: centerY + radius * Math.sin(radian)
     };
-  }, []);
+  }, [centerX, centerY]);
 
   // Generate house divisions
-  const houseLines = Array.from({ length: 12 }, (_, i) => {
-    const degree = i * 30;
+  const HOUSE_COUNT = 12;
+  const DEGREES_PER_HOUSE = 30;
+  
+  const houseLines = Array.from({ length: HOUSE_COUNT }, (_, i) => {
+    const degree = i * DEGREES_PER_HOUSE;
     const start = getPlanetPosition(degree, innerRadius);
     const end = getPlanetPosition(degree, outerRadius);
     return (
@@ -79,8 +89,10 @@ export const NatalChart: React.FC<NatalChartProps> = ({
   });
 
   // Generate zodiac signs around the wheel
+  const SIGN_CENTER_OFFSET = 15; // Degrees to center symbol in sign
+  
   const zodiacSigns = getAllZodiacSigns().map((sign, index) => {
-    const degree = index * 30 + 15; // Center of each sign
+    const degree = index * DEGREES_PER_HOUSE + SIGN_CENTER_OFFSET; // Center of each sign
     const position = getPlanetPosition(degree, outerRadius - 20);
     return (
       <g key={sign.name}>
@@ -118,8 +130,17 @@ export const NatalChart: React.FC<NatalChartProps> = ({
 
   // Generate planets
   const planetElements = planets.map((planetData) => {
-    const position = getPlanetPosition(planetData.degree, middleRadius);
+    // Defensive programming: validate data
+    if (!planetData || typeof planetData.degree !== 'number' || isNaN(planetData.degree)) {
+      return null;
+    }
+    
     const planet = PLANETS[planetData.planet];
+    if (!planet) {
+      return null;
+    }
+
+    const position = getPlanetPosition(planetData.degree, middleRadius);
     const isHovered = hoveredPlanet === planetData.planet;
     const isSelected = selectedPlanet === planetData.planet;
 
@@ -146,11 +167,20 @@ export const NatalChart: React.FC<NatalChartProps> = ({
             ${isSelected ? 'fill-mystical-gold' : 'fill-gradient-golden'}
             ${isHovered ? 'stroke-mystical-gold stroke-2' : 'stroke-none'}
           `}
+          aria-label={`${planet.name} at ${Math.round(planetData.degree)} degrees in ${ZODIAC_SIGNS[planetData.sign]?.name || 'unknown sign'}, house ${planetData.house}`}
+          role={interactive ? "button" : undefined}
+          tabIndex={interactive ? 0 : undefined}
           onMouseEnter={() => interactive && setHoveredPlanet(planetData.planet)}
           onMouseLeave={() => interactive && setHoveredPlanet(null)}
           onClick={() => interactive && setSelectedPlanet(
             selectedPlanet === planetData.planet ? null : planetData.planet
           )}
+          onKeyDown={(e) => {
+            if (interactive && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault();
+              setSelectedPlanet(selectedPlanet === planetData.planet ? null : planetData.planet);
+            }
+          }}
         />
         
         {/* Planet symbol */}
@@ -175,14 +205,21 @@ export const NatalChart: React.FC<NatalChartProps> = ({
         </text>
       </g>
     );
-  });
+  }).filter(Boolean);
 
   // Generate aspects
   const aspectLines = showAspects ? aspects.map((aspect, index) => {
+    // Defensive programming: validate aspect data
+    if (!aspect || !aspect.planet1 || !aspect.planet2 || !aspect.type) {
+      return null;
+    }
+
     const planet1 = planets.find(p => p.planet === aspect.planet1);
     const planet2 = planets.find(p => p.planet === aspect.planet2);
     
-    if (!planet1 || !planet2) return null;
+    if (!planet1 || !planet2) {
+      return null;
+    }
     
     const pos1 = getPlanetPosition(planet1.degree, middleRadius);
     const pos2 = getPlanetPosition(planet2.degree, middleRadius);
@@ -213,6 +250,8 @@ export const NatalChart: React.FC<NatalChartProps> = ({
         height="320"
         viewBox="0 0 320 320"
         className="natal-chart-wheel"
+        role="img"
+        aria-label={`Natal chart showing ${planets.length} planets with ${showAspects && aspects.length > 0 ? aspects.length + ' astrological aspects' : 'no aspects displayed'}`}
       >
         {/* Gradients and definitions */}
         <defs>
