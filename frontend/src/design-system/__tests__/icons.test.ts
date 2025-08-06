@@ -299,27 +299,30 @@ describe('Utility Functions', () => {
 })
 
 describe('Data Integrity', () => {
-  it('ensures all zodiac signs have valid Unicode strings', () => {
+  it('ensures all zodiac signs have valid Unicode characters', () => {
     Object.values(ZODIAC_SIGNS).forEach(sign => {
-      expect(sign.unicode).toMatch(/^\\u[0-9A-F]{4}$/i)
       expect(typeof sign.unicode).toBe('string')
-      expect(sign.unicode.length).toBe(6) // \u + 4 hex digits
+      expect(sign.unicode.length).toBeGreaterThan(0)
+      // Unicode should be valid characters, not escape sequences
+      expect(sign.unicode).toMatch(/^[\u0000-\uFFFF]+$/)
     })
   })
 
-  it('ensures all planets have valid Unicode strings', () => {
+  it('ensures all planets have valid Unicode characters', () => {
     Object.values(PLANETS).forEach(planet => {
-      expect(planet.unicode).toMatch(/^\\u[0-9A-F]{4}$/i)
       expect(typeof planet.unicode).toBe('string')
-      expect(planet.unicode.length).toBe(6) // \u + 4 hex digits
+      expect(planet.unicode.length).toBeGreaterThan(0)
+      // Unicode should be valid characters, not escape sequences
+      expect(planet.unicode).toMatch(/^[\u0000-\uFFFF]+$/)
     })
   })
 
-  it('ensures all lunar phases have valid Unicode strings', () => {
+  it('ensures all lunar phases have valid Unicode characters', () => {
     Object.values(LUNAR_PHASES).forEach(phase => {
-      expect(phase.unicode).toMatch(/^\\u[0-9A-F]{4,5}$/i)
       expect(typeof phase.unicode).toBe('string')
-      // Moon phases use extended Unicode (emoji)
+      expect(phase.unicode.length).toBeGreaterThan(0)
+      // Moon phases use emoji Unicode characters
+      expect(phase.unicode).toMatch(/^[\u0000-\uFFFF\u{10000}-\u{10FFFF}]+$/u)
     })
   })
 

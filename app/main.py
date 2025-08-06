@@ -4,8 +4,12 @@
 
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.api.google_assistant import router as google_router
 from app.api.security import router as security_router
@@ -19,6 +23,52 @@ from app.api.lunar import router as lunar_router
 from app.core.config import settings
 from app.core.database import close_database, init_database
 
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Middleware для добавления заголовков безопасности."""
+    
+    async def dispatch(self, request: Request, call_next):
+        """Добавляет заголовки безопасности к каждому ответу."""
+        response: Response = await call_next(request)
+        
+        # Content Security Policy (CSP)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "font-src 'self' https:; "
+            "connect-src 'self' https:; "
+            "frame-ancestors 'none';"
+        )
+        
+        # HTTP Strict Transport Security (HSTS)
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        
+        # X-Content-Type-Options
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        
+        # X-Frame-Options
+        response.headers["X-Frame-Options"] = "DENY"
+        
+        # X-XSS-Protection
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        
+        # Referrer Policy
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        
+        # Permissions Policy
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(), geolocation=(), "
+            "payment=(), usb=(), magnetometer=(), gyroscope=()"
+        )
+        
+        return response
+
+
+# Create limiter for rate limiting
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(
     title="Astroloh - Multi-Platform Astrological Assistant",
     description="Unified API for astrological forecasts across Yandex Alice, Telegram Bot, and Google Assistant",
@@ -26,6 +76,10 @@ app = FastAPI(
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware
 app.add_middleware(
@@ -35,6 +89,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Подключение роутеров
 app.include_router(yandex_router, prefix="/api/v1")

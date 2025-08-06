@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LunarCalendar, type LunarEvent } from '../LunarCalendar'
 
@@ -109,7 +109,11 @@ describe('LunarCalendar', () => {
       
       // Click on a day cell
       const dayCell = document.querySelector('.grid.grid-cols-7.gap-1:last-child > div')
-      if (dayCell) await user.click(dayCell)
+      if (dayCell) {
+        await act(async () => {
+          await user.click(dayCell)
+        })
+      }
       
       expect(mockOnDateSelect).toHaveBeenCalled()
     })
@@ -144,7 +148,9 @@ describe('LunarCalendar', () => {
       const prevButton = buttons[0] // First button should be previous
       
       if (prevButton) {
-        await user.click(prevButton)
+        await act(async () => {
+          await user.click(prevButton)
+        })
         // Month should change (implementation dependent)
       }
       
@@ -159,7 +165,9 @@ describe('LunarCalendar', () => {
       const nextButton = buttons[1] // Second button should be next
       
       if (nextButton) {
-        await user.click(nextButton)
+        await act(async () => {
+          await user.click(nextButton)
+        })
         // Month should change (implementation dependent)
       }
       

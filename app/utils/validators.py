@@ -187,6 +187,69 @@ class ZodiacValidator:
         return True
 
 
+class PasswordValidator:
+    """Валидатор паролей для обеспечения безопасности."""
+
+    @staticmethod
+    def validate_password_strength(password: str) -> Tuple[bool, str]:
+        """
+        Проверяет силу пароля.
+        
+        Требования:
+        - Минимум 8 символов
+        - Минимум одна заглавная буква
+        - Минимум одна строчная буква
+        - Минимум одна цифра
+        - Минимум один специальный символ
+        """
+        if len(password) < 8:
+            return False, "Password must be at least 8 characters long"
+        
+        if not re.search(r"[A-Z]", password):
+            return False, "Password must contain at least one uppercase letter"
+        
+        if not re.search(r"[a-z]", password):
+            return False, "Password must contain at least one lowercase letter"
+        
+        if not re.search(r"\d", password):
+            return False, "Password must contain at least one digit"
+        
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+            return False, "Password must contain at least one special character"
+        
+        # Проверка на распространенные слабые пароли
+        weak_passwords = [
+            "password", "123456", "123456789", "qwerty", "abc123",
+            "password123", "admin", "letmein", "welcome", "monkey"
+        ]
+        
+        if password.lower() in weak_passwords:
+            return False, "Password is too common and easily guessable"
+        
+        return True, "Password meets security requirements"
+
+    @staticmethod
+    def validate_password(password: str) -> str:
+        """
+        Валидирует пароль и возвращает ошибку если не соответствует требованиям.
+        
+        Args:
+            password: Пароль для проверки
+            
+        Returns:
+            str: Пароль если валидный
+            
+        Raises:
+            ValidationSkillError: Если пароль не соответствует требованиям
+        """
+        is_valid, message = PasswordValidator.validate_password_strength(password)
+        
+        if not is_valid:
+            raise ValidationSkillError(message, "password")
+            
+        return password
+
+
 class YandexRequestValidator:
     """Валидатор запросов от Яндекс.Диалогов."""
 

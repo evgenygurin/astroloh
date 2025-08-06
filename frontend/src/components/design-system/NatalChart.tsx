@@ -163,7 +163,8 @@ export const NatalChart: React.FC<NatalChartProps> = ({
           cy={position.y}
           r="12"
           className={`
-            cursor-pointer transition-all duration-200 
+            transition-all duration-200 
+            ${interactive ? 'cursor-pointer' : ''}
             ${isSelected ? 'fill-mystical-gold' : 'fill-gradient-golden'}
             ${isHovered ? 'stroke-mystical-gold stroke-2' : 'stroke-none'}
           `}

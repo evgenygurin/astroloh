@@ -193,8 +193,8 @@ async def get_phase_recommendations(
 ):
     """Get recommendations for a specific moon phase."""
     # Validate phase name
-    valid_phases = ["new", "waxing_crescent", "first_quarter", "waxing_gibbous", 
-                   "full", "waning_gibbous", "last_quarter", "waning_crescent"]
+    valid_phases = ["new_moon", "waxing_crescent", "first_quarter", "waxing_gibbous", 
+                   "full_moon", "waning_gibbous", "last_quarter", "waning_crescent"]
     
     if phase_name.lower() not in valid_phases:
         raise HTTPException(
