@@ -1,13 +1,11 @@
 """Tests for IoT integration functionality."""
 
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.iot_models import (
     IoTDeviceCreate,
-    IoTDeviceUpdate,
     DeviceType,
     DeviceProtocol,
     DeviceStatus,
@@ -24,7 +22,7 @@ from app.services.home_automation_service import HomeAutomationService
 from app.services.iot_analytics_service import IoTAnalyticsService
 from app.services.iot_protocols import MQTTManager, HomeKitManager, MatterManager
 from app.services.encryption import EncryptionService
-from app.services.lunar_calendar import LunarCalendarService
+from app.services.lunar_calendar import LunarCalendar
 
 
 @pytest.fixture
@@ -51,7 +49,7 @@ async def mock_encryption():
 @pytest.fixture
 async def mock_lunar_service():
     """Mock lunar calendar service."""
-    service = Mock(spec=LunarCalendarService)
+    service = Mock(spec=LunarCalendar)
     service.get_lunar_calendar_info = AsyncMock(return_value={
         "phase": "full_moon",
         "phase_percentage": 1.0,
@@ -330,15 +328,15 @@ class TestHomeAutomation:
             actions=[{"type": "lighting_scene", "parameters": {"scene": "lunar"}}],
         )
         
-        mock_automation = Mock()
-        mock_automation.id = 1
-        mock_automation.name = automation_data.name
-        mock_automation.trigger_type = automation_data.trigger_type.value
-        mock_automation.is_enabled = True
-        
         mock_db.add = Mock()
         mock_db.commit = AsyncMock()
-        mock_db.refresh = AsyncMock(return_value=mock_automation)
+        
+        # Mock refresh to set ID on the automation object (simulating DB behavior)
+        async def mock_refresh(automation):
+            automation.id = 1
+            return None
+        
+        mock_db.refresh = AsyncMock(side_effect=mock_refresh)
         
         # Execute
         result = await automation_service.create_automation(user_id=1, automation_data=automation_data)
@@ -511,7 +509,7 @@ class TestVoiceIntegration:
         from app.services.transit_calculator import TransitCalculator
         from app.services.horoscope_generator import HoroscopeGenerator
         
-        transit_calculator = Mock(spec=TransitCalculator)
+        Mock(spec=TransitCalculator)
         horoscope_generator = Mock(spec=HoroscopeGenerator)
         
         return SmartHomeVoiceIntegration(

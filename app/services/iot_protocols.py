@@ -3,7 +3,7 @@
 import asyncio
 import json
 import ssl
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Callable
 from loguru import logger
 
@@ -14,12 +14,10 @@ except ImportError:
     MQTT_AVAILABLE = False
     logger.warning("MQTT client not available. Install with: pip install paho-mqtt")
 
-try:
-    import aiocoap
-    from aiocoap import Context, Message, Code
-    COAP_AVAILABLE = True
-except ImportError:
-    COAP_AVAILABLE = False
+import importlib.util
+
+COAP_AVAILABLE = importlib.util.find_spec("aiocoap") is not None
+if not COAP_AVAILABLE:
     logger.warning("CoAP client not available. Install with: pip install aiocoap")
 
 

@@ -1,11 +1,9 @@
 """Smart lighting service with lunar phase integration."""
 
-import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
 
 from app.models.iot_models import (
     IoTDevice,
@@ -15,7 +13,7 @@ from app.models.iot_models import (
     DeviceCommand,
 )
 from app.services.iot_manager import IoTDeviceManager
-from app.services.lunar_calendar import LunarCalendarService
+from app.services.lunar_calendar import LunarCalendar
 
 
 class SmartLightingService:
@@ -25,7 +23,7 @@ class SmartLightingService:
         self,
         db: AsyncSession,
         iot_manager: IoTDeviceManager,
-        lunar_service: LunarCalendarService,
+        lunar_service: LunarCalendar,
     ):
         self.db = db
         self.iot_manager = iot_manager

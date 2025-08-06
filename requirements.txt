@@ -1,38 +1,51 @@
-# Astroloh Requirements
-# 
-# For modern Python projects, we recommend using pyproject.toml with optional dependencies:
-#
-# Full installation (Linux/Windows with compilation support):
-# pip install -e ".[full,dev]"
-#
-# macOS installation (without C compilation):
-# pip install -e ".[macos,dev]"
-#
-# Minimal installation:
-# pip install -e ".[minimal]"
-#
-# Development installation:
-# pip install -e ".[dev]"
+# FastAPI и веб-сервер
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
 
-# Core dependencies (automatically installed)
--e .
+# База данных
+sqlalchemy==2.0.23
+alembic==1.13.1
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
 
-# Default astronomy libraries for backward compatibility
-# Note: pyswisseph may have compilation issues on macOS
-# Use "pip install -e .[macos]" for macOS-compatible alternatives
-pyswisseph==2.10.3.2  # Primary astrology library (may fail on macOS)
-skyfield==1.49         # Alternative astronomy library (reliable on all platforms)
-astropy==6.0.0         # Professional astronomy library (backup option)
+# Астрологические вычисления
+pyswisseph
 
-# Development dependencies for backward compatibility
+# Шифрование и безопасность
+cryptography==45.0.5
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# HTTP клиенты
+httpx==0.25.2
+aiohttp==3.9.1
+
+# Email validation
+email-validator==2.1.0
+
+# OAuth2 forms
+python-multipart==0.0.6
+
+# Обработка данных
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Логирование и мониторинг
+loguru==0.7.2
+
+# Тестирование
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
-pytest-mock==3.12.0
-pytest-xdist==3.5.0
+httpx==0.25.2
+
+# Форматирование и линтинг
 black==23.11.0
 isort==5.12.0
 flake8==6.1.0
 mypy==1.7.1
-bandit==1.7.5
-safety>=3.0.0
+
+# Переменные окружения
+python-dotenv==1.0.0

@@ -2,11 +2,11 @@
 
 import asyncio
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_
 
 from app.models.iot_models import (
     IoTDevice,
@@ -17,7 +17,6 @@ from app.models.iot_models import (
     IoTDeviceUpdate,
 )
 from app.services.encryption import EncryptionService
-from app.services.lunar_calendar import LunarCalendarService
 from app.services.cache_service import cache_service
 
 

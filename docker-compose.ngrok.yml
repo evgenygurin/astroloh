@@ -13,7 +13,7 @@ services:
     networks:
       - astroloh-network
 
-  # Backend service (renamed from 'web' for clarity)
+  # Backend service
   backend:
     build:
       context: .
@@ -31,6 +31,20 @@ services:
     networks:
       - astroloh-network
 
+  # Database service
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: astroloh_user
+      POSTGRES_PASSWORD: astroloh_password
+      POSTGRES_DB: astroloh_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - astroloh-network
+
   # Ngrok tunnel for backend
   ngrok-backend:
     image: ngrok/ngrok:latest
@@ -39,7 +53,7 @@ services:
       - "http"
       - "backend:8000"
     ports:
-      - 4040:4040
+      - 4040:4040  # Ngrok web interface for backend
     depends_on:
       - backend
     environment:
@@ -55,7 +69,7 @@ services:
       - "http"
       - "frontend:80"
     ports:
-      - 4041:4040
+      - 4041:4040  # Ngrok web interface for frontend
     depends_on:
       - frontend
     environment:
@@ -63,34 +77,8 @@ services:
     networks:
       - astroloh-network
 
-  # Database service
-  db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: astroloh_user
-      POSTGRES_PASSWORD: astroloh_password
-      POSTGRES_DB: astroloh_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - astroloh-network
-
-  # Redis for caching and session management
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - astroloh-network
-    command: redis-server --appendonly yes
-
 volumes:
   postgres_data:
-  redis_data:
 
 networks:
   astroloh-network:

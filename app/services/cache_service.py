@@ -3,7 +3,7 @@
 import asyncio
 import json
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Optional
 from loguru import logger
 
 try:
@@ -33,12 +33,22 @@ class CacheService:
                 logger.warning(f"Failed to connect to Redis: {e}. Using memory cache.")
                 self.redis_client = None
         
-        # Start cleanup task for memory cache
-        if not self.redis_client:
-            self._cleanup_task = asyncio.create_task(self._cleanup_expired_entries())
+        # Cleanup task will be started when first accessed
+        self._cleanup_started = False
+    
+    def _ensure_cleanup_task(self):
+        """Ensure cleanup task is started for memory cache."""
+        if not self.redis_client and not self._cleanup_started:
+            try:
+                self._cleanup_task = asyncio.create_task(self._cleanup_expired_entries())
+                self._cleanup_started = True
+            except RuntimeError:
+                # No event loop running yet, will try again later
+                pass
     
     async def get(self, key: str) -> Optional[Any]:
         """Get value from cache."""
+        self._ensure_cleanup_task()
         try:
             if self.redis_client:
                 value = await self.redis_client.get(key)
@@ -66,6 +76,7 @@ class CacheService:
         expiry_seconds: int = 3600
     ) -> bool:
         """Set value in cache with expiry."""
+        self._ensure_cleanup_task()
         try:
             if self.redis_client:
                 serialized_value = json.dumps(value, default=str)

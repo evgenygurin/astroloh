@@ -17,7 +17,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from app.models.database import BaseModel as SQLBaseModel
+from app.models.database import Base as SQLBaseModel, GUID
 
 
 class DeviceType(str, Enum):
@@ -76,7 +76,7 @@ class IoTDevice(SQLBaseModel):
     __tablename__ = "iot_devices"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
     device_id = Column(String(255), unique=True, nullable=False)
     name = Column(String(255), nullable=False)
     device_type = Column(String(50), nullable=False)
@@ -104,7 +104,7 @@ class HomeAutomation(SQLBaseModel):
     __tablename__ = "home_automations"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
     device_id = Column(Integer, ForeignKey("iot_devices.id"), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
@@ -131,7 +131,7 @@ class DeviceData(SQLBaseModel):
     data_type = Column(String(100), nullable=False)
     value = Column(Float)
     unit = Column(String(50))
-    metadata = Column(JSON)
+    device_metadata = Column(JSON)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -144,7 +144,7 @@ class WearableData(SQLBaseModel):
     __tablename__ = "wearable_data"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
     device_id = Column(Integer, ForeignKey("iot_devices.id"), nullable=False)
     heart_rate = Column(Integer)
     sleep_quality = Column(Float)

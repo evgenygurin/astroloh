@@ -5,7 +5,7 @@ from fastapi import HTTPException, status, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
-from app.core.database import get_db
+from app.core.database import get_db_session as get_db
 
 
 class AuthenticationError(Exception):

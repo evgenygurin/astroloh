@@ -1,21 +1,19 @@
 """Wearable devices integration service."""
 
-import asyncio
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
 from app.models.iot_models import (
-    IoTDevice,
     DeviceType,
     WearableData,
     WearableAlert,
     DeviceCommand,
 )
 from app.services.iot_manager import IoTDeviceManager
-from app.services.lunar_calendar import LunarCalendarService
+from app.services.lunar_calendar import LunarCalendar
 from app.services.transit_calculator import TransitCalculator
 
 
@@ -26,7 +24,7 @@ class WearableIntegrationService:
         self,
         db: AsyncSession,
         iot_manager: IoTDeviceManager,
-        lunar_service: LunarCalendarService,
+        lunar_service: LunarCalendar,
         transit_calculator: TransitCalculator,
     ):
         self.db = db
@@ -255,7 +253,7 @@ class WearableIntegrationService:
             reminders_scheduled = []
             for transit in significant_transits:
                 alert = WearableAlert(
-                    title=f"Астрологическое событие",
+                    title="Астрологическое событие",
                     message=f"{transit['name']}: {transit['description']}",
                     alert_type="transit",
                     priority=transit.get("significance", 5),

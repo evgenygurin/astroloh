@@ -12,7 +12,7 @@
 
 ## Технологический стек
 
-- **Backend**: Python 3.11, FastAPI
+- **Backend**: Python 3.12, FastAPI
 - **База данных**: PostgreSQL
 - **Астрологические вычисления**: Swiss Ephemeris (pyswisseph)
 - **Интеграция**: Яндекс.Диалоги API

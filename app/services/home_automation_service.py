@@ -1,24 +1,21 @@
 """Home automation service with astrological triggers."""
 
-import asyncio
-from datetime import datetime, timedelta, time
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_
 
 from app.models.iot_models import (
-    IoTDevice,
     HomeAutomation,
     AutomationTrigger,
-    DeviceType,
     DeviceCommand,
     AutomationCreate,
     AutomationUpdate,
 )
 from app.services.iot_manager import IoTDeviceManager
 from app.services.smart_lighting_service import SmartLightingService
-from app.services.lunar_calendar import LunarCalendarService
+from app.services.lunar_calendar import LunarCalendar
 from app.services.transit_calculator import TransitCalculator
 from app.services.horoscope_generator import HoroscopeGenerator
 
@@ -31,7 +28,7 @@ class HomeAutomationService:
         db: AsyncSession,
         iot_manager: IoTDeviceManager,
         lighting_service: SmartLightingService,
-        lunar_service: LunarCalendarService,
+        lunar_service: LunarCalendar,
         transit_calculator: TransitCalculator,
         horoscope_generator: HoroscopeGenerator,
     ):
@@ -578,7 +575,7 @@ class HomeAutomationService:
         """Check all automation rules and execute those that should trigger."""
         try:
             # Get all enabled automations
-            query = select(HomeAutomation).where(HomeAutomation.is_enabled == True)
+            query = select(HomeAutomation).where(HomeAutomation.is_enabled)
             result = await self.db.execute(query)
             automations = result.scalars().all()
 

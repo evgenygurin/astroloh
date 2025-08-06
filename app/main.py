@@ -13,6 +13,9 @@ from app.api.telegram_bot import router as telegram_router
 from app.api.yandex_dialogs import router as yandex_router
 from app.api.recommendations import router as recommendations_router
 from app.api.iot_api import router as iot_router
+from app.api.auth import router as auth_router
+from app.api.astrology import router as astrology_router
+from app.api.lunar import router as lunar_router
 from app.core.config import settings
 from app.core.database import close_database, init_database
 
@@ -40,6 +43,9 @@ app.include_router(google_router, prefix="/api/v1")
 app.include_router(security_router, prefix="/api/v1")
 app.include_router(recommendations_router, prefix="/api/v1")
 app.include_router(iot_router)
+app.include_router(auth_router)
+app.include_router(astrology_router)
+app.include_router(lunar_router)
 
 
 @app.get("/")

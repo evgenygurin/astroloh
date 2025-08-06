@@ -1,17 +1,15 @@
 """Smart home voice integration for multiple assistants."""
 
-import asyncio
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict, List
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
-from app.models.iot_models import IoTDevice, DeviceType, DeviceCommand
+from app.models.iot_models import DeviceType
 from app.services.iot_manager import IoTDeviceManager
 from app.services.smart_lighting_service import SmartLightingService
 from app.services.horoscope_generator import HoroscopeGenerator
-from app.services.lunar_calendar import LunarCalendarService
+from app.services.lunar_calendar import LunarCalendar
 
 
 class SmartHomeVoiceIntegration:
@@ -23,7 +21,7 @@ class SmartHomeVoiceIntegration:
         iot_manager: IoTDeviceManager,
         lighting_service: SmartLightingService,
         horoscope_generator: HoroscopeGenerator,
-        lunar_service: LunarCalendarService,
+        lunar_service: LunarCalendar,
     ):
         self.db = db
         self.iot_manager = iot_manager
@@ -39,7 +37,7 @@ class SmartHomeVoiceIntegration:
             command_lower = command.lower()
 
             # Lighting commands
-            if "свет" in command_lower and "луна" in command_lower:
+            if "свет" in command_lower and ("луна" in command_lower or "лунн" in command_lower):
                 return await self._handle_lunar_lighting_command(user_id, parameters)
             
             # Horoscope commands
@@ -142,7 +140,18 @@ class SmartHomeVoiceIntegration:
             phase = result.get("phase", "unknown")
             devices_updated = result.get("devices_updated", 0)
             
-            response_message = f"Настроил освещение под {phase}. "
+            # Translate phase to Russian
+            phase_translations = {
+                "full_moon": "полная луна", 
+                "new_moon": "новая луна",
+                "waxing_crescent": "растущая луна",
+                "waning_crescent": "убывающая луна",
+                "first_quarter": "первая четверть луны",
+                "last_quarter": "последняя четверть луны"
+            }
+            russian_phase = phase_translations.get(phase, f"лунное освещение ({phase})")
+            
+            response_message = f"Настроил освещение под {russian_phase}. "
             response_message += f"Обновлено устройств: {devices_updated}"
             
             if room:
@@ -161,8 +170,8 @@ class SmartHomeVoiceIntegration:
     ) -> Dict[str, Any]:
         """Handle horoscope requests."""
         try:
-            date_str = parameters.get("date", "today")
-            horoscope_type = parameters.get("type", "daily")
+            parameters.get("date", "today")
+            parameters.get("type", "daily")
             
             # Generate horoscope based on user's profile
             horoscope_result = await self.horoscope_generator.generate_daily_horoscope(
@@ -388,7 +397,7 @@ class SmartHomeVoiceIntegration:
             has_lights = any(d.device_type == DeviceType.SMART_LIGHT.value for d in devices)
             
             # Get current lunar phase for contextual suggestions
-            lunar_info = await self.lunar_calendar.get_lunar_calendar_info(datetime.now())
+            lunar_info = await self.lunar_service.get_lunar_calendar_info(datetime.now())
             current_phase = lunar_info.get("phase", "")
             
             base_commands = [

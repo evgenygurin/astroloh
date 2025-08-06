@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Ngrok settings
+    NGROK_AUTHTOKEN: Optional[str] = None
+    NGROK_BACKEND_HOSTNAME: Optional[str] = None
+    NGROK_FRONTEND_HOSTNAME: Optional[str] = None
+
     @model_validator(mode="before")
     @classmethod
     def validate_fields(cls, values):

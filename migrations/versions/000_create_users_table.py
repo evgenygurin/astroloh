@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import UUID
 
 # revision identifiers, used by Alembic.
 revision: str = '000_create_users_table'
@@ -22,7 +22,7 @@ def upgrade() -> None:
     # Create users table
     op.create_table(
         'users',
-        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('id', UUID(as_uuid=True), nullable=False),
         sa.Column('yandex_user_id', sa.String(length=255), nullable=True),
         sa.Column('telegram_user_id', sa.BigInteger(), nullable=True),
         sa.Column('google_user_id', sa.String(length=255), nullable=True),

@@ -6,17 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 from pydantic import ValidationError
 
-from app.core.database import get_db
-from app.core.auth import get_current_user_id, get_optional_user_id
+from app.core.database import get_db_session as get_db
+from app.core.auth import get_current_user_id
 from app.services.iot_manager import IoTDeviceManager
 from app.services.smart_lighting_service import SmartLightingService
 from app.services.smart_home_voice_integration import SmartHomeVoiceIntegration
 from app.services.wearable_integration import WearableIntegrationService
 from app.services.home_automation_service import HomeAutomationService
 from app.services.iot_analytics_service import IoTAnalyticsService
-from app.services.iot_protocols import IoTProtocolManager
 from app.services.encryption import EncryptionService
-from app.services.lunar_calendar import LunarCalendarService
+from app.services.lunar_calendar import LunarCalendar
 from app.services.transit_calculator import TransitCalculator
 from app.services.horoscope_generator import HoroscopeGenerator
 
@@ -26,10 +25,7 @@ from app.models.iot_models import (
     IoTDeviceResponse,
     DeviceCommand,
     AutomationCreate,
-    AutomationUpdate,
-    AutomationResponse,
     WearableAlert,
-    LunarLightingConfig,
 )
 
 router = APIRouter(prefix="/api/v1/iot", tags=["IoT Integration"])
@@ -47,7 +43,7 @@ async def get_lighting_service(
     iot_manager: IoTDeviceManager = Depends(get_iot_manager)
 ) -> SmartLightingService:
     """Get smart lighting service instance."""
-    lunar_service = LunarCalendarService()
+    lunar_service = LunarCalendar()
     return SmartLightingService(db, iot_manager, lunar_service)
 
 
@@ -57,8 +53,8 @@ async def get_voice_integration(
     lighting_service: SmartLightingService = Depends(get_lighting_service)
 ) -> SmartHomeVoiceIntegration:
     """Get voice integration service instance."""
-    lunar_service = LunarCalendarService()
-    transit_calculator = TransitCalculator()
+    lunar_service = LunarCalendar()
+    TransitCalculator()
     horoscope_generator = HoroscopeGenerator()
     
     return SmartHomeVoiceIntegration(
@@ -71,7 +67,7 @@ async def get_wearable_service(
     iot_manager: IoTDeviceManager = Depends(get_iot_manager)
 ) -> WearableIntegrationService:
     """Get wearable integration service instance."""
-    lunar_service = LunarCalendarService()
+    lunar_service = LunarCalendar()
     transit_calculator = TransitCalculator()
     return WearableIntegrationService(db, iot_manager, lunar_service, transit_calculator)
 
@@ -82,7 +78,7 @@ async def get_automation_service(
     lighting_service: SmartLightingService = Depends(get_lighting_service)
 ) -> HomeAutomationService:
     """Get home automation service instance."""
-    lunar_service = LunarCalendarService()
+    lunar_service = LunarCalendar()
     transit_calculator = TransitCalculator()
     horoscope_generator = HoroscopeGenerator()
     
@@ -95,7 +91,7 @@ async def get_analytics_service(
     db: AsyncSession = Depends(get_db)
 ) -> IoTAnalyticsService:
     """Get IoT analytics service instance."""
-    lunar_service = LunarCalendarService()
+    lunar_service = LunarCalendar()
     return IoTAnalyticsService(db, lunar_service)
 
 

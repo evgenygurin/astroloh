@@ -370,10 +370,6 @@ class DataProtectionManager:
         return datetime.utcnow() > expiry_date
 
 
-class EncryptionError(Exception):
-    """Исключение для ошибок шифрования."""
-
-    pass
 
 
 # Глобальный экземпляр сервиса шифрования

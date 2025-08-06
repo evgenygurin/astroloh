@@ -1,28 +1,26 @@
 """IoT analytics and monitoring service for smart home data analysis."""
 
-import asyncio
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 from collections import defaultdict
 import statistics
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func, desc
+from sqlalchemy import select, and_
 
 from app.models.iot_models import (
     IoTDevice,
     DeviceData,
     WearableData,
     HomeAutomation,
-    DeviceType,
 )
-from app.services.lunar_calendar import LunarCalendarService
+from app.services.lunar_calendar import LunarCalendar
 
 
 class IoTAnalyticsService:
     """Analytics service for IoT and smart home data analysis."""
 
-    def __init__(self, db: AsyncSession, lunar_service: LunarCalendarService):
+    def __init__(self, db: AsyncSession, lunar_service: LunarCalendar):
         self.db = db
         self.lunar_service = lunar_service
 
@@ -349,7 +347,6 @@ class IoTAnalyticsService:
         
         scores = []
         for data in wellness_data:
-            day_score = 0
             weight_sum = 0
             
             if data.sleep_quality is not None:

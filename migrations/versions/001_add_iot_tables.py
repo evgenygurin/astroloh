@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import UUID
 
 # revision identifiers, used by Alembic.
 revision: str = '001_add_iot_tables'
@@ -23,7 +23,7 @@ def upgrade() -> None:
     op.create_table(
         'iot_devices',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('user_id', UUID(as_uuid=True), nullable=False),
         sa.Column('device_id', sa.String(length=255), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('device_type', sa.String(length=50), nullable=False),
@@ -48,7 +48,7 @@ def upgrade() -> None:
     op.create_table(
         'home_automations',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('user_id', UUID(as_uuid=True), nullable=False),
         sa.Column('device_id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
@@ -73,7 +73,7 @@ def upgrade() -> None:
         sa.Column('data_type', sa.String(length=100), nullable=False),
         sa.Column('value', sa.Float(), nullable=True),
         sa.Column('unit', sa.String(length=50), nullable=True),
-        sa.Column('metadata', sa.JSON(), nullable=True),
+        sa.Column('device_metadata', sa.JSON(), nullable=True),
         sa.Column('timestamp', sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(['device_id'], ['iot_devices.id'], ),
         sa.PrimaryKeyConstraint('id')
@@ -83,7 +83,7 @@ def upgrade() -> None:
     op.create_table(
         'wearable_data',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('user_id', UUID(as_uuid=True), nullable=False),
         sa.Column('device_id', sa.Integer(), nullable=False),
         sa.Column('heart_rate', sa.Integer(), nullable=True),
         sa.Column('sleep_quality', sa.Float(), nullable=True),
