@@ -12,6 +12,7 @@ from app.api.security import router as security_router
 from app.api.telegram_bot import router as telegram_router
 from app.api.yandex_dialogs import router as yandex_router
 from app.api.recommendations import router as recommendations_router
+from app.api.iot_api import router as iot_router
 from app.core.config import settings
 from app.core.database import close_database, init_database
 
@@ -38,6 +39,7 @@ app.include_router(telegram_router, prefix="/api/v1")
 app.include_router(google_router, prefix="/api/v1")
 app.include_router(security_router, prefix="/api/v1")
 app.include_router(recommendations_router, prefix="/api/v1")
+app.include_router(iot_router)
 
 
 @app.get("/")
@@ -45,7 +47,7 @@ async def root() -> dict[str, str | list[str]]:
     """Корневой эндпоинт для проверки работы API."""
     return {
         "message": "Astroloh - Multi-Platform Astrological Assistant is running!",
-        "platforms": ["Yandex Alice", "Telegram Bot", "Google Assistant"],
+        "platforms": ["Yandex Alice", "Telegram Bot", "Google Assistant", "IoT Smart Home"],
     }
 
 
