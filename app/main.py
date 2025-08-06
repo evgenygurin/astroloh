@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.security import router as security_router
 from app.api.yandex_dialogs import router as yandex_router
+from app.api.recommendations import router as recommendations_router
 from app.core.config import settings
 from app.core.database import close_database, init_database
 
@@ -31,6 +32,7 @@ app.add_middleware(
 # Подключение роутеров
 app.include_router(yandex_router, prefix="/api/v1")
 app.include_router(security_router, prefix="/api/v1")
+app.include_router(recommendations_router, prefix="/api/v1")
 
 
 @app.get("/")
