@@ -1,0 +1,471 @@
+/**
+ * Astroloh Design System - Component Library
+ * Reusable UI components with mystical astrological styling
+ */
+
+/* === CARD COMPONENTS === */
+
+.astro-card {
+  background: var(--gradient-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-mystical);
+  padding: var(--space-6);
+  transition: all var(--duration-300) var(--ease-in-out);
+}
+
+.astro-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-gold-glow), var(--shadow-lg);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.astro-card--elevated {
+  box-shadow: var(--shadow-xl), var(--shadow-gold-glow);
+}
+
+.astro-card--compact {
+  padding: var(--space-4);
+  border-radius: var(--border-radius-lg);
+}
+
+/* === NATAL CHART COMPONENTS === */
+
+.natal-chart-container {
+  position: relative;
+  background: var(--gradient-mystical-radial);
+  border: 2px solid var(--color-mystical-gold);
+  border-radius: 50%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  box-shadow: var(--shadow-gold-glow);
+}
+
+.natal-chart-wheel {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.natal-chart-house {
+  position: absolute;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: var(--color-mystical-silver);
+  font-family: var(--font-mystical);
+  font-size: var(--font-size-xs);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.natal-chart-planet {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gradient-golden);
+  color: var(--color-dark-900);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-gold-glow);
+  transition: all var(--duration-200) var(--ease-in-out);
+}
+
+.natal-chart-planet:hover {
+  transform: scale(1.2);
+  z-index: 10;
+}
+
+.natal-chart-aspect {
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    rgba(99, 102, 241, 0.6) 0%, 
+    rgba(251, 191, 36, 0.4) 50%, 
+    rgba(99, 102, 241, 0.6) 100%);
+  transform-origin: left center;
+}
+
+/* === PLANET CARD COMPONENTS === */
+
+.planet-card {
+  @apply astro-card;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 200px;
+  will-change: transform, box-shadow;
+}
+
+.planet-card__icon {
+  width: 64px;
+  height: 64px;
+  background: var(--gradient-golden);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-gold-glow);
+  animation: planet-pulse 3s ease-in-out infinite;
+  will-change: transform, box-shadow;
+}
+
+.planet-card__name {
+  font-family: var(--font-mystical);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-mystical-gold);
+  margin-bottom: var(--space-2);
+}
+
+.planet-card__description {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-mystical-silver);
+  line-height: var(--line-height-relaxed);
+  opacity: 0.9;
+}
+
+.planet-card__influence {
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: var(--border-radius-full);
+  font-size: var(--font-size-xs);
+  color: var(--color-mystical-purple-light);
+  font-weight: var(--font-weight-medium);
+}
+
+/* === LUNAR CALENDAR COMPONENTS === */
+
+.lunar-calendar {
+  background: var(--gradient-cosmic);
+  border-radius: var(--border-radius-2xl);
+  padding: var(--space-6);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.lunar-phase {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  position: relative;
+  background: var(--color-mystical-silver);
+  box-shadow: var(--shadow-base);
+  cursor: pointer;
+  transition: all var(--duration-200) var(--ease-in-out);
+}
+
+.lunar-phase:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.lunar-phase--new {
+  background: var(--color-dark-300);
+}
+
+.lunar-phase--waxing {
+  background: linear-gradient(90deg, var(--color-dark-300) 50%, var(--color-mystical-silver) 50%);
+}
+
+.lunar-phase--full {
+  background: var(--color-mystical-silver);
+  box-shadow: 0 0 20px rgba(229, 231, 235, 0.6);
+}
+
+.lunar-phase--waning {
+  background: linear-gradient(270deg, var(--color-dark-300) 50%, var(--color-mystical-silver) 50%);
+}
+
+.lunar-event {
+  padding: var(--space-3) var(--space-4);
+  background: rgba(251, 191, 36, 0.1);
+  border-left: 3px solid var(--color-mystical-gold);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--space-3);
+}
+
+.lunar-event__title {
+  font-family: var(--font-mystical);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-mystical-gold);
+  margin-bottom: var(--space-1);
+}
+
+.lunar-event__description {
+  font-size: var(--font-size-xs);
+  color: var(--color-mystical-silver);
+  line-height: var(--line-height-normal);
+}
+
+/* === PROGRESS BAR COMPONENTS === */
+
+.astro-progress {
+  background: rgba(17, 17, 27, 0.6);
+  border-radius: var(--border-radius-full);
+  height: 8px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.astro-progress__bar {
+  height: 100%;
+  border-radius: var(--border-radius-full);
+  transition: width var(--duration-500) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.astro-progress__bar--compatibility {
+  background: var(--gradient-mystical);
+}
+
+.astro-progress__bar--influence {
+  background: var(--gradient-golden);
+}
+
+.astro-progress__bar--energy {
+  background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+}
+
+.astro-progress__shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+/* === BUTTON COMPONENTS === */
+
+.astro-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--border-radius-full);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--duration-300) var(--ease-in-out);
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.astro-button--primary {
+  background: var(--gradient-golden);
+  color: var(--color-dark-900);
+  box-shadow: var(--shadow-base);
+}
+
+.astro-button--primary:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: var(--shadow-lg), var(--shadow-gold-glow);
+}
+
+.astro-button--secondary {
+  background: transparent;
+  color: var(--color-mystical-gold);
+  border: 1px solid var(--color-mystical-gold);
+}
+
+.astro-button--secondary:hover {
+  background: rgba(251, 191, 36, 0.1);
+  transform: translateY(-1px);
+}
+
+.astro-button--ghost {
+  background: transparent;
+  color: var(--color-mystical-silver);
+}
+
+.astro-button--ghost:hover {
+  background: rgba(229, 231, 235, 0.1);
+  color: var(--color-mystical-gold);
+}
+
+/* === FORM COMPONENTS === */
+
+.astro-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(17, 17, 27, 0.5);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--border-radius-lg);
+  color: var(--color-mystical-silver);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  transition: all var(--duration-200) var(--ease-in-out);
+}
+
+.astro-input::placeholder {
+  color: rgba(229, 231, 235, 0.5);
+}
+
+.astro-input:focus {
+  outline: none;
+  border-color: var(--color-mystical-gold);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+}
+
+.astro-label {
+  display: block;
+  font-family: var(--font-mystical);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-mystical-gold);
+  margin-bottom: var(--space-2);
+}
+
+.astro-select {
+  @apply astro-input;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23fbbf24' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right var(--space-3) center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  padding-right: var(--space-10);
+}
+
+/* === MODAL COMPONENTS === */
+
+.astro-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: var(--z-modal);
+  animation: fadeIn var(--duration-300) var(--ease-out);
+}
+
+.astro-modal {
+  @apply astro-card;
+  max-width: min(90vw, 600px);
+  max-height: min(90vh, 800px);
+  overflow-y: auto;
+  position: relative;
+  animation: slideIn var(--duration-300) var(--ease-out);
+}
+
+.astro-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.astro-modal__title {
+  font-family: var(--font-mystical);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-mystical-gold);
+}
+
+.astro-modal__close {
+  background: none;
+  border: none;
+  color: var(--color-mystical-silver);
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--border-radius-base);
+  transition: all var(--duration-200) var(--ease-in-out);
+}
+
+.astro-modal__close:hover {
+  background: rgba(229, 231, 235, 0.1);
+  color: var(--color-mystical-gold);
+}
+
+/* === ZODIAC SPECIFIC COMPONENTS === */
+
+.zodiac-symbol {
+  font-family: var(--font-mystical);
+  font-size: var(--font-size-2xl);
+  color: var(--color-mystical-gold);
+  text-align: center;
+  opacity: 0.8;
+  transition: all var(--duration-300) var(--ease-in-out);
+}
+
+.zodiac-symbol:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+}
+
+.constellation-pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.1;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, var(--color-mystical-gold), transparent),
+    radial-gradient(2px 2px at 40px 70px, var(--color-mystical-purple), transparent),
+    radial-gradient(1px 1px at 90px 40px, var(--color-mystical-gold), transparent);
+  background-size: 200px 200px;
+  animation: constellation-drift 20s linear infinite;
+}
+
+/* === ANIMATIONS === */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@keyframes planet-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes constellation-drift {
+  0% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-20px) translateY(-10px); }
+  50% { transform: translateX(-10px) translateY(-20px); }
+  75% { transform: translateX(10px) translateY(-10px); }
+  100% { transform: translateX(0) translateY(0); }
+}
