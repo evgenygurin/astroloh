@@ -877,3 +877,170 @@ class ResponseFormatter:
             )
 
         return buttons
+
+    def format_transit_request_response(self) -> YandexResponse:
+        """Форматирует запрос данных для транзитов."""
+        text = "Для расчета транзитов мне нужна ваша дата рождения. Назовите ее, пожалуйста."
+        
+        buttons = [
+            YandexButton(title="Помощь", payload={"action": "help"}),
+            YandexButton(title="Пропустить", payload={"action": "skip"}),
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_transits_response(self, transits: Dict[str, Any]) -> YandexResponse:
+        """Форматирует ответ с транзитами."""
+        text = f"Актуальные транзиты на {transits.get('summary', 'сегодня')}.\n\n"
+        
+        active_transits = transits.get('active_transits', [])
+        if active_transits:
+            text += "Основные влияния:\n"
+            for i, transit in enumerate(active_transits[:3]):  # Ограничиваем тремя
+                text += f"• {transit['transit_planet']} {transit['aspect']} {transit['natal_planet']}: {transit['influence']}\n"
+        
+        daily_influences = transits.get('daily_influences', [])
+        if daily_influences:
+            text += f"\nСовет дня: {daily_influences[0]}"
+            
+        buttons = [
+            YandexButton(title="Гороскоп", payload={"action": "horoscope"}),
+            YandexButton(title="Прогрессии", payload={"action": "progressions"}),
+            YandexButton(title="Помощь", payload={"action": "help"}),
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_progressions_request_response(self) -> YandexResponse:
+        """Форматирует запрос данных для прогрессий."""
+        text = "Для расчета прогрессий мне нужна ваша дата рождения."
+        
+        buttons = [
+            YandexButton(title="Помощь", payload={"action": "help"}),
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_progressions_response(self, progressions: Dict[str, Any]) -> YandexResponse:
+        """Форматирует ответ с прогрессиями."""
+        interpretation = progressions.get('interpretation', {})
+        
+        text = f"Ваши прогрессии показывают:\n\n"
+        text += f"Возраст: {interpretation.get('current_age', 'неизвестен')} лет\n"
+        text += f"Жизненный этап: {interpretation.get('life_stage', 'развитие')}\n\n"
+        
+        prog_sun = interpretation.get('progressed_sun', {})
+        if prog_sun:
+            text += f"Прогрессированное Солнце в {prog_sun.get('sign', 'знаке')}: {prog_sun.get('meaning', '')}\n\n"
+        
+        trends = interpretation.get('general_trends', [])
+        if trends:
+            text += f"Общие тенденции: {trends[0]}"
+            
+        buttons = [
+            YandexButton(title="Транзиты", payload={"action": "transits"}),
+            YandexButton(title="Соляр", payload={"action": "solar_return"}),
+            YandexButton(title="Помощь", payload={"action": "help"}),
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_solar_return_request_response(self) -> YandexResponse:
+        """Форматирует запрос данных для соляра."""
+        text = "Для составления годовой карты (соляра) мне нужна ваша дата рождения."
+        
+        buttons = [
+            YandexButton(title="Помощь", payload={"action": "help"}),
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_solar_return_response(self, solar_return: Dict[str, Any]) -> YandexResponse:
+        """Форматирует ответ с соляром."""
+        interpretation = solar_return.get('interpretation', {})
+        
+        text = f"Ваш соляр на {solar_return.get('year', 'этот')} год:\n\n"
+        text += f"Тема года: {interpretation.get('year_theme', 'личностный рост')}\n\n"
+        
+        key_areas = interpretation.get('key_areas', [])
+        if key_areas:
+            text += f"Ключевые сферы: {', '.join(key_areas[:3])}\n\n"
+        
+        opportunities = interpretation.get('opportunities', [])
+        if opportunities:
+            text += f"Возможности: {opportunities[0]}"
+            
+        buttons = [
+            YandexButton(title="Лунар", payload={"action": "lunar_return"}),
+            YandexButton(title="Транзиты", payload={"action": "transits"}),
+            YandexButton(title="Помощь", payload={"action": "help"}),
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_lunar_return_request_response(self) -> YandexResponse:
+        """Форматирует запрос данных для лунара."""
+        text = "Для составления месячной карты (лунара) мне нужна ваша дата рождения."
+        
+        buttons = [
+            YandexButton(title="Помощь", payload={"action": "help"}),
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )
+
+    def format_lunar_return_response(self, lunar_return: Dict[str, Any]) -> YandexResponse:
+        """Форматирует ответ с лунаром."""
+        interpretation = lunar_return.get('interpretation', {})
+        
+        text = f"Ваш лунар на {lunar_return.get('month', 'этот')} месяц:\n\n"
+        text += f"{interpretation.get('emotional_theme', 'Эмоциональное развитие')}\n\n"
+        text += f"{interpretation.get('action_theme', 'Активные действия')}\n\n"
+        text += f"Совет: {interpretation.get('general_advice', 'Следуйте лунным ритмам')}"
+        
+        buttons = [
+            YandexButton(title="Соляр", payload={"action": "solar_return"}),
+            YandexButton(title="Транзиты", payload={"action": "transits"}),
+            YandexButton(title="Помощь", payload={"action": "help"}),
+        ]
+        
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False
+        )

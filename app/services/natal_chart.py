@@ -1,7 +1,7 @@
 """
 Сервис расчета и интерпретации натальной карты.
 """
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from typing import Any, Dict, List, Optional
 
 import pytz
@@ -622,3 +622,201 @@ class NatalChartCalculator:
             description = "Разнообразные интересы и таланты"
 
         return {"shape": shape, "description": description}
+
+    def calculate_progressions(
+        self,
+        birth_date: date,
+        birth_time: Optional[time] = None,
+        progression_date: Optional[date] = None,
+        birth_place: Optional[Dict[str, float]] = None,
+        timezone_str: str = "Europe/Moscow",
+    ) -> Dict[str, Any]:
+        """Вычисляет прогрессии натальной карты."""
+        
+        if progression_date is None:
+            progression_date = date.today()
+            
+        if birth_time is None:
+            birth_time = time(12, 0)
+            
+        if birth_place is None:
+            birth_place = {"latitude": 55.7558, "longitude": 37.6176}
+            
+        # Вычисляем количество дней от рождения до даты прогрессии
+        days_since_birth = (progression_date - birth_date).days
+        
+        # В символических прогрессиях 1 день = 1 год
+        # Поэтому прогрессированная дата = дата рождения + количество лет в днях
+        progressed_birth_date = birth_date + timedelta(days=days_since_birth)
+        progressed_datetime = datetime.combine(progressed_birth_date, birth_time)
+        
+        # Устанавливаем временную зону
+        try:
+            timezone = pytz.timezone(timezone_str)
+            progressed_datetime = timezone.localize(progressed_datetime)
+        except Exception:
+            progressed_datetime = pytz.UTC.localize(progressed_datetime)
+            
+        # Вычисляем прогрессированные позиции планет
+        progressed_positions = self.astro_calc.calculate_planet_positions(
+            progressed_datetime, birth_place["latitude"], birth_place["longitude"]
+        )
+        
+        # Вычисляем прогрессированные дома (только для быстро движущихся точек)
+        progressed_houses = self.astro_calc.calculate_houses(
+            progressed_datetime, birth_place["latitude"], birth_place["longitude"]
+        )
+        
+        # Создаем интерпретацию прогрессий
+        progression_interpretation = self._interpret_progressions(
+            progressed_positions, progression_date, birth_date
+        )
+        
+        return {
+            "birth_date": birth_date.isoformat(),
+            "progression_date": progression_date.isoformat(),
+            "days_progressed": days_since_birth,
+            "progressed_planets": progressed_positions,
+            "progressed_houses": progressed_houses,
+            "interpretation": progression_interpretation,
+            "key_changes": self._analyze_progression_changes(progressed_positions),
+        }
+
+    def _interpret_progressions(
+        self,
+        progressed_positions: Dict[str, Dict[str, Any]],
+        progression_date: date,
+        birth_date: date,
+    ) -> Dict[str, Any]:
+        """Интерпретирует прогрессии."""
+        
+        age = (progression_date - birth_date).days // 365
+        
+        # Анализируем прогрессированное Солнце
+        prog_sun_sign = progressed_positions.get("Sun", {}).get("sign", "Овен")
+        
+        # Анализируем прогрессированную Луну
+        prog_moon_sign = progressed_positions.get("Moon", {}).get("sign", "Рак")
+        
+        interpretation = {
+            "current_age": age,
+            "life_stage": self._get_life_stage_description(age),
+            "progressed_sun": {
+                "sign": prog_sun_sign,
+                "meaning": self._get_progressed_sun_meaning(prog_sun_sign),
+            },
+            "progressed_moon": {
+                "sign": prog_moon_sign,
+                "meaning": self._get_progressed_moon_meaning(prog_moon_sign),
+            },
+            "general_trends": self._get_progression_trends(age, progressed_positions),
+        }
+        
+        return interpretation
+
+    def _get_life_stage_description(self, age: int) -> str:
+        """Возвращает описание жизненного этапа."""
+        
+        if age < 7:
+            return "Раннее детство - формирование базовой личности"
+        elif age < 14:
+            return "Детство - развитие социальных навыков"
+        elif age < 21:
+            return "Юность - поиск идентичности"
+        elif age < 30:
+            return "Молодость - становление в мире"
+        elif age < 42:
+            return "Зрелость - активная самореализация"
+        elif age < 56:
+            return "Средний возраст - переосмысление ценностей"
+        elif age < 70:
+            return "Зрелый возраст - мудрость и наставничество"
+        else:
+            return "Старшие годы - интеграция жизненного опыта"
+
+    def _get_progressed_sun_meaning(self, sun_sign: str) -> str:
+        """Возвращает значение прогрессированного Солнца."""
+        
+        meanings = {
+            "Овен": "Период активности и новых начинаний",
+            "Телец": "Время стабилизации и материального роста",
+            "Близнецы": "Фокус на общении и обучении",
+            "Рак": "Внимание к семье и эмоциональной безопасности",
+            "Лев": "Творческое самовыражение и лидерство",
+            "Дева": "Совершенствование навыков и служение",
+            "Весы": "Гармонизация отношений и партнерство",
+            "Скорпион": "Глубокая трансформация и возрождение",
+            "Стрелец": "Расширение горизонтов и философские поиски",
+            "Козерог": "Построение структуры и достижение целей",
+            "Водолей": "Инновации и социальная активность",
+            "Рыбы": "Духовное развитие и сострадание",
+        }
+        
+        return meanings.get(sun_sign, "Период личностного развития")
+
+    def _get_progressed_moon_meaning(self, moon_sign: str) -> str:
+        """Возвращает значение прогрессированной Луны."""
+        
+        meanings = {
+            "Овен": "Эмоциональная независимость и спонтанность",
+            "Телец": "Потребность в стабильности и комфорте",
+            "Близнецы": "Любознательность и социальная активность",
+            "Рак": "Глубокая эмоциональная связь с близкими",
+            "Лев": "Потребность в признании и творческом выражении",
+            "Дева": "Аналитический подход к эмоциям",
+            "Весы": "Стремление к гармонии в отношениях",
+            "Скорпион": "Интенсивные эмоциональные переживания",
+            "Стрелец": "Оптимизм и стремление к свободе",
+            "Козерог": "Серьезный подход к эмоциональным вопросам",
+            "Водолей": "Необычный взгляд на чувства и отношения",
+            "Рыбы": "Повышенная чувствительность и интуиция",
+        }
+        
+        return meanings.get(moon_sign, "Эмоциональное развитие")
+
+    def _get_progression_trends(
+        self, age: int, progressed_positions: Dict[str, Dict[str, Any]]
+    ) -> List[str]:
+        """Определяет основные тенденции прогрессий."""
+        
+        trends = []
+        
+        # Анализируем ключевые возрастные периоды
+        if 28 <= age <= 30:
+            trends.append("Возвращение Сатурна - время важных жизненных решений")
+        elif 35 <= age <= 45:
+            trends.append("Кризис среднего возраста - переосмысление жизненных целей")
+        elif 56 <= age <= 60:
+            trends.append("Второе возвращение Сатурна - мудрость и авторитет")
+            
+        # Анализируем прогрессированные аспекты (упрощенно)
+        prog_sun = progressed_positions.get("Sun", {}).get("longitude", 0)
+        prog_moon = progressed_positions.get("Moon", {}).get("longitude", 0)
+        
+        sun_moon_angle = abs(prog_sun - prog_moon)
+        if sun_moon_angle > 180:
+            sun_moon_angle = 360 - sun_moon_angle
+            
+        if sun_moon_angle <= 10:
+            trends.append("Гармония между сознанием и эмоциями")
+        elif 170 <= sun_moon_angle <= 190:
+            trends.append("Необходимость баланса между разумом и чувствами")
+            
+        return trends
+
+    def _analyze_progression_changes(
+        self, progressed_positions: Dict[str, Dict[str, Any]]
+    ) -> List[str]:
+        """Анализирует ключевые изменения в прогрессиях."""
+        
+        changes = []
+        
+        # Анализируем быстро движущиеся планеты
+        fast_planets = ["Sun", "Moon", "Mercury", "Venus", "Mars"]
+        
+        for planet in fast_planets:
+            if planet in progressed_positions:
+                sign = progressed_positions[planet]["sign"]
+                changes.append(f"Прогрессированный {planet} в {sign}")
+                
+        return changes[:3]  # Ограничиваем тремя основными изменениями
