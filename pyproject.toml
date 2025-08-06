@@ -48,6 +48,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# IoT интеграция и умный дом
+iot = [
+    # MQTT протокол
+    "paho-mqtt==1.6.1",
+    # CoAP протокол (для Matter/Thread)
+    "aiocoap==0.4.7",
+    # Дополнительные IoT библиотеки
+    "bleak==0.21.1",  # Bluetooth Low Energy
+]
 # Полный набор астрологических библиотек (рекомендуется для Linux/Windows)
 full = [
     "pyswisseph==2.10.3.2",
