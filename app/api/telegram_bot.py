@@ -1,6 +1,7 @@
 """
 API router for Telegram Bot integration.
 """
+import json
 import logging
 from typing import Any, Dict
 
@@ -29,9 +30,27 @@ async def telegram_webhook(
     Handles incoming updates from Telegram Bot API and processes them
     through the unified multi-platform handler.
     """
+    telegram_data = None
     try:
-        # Get raw request data
-        telegram_data = await request.json()
+        # Get raw request body for debugging and validation
+        raw_body = await request.body()
+        logger.debug(f"Raw request body length: {len(raw_body)}, content preview: {raw_body[:100]}...")
+        
+        # Check if body is empty
+        if not raw_body:
+            logger.warning("Received empty request body")
+            return {"ok": True, "error": "Empty request body"}
+        
+        # Try to parse JSON manually first to handle errors better
+        try:
+            body_text = raw_body.decode('utf-8')
+            telegram_data = json.loads(body_text)
+        except UnicodeDecodeError as e:
+            logger.error(f"Failed to decode request body as UTF-8: {e}")
+            return {"ok": True, "error": "Invalid encoding"}
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON: {e}. Body content: '{body_text[:200]}...'")
+            return {"ok": True, "error": "Invalid JSON"}
         
         logger.info(f"Received Telegram update: {telegram_data.get('update_id')}")
         
@@ -89,14 +108,17 @@ async def telegram_webhook(
         
         # Handle error gracefully
         try:
-            error_handler.handle_error(
-                e,
-                {
-                    "platform": "telegram",
-                    "update_id": telegram_data.get("update_id", "unknown"),
-                    "user_id": telegram_data.get("message", {}).get("from", {}).get("id", "unknown"),
-                },
-            )
+            # Build context data safely
+            context = {"platform": "telegram"}
+            
+            if telegram_data:
+                context["update_id"] = telegram_data.get("update_id", "unknown")
+                context["user_id"] = telegram_data.get("message", {}).get("from", {}).get("id", "unknown")
+            else:
+                context["update_id"] = "unknown"
+                context["user_id"] = "unknown"
+            
+            error_handler.handle_error(e, context)
             
             # For Telegram, we still return 200 OK but log the error
             return {"ok": True, "error": str(e)}
