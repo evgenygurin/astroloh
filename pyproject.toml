@@ -59,6 +59,7 @@ iot = [
 ]
 # Полный набор астрологических библиотек (рекомендуется для Linux/Windows)
 full = [
+    "kerykeion>=4.11.0",
     "pyswisseph==2.10.3.2",
     "skyfield==1.49",
     "astropy==6.0.0"
@@ -66,6 +67,7 @@ full = [
 
 # Альтернативы для macOS (без компиляции C)
 macos = [
+    "kerykeion>=4.11.0",
     "skyfield==1.49",
     "astropy==6.0.0"
 ]
@@ -77,6 +79,7 @@ minimal = [
 
 # Профессиональная астрономия (высокая точность)
 professional = [
+    "kerykeion>=4.11.0",
     "astropy==6.0.0",
     "skyfield==1.49"
 ]
@@ -159,6 +162,7 @@ module = [
     "swisseph",
     "skyfield.*",
     "astropy.*",
+    "kerykeion.*",
 ]
 ignore_missing_imports = true
 

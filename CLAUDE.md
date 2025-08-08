@@ -90,11 +90,12 @@ astroloh/
 
 ## Key Services
 
-- **astrology_calculator.py**: Core astrological calculations
+- **astrology_calculator.py**: Core astrological calculations with multi-backend support
+- **kerykeion_service.py**: ⭐ **NEW** - Advanced Kerykeion-based astrological service with full professional features
+- **natal_chart.py**: Enhanced birth chart calculations with Kerykeion integration
+- **horoscope_generator.py**: Horoscope generation with AI and traditional methods
 - **conversation_manager.py**: Dialog flow management
-- **horoscope_generator.py**: Horoscope generation
 - **lunar_calendar.py**: Lunar calendar functionality
-- **natal_chart.py**: Birth chart calculations
 - **session_manager.py**: User session handling
 
 ## Security Considerations
@@ -106,11 +107,24 @@ astroloh/
 
 ## Astronomical Libraries
 
-The project supports multiple astronomical calculation libraries with automatic fallbacks:
+The project supports multiple astronomical calculation libraries with automatic fallbacks and priority system:
 
-- **pyswisseph**: Primary library (high accuracy, requires C compilation)
-- **skyfield**: Alternative (good accuracy, pure Python)
-- **astropy**: Professional astronomy (full-featured)
+1. **Kerykeion** >=4.11.0: **PRIMARY** library for professional astrology (highest priority)
+   - Complete natal chart calculation with all planets including Chiron, Lilith, Lunar Nodes
+   - Advanced aspect calculation with color coding and configurable orbs
+   - Multiple house systems support (Placidus, Koch, Equal, Whole Sign, etc.)
+   - Tropical and Sidereal zodiac types
+   - Synastry (chart compatibility) calculations
+   - Transits and progressions
+   - SVG chart generation
+   - Arabic Parts (Lots) calculation
+   - Comprehensive astrological analysis and interpretations
+
+2. **pyswisseph**: High accuracy library (requires C compilation, fallback)
+3. **skyfield**: Good accuracy, pure Python (fallback)
+4. **astropy**: Professional astronomy (full-featured, fallback)
+
+**Priority System**: Kerykeion → Swiss Ephemeris → Skyfield → Built-in algorithms
 
 ## API Integration
 
@@ -139,6 +153,88 @@ The project supports multiple astronomical calculation libraries with automatic 
 - CI/CD pipeline enforces quality checks
 
 When making changes, always consider the astrological domain context and maintain the existing service-oriented architecture.
+
+## Enhanced Kerykeion Integration (Updated 2025-01-08)
+
+### New KerykeionService Features
+
+**Complete Professional Astrology Support:**
+
+- **Enhanced Natal Charts**: Full planet calculation including Chiron, Lilith (Mean Apogee), True/Mean Nodes
+- **Advanced Aspects**: 11 aspect types with color coding, configurable orbs, and strength ratings
+- **Multiple House Systems**: Placidus, Koch, Equal, Whole Sign, Regiomontanus, Campanus, etc.
+- **Zodiac Types**: Both Tropical and Sidereal zodiac calculations with automatic conversion
+- **Arabic Parts**: Extended calculation of Lots including Fortune, Spirit, Love, Marriage, Career
+- **Chart Analysis**: Automatic shape detection, element/quality distribution, dominant planets
+- **SVG Generation**: Professional chart rendering with customizable themes
+- **Detailed Compatibility**: Advanced synastry calculations with relationship advice
+
+### Enhanced NatalChartCalculator Methods
+
+**New calculate_enhanced_natal_chart() method:**
+```python
+calculate_enhanced_natal_chart(
+    name="User Name",
+    birth_date=date(1990, 8, 15),
+    birth_time=time(14, 30),
+    birth_place={"latitude": 55.7558, "longitude": 37.6176},
+    timezone_str="Europe/Moscow",
+    house_system="Placidus",  # or Koch, Equal, etc.
+    zodiac_type="Tropical",   # or Sidereal
+    include_arabic_parts=True,
+    include_fixed_stars=True,
+    generate_svg=False        # Set True for SVG chart generation
+)
+```
+
+**Enhanced Interpretations:**
+- Psychological analysis with dominant planet influences
+- Life themes based on strong aspects
+- Career guidance by MC sign
+- Spiritual path analysis by element distribution
+- Karmic indicators and growth patterns
+
+### Backend Priority System
+
+**Automatic Library Selection:**
+1. **Kerykeion** (primary) - Full professional features
+2. **Swiss Ephemeris** (fallback) - High precision calculations
+3. **Skyfield** (fallback) - Pure Python alternative  
+4. **Built-in** (fallback) - Basic calculations
+
+**Graceful Degradation:** If Kerykeion is unavailable, the system automatically falls back to Swiss Ephemeris while maintaining API compatibility.
+
+### Aspect Color Coding System
+
+**Traditional Astrological Colors:**
+- Conjunction: #FF0000 (Red)
+- Opposition: #0000FF (Blue)
+- Trine: #00FF00 (Green)
+- Square: #FF8000 (Orange)
+- Sextile: #8000FF (Purple)
+- Minor aspects: Gray/Pink/Gold variations
+
+### Development Best Practices
+
+**When working with Kerykeion features:**
+1. Always check `kerykeion_service.is_available()` before using advanced features
+2. Implement graceful fallbacks to basic astrology_calculator methods
+3. Use appropriate logging patterns: `KERYKEION_SERVICE_*` prefixes
+4. Test both Kerykeion-available and fallback scenarios
+5. Respect the multi-backend architecture for compatibility
+
+**Error Handling:**
+- KerykeionService methods return error dictionaries on failure
+- Always check for "error" key in returned data
+- Log both successes and failures with correlation IDs
+
+### Configuration Requirements
+
+**For full Kerykeion functionality, ensure:**
+- Kerykeion >=4.11.0 is installed in the environment
+- Proper timezone handling (uses pytz)
+- Sufficient memory for complex chart calculations
+- Optional: SVG rendering libraries for chart generation
 
 ## Critical Operational Knowledge (Updated 2025-01-08)
 
