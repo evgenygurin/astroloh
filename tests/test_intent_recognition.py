@@ -25,7 +25,9 @@ class TestIntentRecognizer:
         ]
 
         for phrase in test_phrases:
-            processed = self.recognizer.recognize_intent(phrase, self.user_context)
+            processed = self.recognizer.recognize_intent(
+                phrase, self.user_context
+            )
             assert processed.intent == YandexIntent.GREET
             assert processed.confidence > 0
 
@@ -40,7 +42,9 @@ class TestIntentRecognizer:
         ]
 
         for phrase in test_phrases:
-            processed = self.recognizer.recognize_intent(phrase, self.user_context)
+            processed = self.recognizer.recognize_intent(
+                phrase, self.user_context
+            )
             assert processed.intent == YandexIntent.HOROSCOPE
             assert processed.confidence > 0
 
@@ -54,7 +58,9 @@ class TestIntentRecognizer:
         ]
 
         for phrase in test_phrases:
-            processed = self.recognizer.recognize_intent(phrase, self.user_context)
+            processed = self.recognizer.recognize_intent(
+                phrase, self.user_context
+            )
             assert processed.intent == YandexIntent.COMPATIBILITY
             assert processed.confidence > 0
 
@@ -96,11 +102,15 @@ class TestIntentRecognizer:
         self.user_context.intent = YandexIntent.HOROSCOPE
 
         # Тестируем обработку даты
-        processed = self.recognizer.recognize_intent("15.03.1990", self.user_context)
+        processed = self.recognizer.recognize_intent(
+            "15.03.1990", self.user_context
+        )
         assert processed.intent == YandexIntent.HOROSCOPE
         assert "birth_date" in processed.entities
 
     def test_unknown_intent(self):
         """Тест обработки неизвестного интента."""
-        processed = self.recognizer.recognize_intent("абракадабра", self.user_context)
+        processed = self.recognizer.recognize_intent(
+            "абракадабра", self.user_context
+        )
         assert processed.intent == YandexIntent.UNKNOWN

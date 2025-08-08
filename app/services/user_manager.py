@@ -113,8 +113,12 @@ class UserManager:
                 update(User)
                 .where(User.id == user_id)
                 .values(
-                    encrypted_birth_date=encrypted_data.get("encrypted_birth_date"),
-                    encrypted_birth_time=encrypted_data.get("encrypted_birth_time"),
+                    encrypted_birth_date=encrypted_data.get(
+                        "encrypted_birth_date"
+                    ),
+                    encrypted_birth_time=encrypted_data.get(
+                        "encrypted_birth_time"
+                    ),
                     encrypted_birth_location=encrypted_data.get(
                         "encrypted_birth_location"
                     ),
@@ -144,7 +148,9 @@ class UserManager:
             )
             return False
 
-    async def get_user_birth_data(self, user_id: uuid.UUID) -> Optional[Dict[str, Any]]:
+    async def get_user_birth_data(
+        self, user_id: uuid.UUID
+    ) -> Optional[Dict[str, Any]]:
         """
         Получение расшифрованных данных о рождении пользователя.
 
@@ -155,7 +161,9 @@ class UserManager:
             Словарь с данными о рождении или None
         """
         try:
-            result = await self.db.execute(select(User).where(User.id == user_id))
+            result = await self.db.execute(
+                select(User).where(User.id == user_id)
+            )
             user = result.scalar_one_or_none()
 
             if not user:
@@ -342,7 +350,9 @@ class UserManager:
         )  # Максимальный срок хранения
 
         result = await self.db.execute(
-            select(User).where(User.created_at < cutoff_date, User.data_consent)
+            select(User).where(
+                User.created_at < cutoff_date, User.data_consent
+            )
         )
         expired_users = result.scalars().all()
 
@@ -415,7 +425,9 @@ class UserManager:
         user.data_consent = consent
         await self.db.commit()
 
-    async def get_users_for_cleanup(self, days_threshold: int = 30) -> List[User]:
+    async def get_users_for_cleanup(
+        self, days_threshold: int = 30
+    ) -> List[User]:
         """
         Get users that need data cleanup.
 
@@ -491,7 +503,9 @@ class UserManager:
         now = datetime.utcnow()
 
         # Calculate days since registration
-        days_since_registration = (now - user.created_at).days if user.created_at else 0
+        days_since_registration = (
+            (now - user.created_at).days if user.created_at else 0
+        )
 
         # Calculate days since last access
         days_since_last_access = (
@@ -510,7 +524,9 @@ class UserManager:
             "total_sessions": total_sessions,
         }
 
-    async def is_user_active(self, user: User, days_threshold: int = 30) -> bool:
+    async def is_user_active(
+        self, user: User, days_threshold: int = 30
+    ) -> bool:
         """
         Check if user is active based on last access.
 
@@ -553,7 +569,9 @@ class UserManager:
         user.gender = gender
         await self.db.commit()
 
-    async def update_user_zodiac_sign(self, user: User, zodiac_sign: Any) -> None:
+    async def update_user_zodiac_sign(
+        self, user: User, zodiac_sign: Any
+    ) -> None:
         """
         Update user zodiac sign.
 
@@ -649,14 +667,18 @@ class UserManager:
                 # Store conversation count in preferences
                 if not user.preferences:
                     user.preferences = {}
-                user.preferences["conversation_count"] = context.conversation_count
+                user.preferences[
+                    "conversation_count"
+                ] = context.conversation_count
 
             await db_session.commit()
 
     def _update_user_info(self, user: User, user_info: Dict[str, Any]):
         """Обновление информации о пользователе."""
         if "name" in user_info and user_info["name"]:
-            user.encrypted_name = self.data_protection.encrypt_name(user_info["name"])
+            user.encrypted_name = self.data_protection.encrypt_name(
+                user_info["name"]
+            )
 
         if "gender" in user_info:
             user.gender = SecurityUtils.sanitize_input(user_info["gender"], 10)
@@ -667,9 +689,13 @@ class UserManager:
         await self.db.execute(
             delete(HoroscopeRequest).where(HoroscopeRequest.user_id == user_id)
         )
-        await self.db.execute(delete(UserSession).where(UserSession.user_id == user_id))
         await self.db.execute(
-            delete(DataDeletionRequest).where(DataDeletionRequest.user_id == user_id)
+            delete(UserSession).where(UserSession.user_id == user_id)
+        )
+        await self.db.execute(
+            delete(DataDeletionRequest).where(
+                DataDeletionRequest.user_id == user_id
+            )
         )
         await self.db.execute(delete(User).where(User.id == user_id))
 
@@ -741,7 +767,9 @@ class SessionManager:
 
         return session
 
-    async def get_active_session(self, session_id: str) -> Optional[UserSession]:
+    async def get_active_session(
+        self, session_id: str
+    ) -> Optional[UserSession]:
         """
         Получение активной сессии.
 
@@ -793,7 +821,9 @@ class SessionManager:
 
             await self.db.execute(
                 update(UserSession)
-                .where(UserSession.session_id == session_id, UserSession.is_active)
+                .where(
+                    UserSession.session_id == session_id, UserSession.is_active
+                )
                 .values(**update_values)
             )
             await self.db.commit()
@@ -846,13 +876,15 @@ class SessionManager:
             request_log = HoroscopeRequest(
                 user_id=user_id,
                 request_type=SecurityUtils.sanitize_input(request_type, 50),
-                ip_hash=SecurityUtils.hash_ip(ip_address) if ip_address else None,
+                ip_hash=SecurityUtils.hash_ip(ip_address)
+                if ip_address
+                else None,
             )
 
             # Шифруем чувствительные данные
             if target_date:
-                request_log.encrypted_target_date = data_protection.encryption.encrypt(
-                    target_date
+                request_log.encrypted_target_date = (
+                    data_protection.encryption.encrypt(target_date)
                 )
 
             if partner_data:

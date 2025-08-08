@@ -66,7 +66,9 @@ class TransitCalculator:
             transit_date = datetime.now(pytz.UTC)
 
         # Получаем текущие позиции планет
-        current_positions = self.astro_calc.calculate_planet_positions(transit_date)
+        current_positions = self.astro_calc.calculate_planet_positions(
+            transit_date
+        )
 
         # Находим активные транзитные аспекты
         active_transits = []
@@ -80,7 +82,9 @@ class TransitCalculator:
                 )
 
                 for aspect in aspects:
-                    if aspect["orb"] <= self.transit_orbs.get(aspect["angle"], 8):
+                    if aspect["orb"] <= self.transit_orbs.get(
+                        aspect["angle"], 8
+                    ):
                         if aspect["orb"] <= 2:  # Точные аспекты
                             active_transits.append(aspect)
                         else:  # Приближающиеся аспекты
@@ -93,7 +97,9 @@ class TransitCalculator:
         return {
             "date": transit_date.isoformat(),
             "active_transits": active_transits[:10],  # Топ-10 активных
-            "approaching_transits": approaching_transits[:5],  # Топ-5 приближающихся
+            "approaching_transits": approaching_transits[
+                :5
+            ],  # Топ-5 приближающихся
             "summary": self._create_transit_summary(active_transits),
             "daily_influences": self._get_daily_influences(active_transits),
         }
@@ -129,19 +135,21 @@ class TransitCalculator:
                     transit_planet, natal_planet, aspect_name
                 )
 
-                aspects.append({
-                    "transit_planet": transit_planet,
-                    "natal_planet": natal_planet,
-                    "aspect": aspect_name,
-                    "angle": aspect_angle,
-                    "orb": exactness,
-                    "exact_angle": angle,
-                    "influence": influence,
-                    "strength": self._calculate_aspect_strength(
-                        exactness, aspect_angle
-                    ),
-                    "nature": self._get_aspect_nature(aspect_name),
-                })
+                aspects.append(
+                    {
+                        "transit_planet": transit_planet,
+                        "natal_planet": natal_planet,
+                        "aspect": aspect_name,
+                        "angle": aspect_angle,
+                        "orb": exactness,
+                        "exact_angle": angle,
+                        "influence": influence,
+                        "strength": self._calculate_aspect_strength(
+                            exactness, aspect_angle
+                        ),
+                        "nature": self._get_aspect_nature(aspect_name),
+                    }
+                )
 
         return aspects
 
@@ -167,7 +175,9 @@ class TransitCalculator:
         }
         return natures.get(aspect_name, "нейтральный")
 
-    def _calculate_aspect_strength(self, orb: float, aspect_angle: float) -> str:
+    def _calculate_aspect_strength(
+        self, orb: float, aspect_angle: float
+    ) -> str:
         """Вычисляет силу аспекта."""
         if orb <= 1:
             return "очень сильный"
@@ -214,7 +224,9 @@ class TransitCalculator:
         else:
             return base_influence
 
-    def _create_transit_summary(self, active_transits: List[Dict[str, Any]]) -> str:
+    def _create_transit_summary(
+        self, active_transits: List[Dict[str, Any]]
+    ) -> str:
         """Создает краткое резюме транзитов."""
 
         if not active_transits:
@@ -222,7 +234,9 @@ class TransitCalculator:
 
         # Анализируем доминирующие влияния
         strong_transits = [
-            t for t in active_transits if t["strength"] in ["сильный", "очень сильный"]
+            t
+            for t in active_transits
+            if t["strength"] in ["сильный", "очень сильный"]
         ]
 
         if not strong_transits:
@@ -245,14 +259,18 @@ class TransitCalculator:
         else:
             return "Сбалансированный период с возможностями и вызовами"
 
-    def _get_daily_influences(self, active_transits: List[Dict[str, Any]]) -> List[str]:
+    def _get_daily_influences(
+        self, active_transits: List[Dict[str, Any]]
+    ) -> List[str]:
         """Получает ключевые влияния дня."""
 
         influences = []
 
         # Берем только самые сильные транзиты
         strong_transits = [
-            t for t in active_transits if t["strength"] in ["сильный", "очень сильный"]
+            t
+            for t in active_transits
+            if t["strength"] in ["сильный", "очень сильный"]
         ][:3]
 
         for transit in strong_transits:
@@ -274,7 +292,9 @@ class TransitCalculator:
 
         # Находим точное время соляра (когда Солнце возвращается в натальную позицию)
         natal_datetime = datetime.combine(birth_date, datetime.min.time())
-        self.astro_calc.calculate_planet_positions(natal_datetime)["Sun"]["longitude"]
+        self.astro_calc.calculate_planet_positions(natal_datetime)["Sun"][
+            "longitude"
+        ]
 
         # Приблизительная дата соляра
         solar_date = date(year, birth_date.month, birth_date.day)
@@ -291,7 +311,9 @@ class TransitCalculator:
         )
 
         # Интерпретируем соляр
-        interpretation = self._interpret_solar_return(solar_positions, solar_houses)
+        interpretation = self._interpret_solar_return(
+            solar_positions, solar_houses
+        )
 
         return {
             "year": year,
@@ -303,7 +325,9 @@ class TransitCalculator:
         }
 
     def _interpret_solar_return(
-        self, positions: Dict[str, Dict[str, Any]], houses: Dict[int, Dict[str, Any]]
+        self,
+        positions: Dict[str, Dict[str, Any]],
+        houses: Dict[int, Dict[str, Any]],
     ) -> Dict[str, Any]:
         """Интерпретирует соляр."""
 
@@ -312,7 +336,9 @@ class TransitCalculator:
         asc_sign = ascendant.get("sign", "Овен")
 
         # Анализируем акцентированные дома
-        planet_house_distribution = self._analyze_house_emphasis(positions, houses)
+        planet_house_distribution = self._analyze_house_emphasis(
+            positions, houses
+        )
 
         return {
             "year_theme": self._get_year_theme(asc_sign),
@@ -342,7 +368,9 @@ class TransitCalculator:
         return themes.get(ascendant_sign, "Год личностного роста")
 
     def _analyze_house_emphasis(
-        self, positions: Dict[str, Dict[str, Any]], houses: Dict[int, Dict[str, Any]]
+        self,
+        positions: Dict[str, Dict[str, Any]],
+        houses: Dict[int, Dict[str, Any]],
     ) -> Dict[int, int]:
         """Анализирует распределение планет по домам."""
 
@@ -366,7 +394,9 @@ class TransitCalculator:
 
         return house_count
 
-    def _get_key_life_areas(self, house_distribution: Dict[int, int]) -> List[str]:
+    def _get_key_life_areas(
+        self, house_distribution: Dict[int, int]
+    ) -> List[str]:
         """Определяет ключевые сферы жизни года."""
 
         house_meanings = {
@@ -408,10 +438,11 @@ class TransitCalculator:
         aspects = self.astro_calc.calculate_aspects(positions)
 
         for aspect in aspects:
-            if aspect["aspect"] in ["Квадрат", "Оппозиция"] and aspect["orb"] <= 5:
-                challenge = (
-                    f"Напряжение между {aspect['planet1']} и {aspect['planet2']}"
-                )
+            if (
+                aspect["aspect"] in ["Квадрат", "Оппозиция"]
+                and aspect["orb"] <= 5
+            ):
+                challenge = f"Напряжение между {aspect['planet1']} и {aspect['planet2']}"
                 challenges.append(challenge)
 
         return challenges[:3]  # Ограничиваем тремя основными
@@ -436,7 +467,9 @@ class TransitCalculator:
         return opportunities[:3]  # Ограничиваем тремя основными
 
     def _get_solar_themes(
-        self, positions: Dict[str, Dict[str, Any]], houses: Dict[int, Dict[str, Any]]
+        self,
+        positions: Dict[str, Dict[str, Any]],
+        houses: Dict[int, Dict[str, Any]],
     ) -> List[str]:
         """Получает основные темы года."""
 
@@ -469,7 +502,9 @@ class TransitCalculator:
                     12: "Spiritual introspection и внутренняя работа",
                 }
 
-                theme = house_themes.get(house_num, f"Влияние {house_num}-го дома")
+                theme = house_themes.get(
+                    house_num, f"Влияние {house_num}-го дома"
+                )
                 themes.append(theme)
                 break
 
@@ -549,7 +584,9 @@ class TransitCalculator:
             "general_advice": "Следуйте лунным ритмам для гармоничного развития",
         }
 
-    def _get_monthly_themes(self, positions: Dict[str, Dict[str, Any]]) -> List[str]:
+    def _get_monthly_themes(
+        self, positions: Dict[str, Dict[str, Any]]
+    ) -> List[str]:
         """Получает темы месяца."""
 
         themes = []

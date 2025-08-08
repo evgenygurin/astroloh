@@ -3,26 +3,28 @@
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 from sqlalchemy import (
+    JSON,
     Boolean,
     Column,
     DateTime,
     Float,
     ForeignKey,
     Integer,
-    JSON,
     String,
     Text,
 )
 from sqlalchemy.orm import relationship
 
-from app.models.database import Base as SQLBaseModel, GUID
+from app.models.database import GUID
+from app.models.database import Base as SQLBaseModel
 
 
 class DeviceType(str, Enum):
     """Types of IoT devices."""
-    
+
     SMART_LIGHT = "smart_light"
     SMART_SPEAKER = "smart_speaker"
     SMART_DISPLAY = "smart_display"
@@ -36,7 +38,7 @@ class DeviceType(str, Enum):
 
 class DeviceProtocol(str, Enum):
     """IoT protocols supported."""
-    
+
     MATTER = "matter"
     HOMEKIT = "homekit"
     GOOGLE_ASSISTANT = "google_assistant"
@@ -50,7 +52,7 @@ class DeviceProtocol(str, Enum):
 
 class AutomationTrigger(str, Enum):
     """Automation trigger types."""
-    
+
     LUNAR_PHASE = "lunar_phase"
     PLANETARY_TRANSIT = "planetary_transit"
     DAILY_HOROSCOPE = "daily_horoscope"
@@ -62,7 +64,7 @@ class AutomationTrigger(str, Enum):
 
 class DeviceStatus(str, Enum):
     """Device status enum."""
-    
+
     ONLINE = "online"
     OFFLINE = "offline"
     PAIRING = "pairing"
@@ -72,7 +74,7 @@ class DeviceStatus(str, Enum):
 # SQLAlchemy Models
 class IoTDevice(SQLBaseModel):
     """IoT device database model."""
-    
+
     __tablename__ = "iot_devices"
 
     id = Column(Integer, primary_key=True)
@@ -91,7 +93,9 @@ class IoTDevice(SQLBaseModel):
     room = Column(String(255))
     last_seen = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Relationships
     automations = relationship("HomeAutomation", back_populates="device")
@@ -100,7 +104,7 @@ class IoTDevice(SQLBaseModel):
 
 class HomeAutomation(SQLBaseModel):
     """Home automation rules database model."""
-    
+
     __tablename__ = "home_automations"
 
     id = Column(Integer, primary_key=True)
@@ -115,7 +119,9 @@ class HomeAutomation(SQLBaseModel):
     last_executed = Column(DateTime)
     execution_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Relationships
     device = relationship("IoTDevice", back_populates="automations")
@@ -123,7 +129,7 @@ class HomeAutomation(SQLBaseModel):
 
 class DeviceData(SQLBaseModel):
     """Device sensor data and telemetry."""
-    
+
     __tablename__ = "device_data"
 
     id = Column(Integer, primary_key=True)
@@ -140,7 +146,7 @@ class DeviceData(SQLBaseModel):
 
 class WearableData(SQLBaseModel):
     """Wearable device specific data."""
-    
+
     __tablename__ = "wearable_data"
 
     id = Column(Integer, primary_key=True)
@@ -158,7 +164,7 @@ class WearableData(SQLBaseModel):
 # Pydantic Models for API
 class IoTDeviceCreate(BaseModel):
     """Create IoT device request."""
-    
+
     device_id: str
     name: str
     device_type: DeviceType
@@ -173,7 +179,7 @@ class IoTDeviceCreate(BaseModel):
 
 class IoTDeviceUpdate(BaseModel):
     """Update IoT device request."""
-    
+
     name: Optional[str] = None
     status: Optional[DeviceStatus] = None
     configuration: Optional[Dict[str, Any]] = None
@@ -183,7 +189,7 @@ class IoTDeviceUpdate(BaseModel):
 
 class IoTDeviceResponse(BaseModel):
     """IoT device response."""
-    
+
     id: int
     device_id: str
     name: str
@@ -202,7 +208,7 @@ class IoTDeviceResponse(BaseModel):
 
 class AutomationCreate(BaseModel):
     """Create automation rule request."""
-    
+
     device_id: int
     name: str
     description: Optional[str] = None
@@ -213,7 +219,7 @@ class AutomationCreate(BaseModel):
 
 class AutomationUpdate(BaseModel):
     """Update automation rule request."""
-    
+
     name: Optional[str] = None
     description: Optional[str] = None
     trigger_conditions: Optional[Dict[str, Any]] = None
@@ -223,7 +229,7 @@ class AutomationUpdate(BaseModel):
 
 class AutomationResponse(BaseModel):
     """Automation rule response."""
-    
+
     id: int
     name: str
     description: Optional[str] = None
@@ -238,7 +244,7 @@ class AutomationResponse(BaseModel):
 
 class DeviceCommand(BaseModel):
     """Device command request."""
-    
+
     command: str
     parameters: Optional[Dict[str, Any]] = None
     priority: int = Field(default=5, ge=1, le=10)
@@ -246,7 +252,7 @@ class DeviceCommand(BaseModel):
 
 class LunarLightingConfig(BaseModel):
     """Configuration for lunar phase lighting."""
-    
+
     new_moon: Dict[str, Any] = Field(
         default={"brightness": 10, "color": "#0F0F23", "temperature": 2700}
     )
@@ -275,7 +281,7 @@ class LunarLightingConfig(BaseModel):
 
 class WearableAlert(BaseModel):
     """Wearable device alert/notification."""
-    
+
     title: str
     message: str
     alert_type: str = "info"  # info, warning, reminder, transit

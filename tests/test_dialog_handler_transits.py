@@ -2,20 +2,21 @@
 Тесты для обработки новых интентов в DialogHandler.
 """
 
-import pytest
 from datetime import date
 from unittest.mock import Mock, patch
 
-from app.services.dialog_handler import DialogHandler
+import pytest
+
 from app.models.yandex_models import (
+    UserContext,
     YandexIntent,
-    YandexRequestModel,
+    YandexRequestData,
     YandexRequestMeta,
+    YandexRequestModel,
     YandexRequestType,
     YandexSession,
-    YandexRequestData,
-    UserContext,
 )
+from app.services.dialog_handler import DialogHandler
 
 
 class TestDialogHandlerTransits:
@@ -77,7 +78,10 @@ class TestDialogHandlerTransits:
             )
 
             mock_set_awaiting.assert_called_once_with(
-                self.mock_session, user_context, "birth_date", YandexIntent.TRANSITS
+                self.mock_session,
+                user_context,
+                "birth_date",
+                YandexIntent.TRANSITS,
             )
             mock_format.assert_called_once()
 
@@ -110,13 +114,16 @@ class TestDialogHandlerTransits:
 
         with (
             patch.object(
-                self.dialog_handler.natal_chart_calculator, "calculate_natal_chart"
+                self.dialog_handler.natal_chart_calculator,
+                "calculate_natal_chart",
             ) as mock_natal,
             patch.object(
-                self.dialog_handler.transit_calculator, "calculate_current_transits"
+                self.dialog_handler.transit_calculator,
+                "calculate_current_transits",
             ) as mock_transits_calc,
             patch.object(
-                self.dialog_handler.response_formatter, "format_transits_response"
+                self.dialog_handler.response_formatter,
+                "format_transits_response",
             ) as mock_format,
         ):
             mock_natal.return_value = mock_natal_chart
@@ -128,7 +135,9 @@ class TestDialogHandlerTransits:
             )
 
             mock_natal.assert_called_once()
-            mock_transits_calc.assert_called_once_with(mock_natal_chart["planets"])
+            mock_transits_calc.assert_called_once_with(
+                mock_natal_chart["planets"]
+            )
             mock_format.assert_called_once_with(mock_transits)
 
     @pytest.mark.unit
@@ -154,7 +163,10 @@ class TestDialogHandlerTransits:
             )
 
             mock_set_awaiting.assert_called_once_with(
-                self.mock_session, user_context, "birth_date", YandexIntent.PROGRESSIONS
+                self.mock_session,
+                user_context,
+                "birth_date",
+                YandexIntent.PROGRESSIONS,
             )
             mock_format.assert_called_once()
 
@@ -170,17 +182,22 @@ class TestDialogHandlerTransits:
             "interpretation": {
                 "current_age": 39,
                 "life_stage": "Зрелость",
-                "progressed_sun": {"sign": "Дева", "meaning": "Совершенствование"},
+                "progressed_sun": {
+                    "sign": "Дева",
+                    "meaning": "Совершенствование",
+                },
                 "general_trends": ["Период анализа и детализации"],
             }
         }
 
         with (
             patch.object(
-                self.dialog_handler.natal_chart_calculator, "calculate_progressions"
+                self.dialog_handler.natal_chart_calculator,
+                "calculate_progressions",
             ) as mock_progressions_calc,
             patch.object(
-                self.dialog_handler.response_formatter, "format_progressions_response"
+                self.dialog_handler.response_formatter,
+                "format_progressions_response",
             ) as mock_format,
         ):
             mock_progressions_calc.return_value = mock_progressions
@@ -212,10 +229,12 @@ class TestDialogHandlerTransits:
 
         with (
             patch.object(
-                self.dialog_handler.transit_calculator, "calculate_solar_return"
+                self.dialog_handler.transit_calculator,
+                "calculate_solar_return",
             ) as mock_solar_calc,
             patch.object(
-                self.dialog_handler.response_formatter, "format_solar_return_response"
+                self.dialog_handler.response_formatter,
+                "format_solar_return_response",
             ) as mock_format,
         ):
             mock_solar_calc.return_value = mock_solar_return
@@ -250,10 +269,12 @@ class TestDialogHandlerTransits:
 
         with (
             patch.object(
-                self.dialog_handler.transit_calculator, "calculate_lunar_return"
+                self.dialog_handler.transit_calculator,
+                "calculate_lunar_return",
             ) as mock_lunar_calc,
             patch.object(
-                self.dialog_handler.response_formatter, "format_lunar_return_response"
+                self.dialog_handler.response_formatter,
+                "format_lunar_return_response",
             ) as mock_format,
         ):
             mock_lunar_calc.return_value = mock_lunar_return
@@ -280,7 +301,8 @@ class TestDialogHandlerTransits:
 
         with (
             patch.object(
-                self.dialog_handler.natal_chart_calculator, "calculate_natal_chart"
+                self.dialog_handler.natal_chart_calculator,
+                "calculate_natal_chart",
             ) as mock_natal,
             patch("app.services.dialog_handler.logger") as mock_logger,
             patch.object(
@@ -322,12 +344,15 @@ class TestDialogHandlerTransits:
                 self.dialog_handler.session_manager, "get_user_context"
             ) as mock_get_context,
             patch.object(
-                self.dialog_handler.conversation_manager, "process_conversation"
+                self.dialog_handler.conversation_manager,
+                "process_conversation",
             ) as mock_conversation,
         ):
             # Настраиваем моки
             mock_recognize.return_value = Mock(
-                intent=YandexIntent.TRANSITS, entities={}, user_context=UserContext()
+                intent=YandexIntent.TRANSITS,
+                entities={},
+                user_context=UserContext(),
             )
 
             mock_get_context.return_value = UserContext()
@@ -389,13 +414,16 @@ class TestDialogHandlerTransits:
         # Мочим внешние зависимости для измерения производительности
         with (
             patch.object(
-                self.dialog_handler.natal_chart_calculator, "calculate_natal_chart"
+                self.dialog_handler.natal_chart_calculator,
+                "calculate_natal_chart",
             ) as mock_natal,
             patch.object(
-                self.dialog_handler.transit_calculator, "calculate_current_transits"
+                self.dialog_handler.transit_calculator,
+                "calculate_current_transits",
             ) as mock_transits,
             patch.object(
-                self.dialog_handler.response_formatter, "format_transits_response"
+                self.dialog_handler.response_formatter,
+                "format_transits_response",
             ) as mock_format,
         ):
             mock_natal.return_value = {"planets": {}}

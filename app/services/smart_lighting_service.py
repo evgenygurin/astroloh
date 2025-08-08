@@ -2,15 +2,16 @@
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.iot_models import (
-    IoTDevice,
-    DeviceType,
-    DeviceStatus,
-    LunarLightingConfig,
     DeviceCommand,
+    DeviceStatus,
+    DeviceType,
+    IoTDevice,
+    LunarLightingConfig,
 )
 from app.services.iot_manager import IoTDeviceManager
 from app.services.lunar_calendar import LunarCalendar
@@ -63,12 +64,16 @@ class SmartLightingService:
 
             results = []
             for device in devices:
-                result = await self._apply_lighting_to_device(device, phase_config, current_phase)
+                result = await self._apply_lighting_to_device(
+                    device, phase_config, current_phase
+                )
                 results.append(result)
 
             successful = sum(1 for r in results if r.get("success", False))
-            
-            logger.info(f"Applied lunar lighting ({current_phase}) to {successful}/{len(devices)} devices")
+
+            logger.info(
+                f"Applied lunar lighting ({current_phase}) to {successful}/{len(devices)} devices"
+            )
 
             return {
                 "success": True,
@@ -97,12 +102,16 @@ class SmartLightingService:
                 }
 
             # Create lighting commands based on device capabilities
-            commands = await self._create_lighting_commands(device, phase_config)
-            
+            commands = await self._create_lighting_commands(
+                device, phase_config
+            )
+
             # Execute commands
             success_count = 0
             for command in commands:
-                result = await self.iot_manager.send_command(device.device_id, command)
+                result = await self.iot_manager.send_command(
+                    device.device_id, command
+                )
                 if result.get("success", False):
                     success_count += 1
 
@@ -117,7 +126,9 @@ class SmartLightingService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to apply lighting to device {device.name}: {e}")
+            logger.error(
+                f"Failed to apply lighting to device {device.name}: {e}"
+            )
             return {
                 "device_id": device.device_id,
                 "name": device.name,
@@ -134,9 +145,7 @@ class SmartLightingService:
 
         # Turn on the light
         if "on_off" in capabilities:
-            commands.append(
-                DeviceCommand(command="turn_on", parameters={})
-            )
+            commands.append(DeviceCommand(command="turn_on", parameters={}))
 
         # Set brightness
         if "brightness" in capabilities and "brightness" in config:
@@ -184,7 +193,9 @@ class SmartLightingService:
 
             results = []
             for device in devices:
-                result = await self._apply_lighting_to_device(device, mood_config, mood)
+                result = await self._apply_lighting_to_device(
+                    device, mood_config, mood
+                )
                 results.append(result)
 
             successful = sum(1 for r in results if r.get("success", False))
@@ -215,7 +226,7 @@ class SmartLightingService:
             },
             "energetic": {
                 "brightness": 90,
-                "color": "#FF4500", 
+                "color": "#FF4500",
                 "temperature": 5000,
             },
             "relaxing": {
@@ -272,9 +283,11 @@ class SmartLightingService:
                 adjusted_config["brightness"] += int(brightness_adj)
             else:
                 adjusted_config["brightness"] = int(brightness_adj)
-            
+
             # Clamp values
-            adjusted_config["brightness"] = max(1, min(100, adjusted_config["brightness"]))
+            adjusted_config["brightness"] = max(
+                1, min(100, adjusted_config["brightness"])
+            )
 
         # Apply color adjustment
         if "color" in adjustments:
@@ -331,10 +344,14 @@ class SmartLightingService:
         # This would typically use an astronomy library
         # For now, return approximate times
         today = datetime.now().date()
-        
+
         return {
-            "sunrise": datetime.combine(today, datetime.strptime("06:30", "%H:%M").time()),
-            "sunset": datetime.combine(today, datetime.strptime("18:30", "%H:%M").time()),
+            "sunrise": datetime.combine(
+                today, datetime.strptime("06:30", "%H:%M").time()
+            ),
+            "sunset": datetime.combine(
+                today, datetime.strptime("18:30", "%H:%M").time()
+            ),
         }
 
     async def _create_sun_automation(
@@ -354,7 +371,7 @@ class SmartLightingService:
                 # Gradually decrease brightness and warm up color
                 config = {
                     "brightness": 30,
-                    "color": "#FF8C42", 
+                    "color": "#FF8C42",
                     "temperature": 2200,
                     "transition_duration": 3600,  # 60 minutes
                 }
@@ -373,7 +390,9 @@ class SmartLightingService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to create sun automation for {device.name}: {e}")
+            logger.error(
+                f"Failed to create sun automation for {device.name}: {e}"
+            )
             return {
                 "device_id": device.device_id,
                 "device_name": device.name,
@@ -387,7 +406,9 @@ class SmartLightingService:
         """Create lighting effects for astrological transits."""
         try:
             # Get transit-specific lighting
-            transit_config = self._get_transit_lighting_config(transit_type, transit_data)
+            transit_config = self._get_transit_lighting_config(
+                transit_type, transit_data
+            )
 
             devices = await self.iot_manager.get_user_devices(
                 user_id, DeviceType.SMART_LIGHT
@@ -464,14 +485,18 @@ class SmartLightingService:
 
             states = []
             for device in devices:
-                capabilities = await self.iot_manager.get_device_capabilities(device.device_id)
-                states.append({
-                    "device_id": device.device_id,
-                    "name": device.name,
-                    "room": device.room,
-                    "status": device.status,
-                    "capabilities": capabilities,
-                })
+                capabilities = await self.iot_manager.get_device_capabilities(
+                    device.device_id
+                )
+                states.append(
+                    {
+                        "device_id": device.device_id,
+                        "name": device.name,
+                        "room": device.room,
+                        "status": device.status,
+                        "capabilities": capabilities,
+                    }
+                )
 
             return {
                 "success": True,

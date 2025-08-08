@@ -2,9 +2,10 @@
 Тесты для прогрессий в натальной карте.
 """
 
-import pytest
 from datetime import date, time
 from unittest.mock import patch
+
+import pytest
 
 from app.services.natal_chart import NatalChartCalculator
 
@@ -26,13 +27,25 @@ class TestProgressions:
             patch.object(
                 self.natal_calc.astro_calc, "calculate_planet_positions"
             ) as mock_positions,
-            patch.object(self.natal_calc.astro_calc, "calculate_houses") as mock_houses,
+            patch.object(
+                self.natal_calc.astro_calc, "calculate_houses"
+            ) as mock_houses,
         ):
             mock_positions.return_value = {
-                "Sun": {"longitude": 130.0, "sign": "Лев", "degree_in_sign": 10.0},
-                "Moon": {"longitude": 45.0, "sign": "Телец", "degree_in_sign": 15.0},
+                "Sun": {
+                    "longitude": 130.0,
+                    "sign": "Лев",
+                    "degree_in_sign": 10.0,
+                },
+                "Moon": {
+                    "longitude": 45.0,
+                    "sign": "Телец",
+                    "degree_in_sign": 15.0,
+                },
             }
-            mock_houses.return_value = {1: {"cusp_longitude": 0, "sign": "Овен"}}
+            mock_houses.return_value = {
+                1: {"cusp_longitude": 0, "sign": "Овен"}
+            }
 
             result = self.natal_calc.calculate_progressions(
                 birth_date=birth_date, progression_date=progression_date
@@ -148,17 +161,23 @@ class TestProgressions:
         }
 
         # Тест возрастного периода Сатурна
-        trends_29 = self.natal_calc._get_progression_trends(29, progressed_positions)
+        trends_29 = self.natal_calc._get_progression_trends(
+            29, progressed_positions
+        )
         assert isinstance(trends_29, list)
         assert any("Сатурна" in trend for trend in trends_29)
 
         # Тест кризиса среднего возраста
-        trends_40 = self.natal_calc._get_progression_trends(40, progressed_positions)
+        trends_40 = self.natal_calc._get_progression_trends(
+            40, progressed_positions
+        )
         assert isinstance(trends_40, list)
         assert any("кризис" in trend.lower() for trend in trends_40)
 
         # Тест гармонии Солнце-Луна
-        assert any("гармония" in trend.lower() for trend in trends_29 + trends_40)
+        assert any(
+            "гармония" in trend.lower() for trend in trends_29 + trends_40
+        )
 
     @pytest.mark.unit
     def test_analyze_progression_changes(self):
@@ -169,10 +188,14 @@ class TestProgressions:
             "Mercury": {"sign": "Весы"},
             "Venus": {"sign": "Скорпион"},
             "Mars": {"sign": "Стрелец"},
-            "Jupiter": {"sign": "Козерог"},  # Не должен попасть в быстрые планеты
+            "Jupiter": {
+                "sign": "Козерог"
+            },  # Не должен попасть в быстрые планеты
         }
 
-        changes = self.natal_calc._analyze_progression_changes(progressed_positions)
+        changes = self.natal_calc._analyze_progression_changes(
+            progressed_positions
+        )
 
         assert isinstance(changes, list)
         assert len(changes) <= 3  # Ограничено тремя основными
@@ -200,7 +223,9 @@ class TestProgressions:
             patch.object(
                 self.natal_calc.astro_calc, "calculate_planet_positions"
             ) as mock_positions,
-            patch.object(self.natal_calc.astro_calc, "calculate_houses") as mock_houses,
+            patch.object(
+                self.natal_calc.astro_calc, "calculate_houses"
+            ) as mock_houses,
         ):
             mock_positions.return_value = {
                 "Sun": {"sign": "Лев", "longitude": 120.0},
@@ -223,13 +248,18 @@ class TestProgressions:
         """Тест прогрессий с пользовательским временем и местом."""
         birth_date = date(1990, 6, 10)
         birth_time = time(14, 30)  # 14:30
-        birth_place = {"latitude": 59.9311, "longitude": 30.3609}  # Санкт-Петербург
+        birth_place = {
+            "latitude": 59.9311,
+            "longitude": 30.3609,
+        }  # Санкт-Петербург
 
         with (
             patch.object(
                 self.natal_calc.astro_calc, "calculate_planet_positions"
             ) as mock_positions,
-            patch.object(self.natal_calc.astro_calc, "calculate_houses") as mock_houses,
+            patch.object(
+                self.natal_calc.astro_calc, "calculate_houses"
+            ) as mock_houses,
         ):
             mock_positions.return_value = {
                 "Sun": {"sign": "Близнецы", "longitude": 80.0}

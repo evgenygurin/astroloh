@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.database import User, UserPreference, UserInteraction
+from app.models.database import User, UserInteraction, UserPreference
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.horoscope_generator import HoroscopeGenerator
 
@@ -54,7 +54,9 @@ class DynamicHoroscopeGenerator:
         life_situation = await self._analyze_life_situation(user_id)
 
         # Получаем базовый гороскоп
-        base_horoscope = await self._generate_base_horoscope(user, horoscope_type)
+        base_horoscope = await self._generate_base_horoscope(
+            user, horoscope_type
+        )
 
         # Адаптируем под жизненную ситуацию и предпочтения
         personalized_horoscope = await self._adapt_horoscope_to_situation(
@@ -63,7 +65,9 @@ class DynamicHoroscopeGenerator:
 
         return personalized_horoscope
 
-    async def _analyze_life_situation(self, user_id: uuid.UUID) -> Dict[str, Any]:
+    async def _analyze_life_situation(
+        self, user_id: uuid.UUID
+    ) -> Dict[str, Any]:
         """Анализирует текущую жизненную ситуацию пользователя."""
 
         # Анализируем недавние взаимодействия
@@ -88,7 +92,9 @@ class DynamicHoroscopeGenerator:
 
         for interaction in recent_interactions:
             content_type = interaction.content_type
-            content_counts[content_type] = content_counts.get(content_type, 0) + 1
+            content_counts[content_type] = (
+                content_counts.get(content_type, 0) + 1
+            )
 
         for content_type, count in content_counts.items():
             situation["focus_areas"][content_type] = count / total_interactions
@@ -134,12 +140,16 @@ class DynamicHoroscopeGenerator:
                     user.zodiac_sign or "aries"
                 )
             elif horoscope_type == "weekly":
-                return await self.horoscope_generator.generate_weekly_horoscope(
-                    user.zodiac_sign or "aries"
+                return (
+                    await self.horoscope_generator.generate_weekly_horoscope(
+                        user.zodiac_sign or "aries"
+                    )
                 )
             elif horoscope_type == "monthly":
-                return await self.horoscope_generator.generate_monthly_horoscope(
-                    user.zodiac_sign or "aries"
+                return (
+                    await self.horoscope_generator.generate_monthly_horoscope(
+                        user.zodiac_sign or "aries"
+                    )
                 )
             else:
                 return {}
@@ -185,7 +195,9 @@ class DynamicHoroscopeGenerator:
 
         return adapted_horoscope
 
-    def _add_relationship_focus(self, horoscope: Dict[str, Any]) -> Dict[str, Any]:
+    def _add_relationship_focus(
+        self, horoscope: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Добавляет фокус на отношения в гороскоп."""
 
         relationship_advice = [
@@ -236,7 +248,8 @@ class DynamicHoroscopeGenerator:
             horoscope["tone"] = "encouraging"
             if "content" in horoscope:
                 horoscope["content"] = (
-                    "Ваш позитивный настрой привлекает удачу! " + horoscope["content"]
+                    "Ваш позитивный настрой привлекает удачу! "
+                    + horoscope["content"]
                 )
 
         return horoscope
@@ -302,7 +315,9 @@ class InterestProfilingSystem:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def update_user_profile(self, user_id: uuid.UUID) -> Dict[str, float]:
+    async def update_user_profile(
+        self, user_id: uuid.UUID
+    ) -> Dict[str, float]:
         """
         Обновляет профиль интересов пользователя на основе его активности.
 
@@ -365,11 +380,15 @@ class InterestProfilingSystem:
         # Нормализуем скоры
         if total_weight > 0:
             for area in interest_scores:
-                interest_scores[area] = min(interest_scores[area] / total_weight, 1.0)
+                interest_scores[area] = min(
+                    interest_scores[area] / total_weight, 1.0
+                )
 
         return interest_scores
 
-    def _calculate_interaction_weight(self, interaction: UserInteraction) -> float:
+    def _calculate_interaction_weight(
+        self, interaction: UserInteraction
+    ) -> float:
         """Вычисляет вес взаимодействия."""
 
         base_weight = 1.0
@@ -412,15 +431,24 @@ class InterestProfilingSystem:
         if feedback_text:
             feedback_lower = feedback_text.lower()
 
-            if any(word in feedback_lower for word in ["работа", "карьера", "деньги"]):
+            if any(
+                word in feedback_lower
+                for word in ["работа", "карьера", "деньги"]
+            ):
                 return "career"
             elif any(
-                word in feedback_lower for word in ["любовь", "отношения", "партнер"]
+                word in feedback_lower
+                for word in ["любовь", "отношения", "партнер"]
             ):
                 return "love"
-            elif any(word in feedback_lower for word in ["здоровье", "самочувствие"]):
+            elif any(
+                word in feedback_lower for word in ["здоровье", "самочувствие"]
+            ):
                 return "health"
-            elif any(word in feedback_lower for word in ["семья", "дети", "родители"]):
+            elif any(
+                word in feedback_lower
+                for word in ["семья", "дети", "родители"]
+            ):
                 return "family"
             elif any(
                 word in feedback_lower
@@ -428,7 +456,9 @@ class InterestProfilingSystem:
             ):
                 return "spirituality"
 
-        return base_interest if base_interest != "general" else "career"  # Дефолт
+        return (
+            base_interest if base_interest != "general" else "career"
+        )  # Дефолт
 
     async def _save_interest_profile(
         self, user_id: uuid.UUID, interests: Dict[str, float]
@@ -457,7 +487,9 @@ class CommunicationStyleAdapter:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def adapt_content_style(self, content: str, user_id: uuid.UUID) -> str:
+    async def adapt_content_style(
+        self, content: str, user_id: uuid.UUID
+    ) -> str:
         """
         Адаптирует контент под стиль общения пользователя.
 
@@ -602,7 +634,9 @@ class ComplexityLevelAdjuster:
 
         return adjusted_content
 
-    def _simplify_for_beginner(self, content: Dict[str, Any]) -> Dict[str, Any]:
+    def _simplify_for_beginner(
+        self, content: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Упрощает контент для начинающих."""
 
         # Убираем сложные астрологические термины
@@ -619,7 +653,9 @@ class ComplexityLevelAdjuster:
             }
 
             for complex_term, simple_term in term_replacements.items():
-                simplified_text = simplified_text.replace(complex_term, simple_term)
+                simplified_text = simplified_text.replace(
+                    complex_term, simple_term
+                )
 
             content["content"] = simplified_text
 

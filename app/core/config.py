@@ -58,6 +58,13 @@ class Settings(BaseSettings):
     NGROK_BACKEND_HOSTNAME: Optional[str] = None
     NGROK_FRONTEND_HOSTNAME: Optional[str] = None
 
+    # Logging settings
+    LOG_LEVEL: str = "INFO"
+    LOG_TO_FILE: bool = True
+    LOG_FILE_PATH: str = "logs/astroloh.log"
+    LOG_MAX_SIZE: int = 10  # MB
+    LOG_BACKUP_COUNT: int = 5
+
     @model_validator(mode="before")
     @classmethod
     def validate_fields(cls, values):

@@ -85,7 +85,9 @@ class TestAstrologyCalculator:
         jd = self.calculator.calculate_julian_day(test_date)
 
         assert isinstance(jd, float)
-        assert jd > 2400000  # Юлианский день должен быть больше базового значения
+        assert (
+            jd > 2400000
+        )  # Юлианский день должен быть больше базового значения
 
     def test_calculate_planet_positions(self):
         """Тест вычисления позиций планет."""
@@ -249,7 +251,9 @@ class TestAstrologyCalculator:
             YandexZodiacSign.ARIES, YandexZodiacSign.ARIES
         )
 
-        assert self_compatibility["total_score"] >= 80  # Высокая совместимость с собой
+        assert (
+            self_compatibility["total_score"] >= 80
+        )  # Высокая совместимость с собой
 
         # Совместимость противоположных знаков
         opposite_compatibility = self.calculator.calculate_compatibility_score(
@@ -311,7 +315,9 @@ class TestAstrologyCalculator:
         except Exception as e:
             pytest.fail(f"Backend fallback failed: {e}")
 
-    @pytest.mark.parametrize("backend_name", ["swisseph", "skyfield", "astropy", None])
+    @pytest.mark.parametrize(
+        "backend_name", ["swisseph", "skyfield", "astropy", None]
+    )
     def test_backend_compatibility(self, backend_name, monkeypatch):
         """Тест совместимости с разными бэкендами."""
 
@@ -348,7 +354,9 @@ class TestAstrologyCalculator:
                 available_backends = backend_info["available_backends"]
                 if backend_name not in available_backends:
                     # If requested backend is not available, it should fall back
-                    assert backend_info["backend"] in available_backends + [None]
+                    assert backend_info["backend"] in available_backends + [
+                        None
+                    ]
                 else:
                     assert backend_info["backend"] == backend_name
             else:
@@ -370,7 +378,10 @@ class TestAstrologyCalculator:
 
         for planet in positions1:
             # Позиции должны быть одинаковыми для одной и той же даты
-            assert positions1[planet]["longitude"] == positions2[planet]["longitude"]
+            assert (
+                positions1[planet]["longitude"]
+                == positions2[planet]["longitude"]
+            )
             assert positions1[planet]["sign"] == positions2[planet]["sign"]
 
     def test_fallback_positions_valid(self):

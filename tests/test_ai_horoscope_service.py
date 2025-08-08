@@ -2,9 +2,10 @@
 Тесты для AI сервиса генерации гороскопов.
 """
 
-import pytest
 from datetime import date, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from app.models.yandex_models import YandexZodiacSign
 from app.services.ai_horoscope_service import AIHoroscopeService
@@ -22,7 +23,9 @@ class TestAIHoroscopeService:
     async def test_generate_enhanced_horoscope_with_ai(self):
         """Тест генерации улучшенного гороскопа с AI."""
         # Mock настройки
-        with patch("app.services.ai_horoscope_service.settings") as mock_settings:
+        with patch(
+            "app.services.ai_horoscope_service.settings"
+        ) as mock_settings:
             mock_settings.ENABLE_AI_GENERATION = True
 
             # Mock traditional generator
@@ -35,8 +38,8 @@ class TestAIHoroscopeService:
                 "energy_level": {"level": 75},
             }
 
-            self.service.traditional_generator.generate_personalized_horoscope = (
-                MagicMock(return_value=mock_base_horoscope)
+            self.service.traditional_generator.generate_personalized_horoscope = MagicMock(
+                return_value=mock_base_horoscope
             )
 
             # Mock AI client
@@ -60,7 +63,9 @@ class TestAIHoroscopeService:
     @pytest.mark.asyncio
     async def test_generate_enhanced_horoscope_fallback(self):
         """Тест fallback к традиционному гороскопу."""
-        with patch("app.services.ai_horoscope_service.settings") as mock_settings:
+        with patch(
+            "app.services.ai_horoscope_service.settings"
+        ) as mock_settings:
             mock_settings.ENABLE_AI_GENERATION = False
 
             mock_base_horoscope = {
@@ -69,8 +74,8 @@ class TestAIHoroscopeService:
                 "energy_level": {"level": 60},
             }
 
-            self.service.traditional_generator.generate_personalized_horoscope = (
-                MagicMock(return_value=mock_base_horoscope)
+            self.service.traditional_generator.generate_personalized_horoscope = MagicMock(
+                return_value=mock_base_horoscope
             )
 
             result = await self.service.generate_enhanced_horoscope(
@@ -84,12 +89,14 @@ class TestAIHoroscopeService:
     @pytest.mark.asyncio
     async def test_generate_enhanced_horoscope_ai_error(self):
         """Тест обработки ошибок AI."""
-        with patch("app.services.ai_horoscope_service.settings") as mock_settings:
+        with patch(
+            "app.services.ai_horoscope_service.settings"
+        ) as mock_settings:
             mock_settings.ENABLE_AI_GENERATION = True
 
             mock_base_horoscope = {"general_forecast": "Базовый прогноз"}
-            self.service.traditional_generator.generate_personalized_horoscope = (
-                MagicMock(return_value=mock_base_horoscope)
+            self.service.traditional_generator.generate_personalized_horoscope = MagicMock(
+                return_value=mock_base_horoscope
             )
 
             # Mock AI client to raise exception
@@ -107,16 +114,20 @@ class TestAIHoroscopeService:
     @pytest.mark.asyncio
     async def test_generate_compatibility_analysis_with_ai(self):
         """Тест анализа совместимости с AI."""
-        with patch("app.services.ai_horoscope_service.settings") as mock_settings:
+        with patch(
+            "app.services.ai_horoscope_service.settings"
+        ) as mock_settings:
             mock_settings.ENABLE_AI_GENERATION = True
 
             mock_ai_analysis = "AI анализ совместимости"
-            self.service.gpt_client.generate_compatibility_analysis = AsyncMock(
-                return_value=mock_ai_analysis
+            self.service.gpt_client.generate_compatibility_analysis = (
+                AsyncMock(return_value=mock_ai_analysis)
             )
 
             result = await self.service.generate_compatibility_analysis(
-                sign1=YandexZodiacSign.ARIES, sign2=YandexZodiacSign.LEO, use_ai=True
+                sign1=YandexZodiacSign.ARIES,
+                sign2=YandexZodiacSign.LEO,
+                use_ai=True,
             )
 
             assert result["ai_enhanced"] is True
@@ -127,7 +138,9 @@ class TestAIHoroscopeService:
     @pytest.mark.asyncio
     async def test_generate_compatibility_analysis_traditional(self):
         """Тест традиционного анализа совместимости."""
-        with patch("app.services.ai_horoscope_service.settings") as mock_settings:
+        with patch(
+            "app.services.ai_horoscope_service.settings"
+        ) as mock_settings:
             mock_settings.ENABLE_AI_GENERATION = False
 
             result = await self.service.generate_compatibility_analysis(
@@ -144,7 +157,9 @@ class TestAIHoroscopeService:
     @pytest.mark.asyncio
     async def test_generate_personalized_advice_with_ai(self):
         """Тест генерации персонализированного совета с AI."""
-        with patch("app.services.ai_horoscope_service.settings") as mock_settings:
+        with patch(
+            "app.services.ai_horoscope_service.settings"
+        ) as mock_settings:
             mock_settings.ENABLE_AI_GENERATION = True
 
             mock_ai_advice = "AI персонализированный совет"
@@ -167,7 +182,9 @@ class TestAIHoroscopeService:
     @pytest.mark.asyncio
     async def test_generate_personalized_advice_traditional(self):
         """Тест традиционного совета."""
-        with patch("app.services.ai_horoscope_service.settings") as mock_settings:
+        with patch(
+            "app.services.ai_horoscope_service.settings"
+        ) as mock_settings:
             mock_settings.ENABLE_AI_GENERATION = False
 
             # Mock традиционного генератора
@@ -179,12 +196,16 @@ class TestAIHoroscopeService:
             )
 
             result = await self.service.generate_personalized_advice(
-                zodiac_sign=YandexZodiacSign.LIBRA, topic="здоровье", use_ai=True
+                zodiac_sign=YandexZodiacSign.LIBRA,
+                topic="здоровье",
+                use_ai=True,
             )
 
             assert result["ai_enhanced"] is False
             assert result["generation_method"] == "traditional"
-            assert "гармония" in result["advice"] or "баланс" in result["advice"]
+            assert (
+                "гармония" in result["advice"] or "баланс" in result["advice"]
+            )
 
     def test_get_traditional_compatibility(self):
         """Тест получения традиционной совместимости."""
@@ -205,7 +226,9 @@ class TestAIHoroscopeService:
                 "keywords": ["интенсивность", "страсть", "трансформация"]
             }
         }
-        self.service.traditional_generator.sign_characteristics = mock_characteristics
+        self.service.traditional_generator.sign_characteristics = (
+            mock_characteristics
+        )
 
         # Тест разных тем
         love_advice = self.service._generate_traditional_advice(
@@ -286,11 +309,15 @@ class TestAIHoroscopeService:
     @pytest.mark.asyncio
     async def test_ai_content_generation_none_result(self):
         """Тест обработки None результата от AI."""
-        with patch("app.services.ai_horoscope_service.settings") as mock_settings:
+        with patch(
+            "app.services.ai_horoscope_service.settings"
+        ) as mock_settings:
             mock_settings.ENABLE_AI_GENERATION = True
 
             # Mock AI client to return None
-            self.service.gpt_client.generate_horoscope = AsyncMock(return_value=None)
+            self.service.gpt_client.generate_horoscope = AsyncMock(
+                return_value=None
+            )
 
             result = await self.service._generate_ai_content(
                 zodiac_sign=YandexZodiacSign.AQUARIUS,
@@ -304,15 +331,19 @@ class TestAIHoroscopeService:
     @pytest.mark.asyncio
     async def test_generate_enhanced_horoscope_default_target_date(self):
         """Тест использования текущей даты по умолчанию."""
-        with patch("app.services.ai_horoscope_service.settings") as mock_settings:
+        with patch(
+            "app.services.ai_horoscope_service.settings"
+        ) as mock_settings:
             mock_settings.ENABLE_AI_GENERATION = False
 
             mock_base_horoscope = {"general_forecast": "Прогноз"}
-            self.service.traditional_generator.generate_personalized_horoscope = (
-                MagicMock(return_value=mock_base_horoscope)
+            self.service.traditional_generator.generate_personalized_horoscope = MagicMock(
+                return_value=mock_base_horoscope
             )
 
-            with patch("app.services.ai_horoscope_service.datetime") as mock_datetime:
+            with patch(
+                "app.services.ai_horoscope_service.datetime"
+            ) as mock_datetime:
                 mock_now = datetime(2023, 6, 15, 12, 0)
                 mock_datetime.now.return_value = mock_now
 
@@ -321,5 +352,7 @@ class TestAIHoroscopeService:
                 )
 
                 # Проверяем, что traditional_generator был вызван с текущей датой
-                call_args = self.service.traditional_generator.generate_personalized_horoscope.call_args
+                call_args = (
+                    self.service.traditional_generator.generate_personalized_horoscope.call_args
+                )
                 assert call_args[1]["target_date"] == mock_now

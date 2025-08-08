@@ -170,7 +170,9 @@ class UserContext(BaseModel):
 
     user_id: Optional[str] = None
     intent: Optional[YandexIntent] = None
-    awaiting_data: Optional[str] = None  # Ожидаемые данные (дата рождения, знак и т.д.)
+    awaiting_data: Optional[
+        str
+    ] = None  # Ожидаемые данные (дата рождения, знак и т.д.)
     birth_date: Optional[str] = None
     birth_time: Optional[str] = None
     birth_place: Optional[str] = None

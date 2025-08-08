@@ -29,7 +29,9 @@ class DialogState(Enum):
 class DialogFlow:
     """Представляет отдельный диалоговый поток."""
 
-    def __init__(self, flow_id: str, state: DialogState, context: Dict[str, Any]):
+    def __init__(
+        self, flow_id: str, state: DialogState, context: Dict[str, Any]
+    ):
         self.flow_id = flow_id
         self.state = state
         self.context = context
@@ -51,7 +53,9 @@ class DialogFlow:
 
     def is_expired(self, timeout_minutes: int = 30) -> bool:
         """Проверяет, истек ли диалог."""
-        return datetime.now() - self.updated_at > timedelta(minutes=timeout_minutes)
+        return datetime.now() - self.updated_at > timedelta(
+            minutes=timeout_minutes
+        )
 
 
 class DialogFlowManager:
@@ -59,7 +63,9 @@ class DialogFlowManager:
 
     def __init__(self):
         self.active_flows: Dict[str, DialogFlow] = {}
-        self.flow_transitions: Dict[DialogState, Dict[YandexIntent, DialogState]] = {
+        self.flow_transitions: Dict[
+            DialogState, Dict[YandexIntent, DialogState]
+        ] = {
             DialogState.INITIAL: {
                 YandexIntent.GREET: DialogState.INITIAL,
                 YandexIntent.HOROSCOPE: DialogState.COLLECTING_BIRTH_DATA,
@@ -106,7 +112,9 @@ class DialogFlowManager:
         }
 
         # Условия для переходов между состояниями
-        self.transition_conditions: Dict[Tuple[DialogState, YandexIntent], callable] = {
+        self.transition_conditions: Dict[
+            Tuple[DialogState, YandexIntent], callable
+        ] = {
             (
                 DialogState.COLLECTING_BIRTH_DATA,
                 YandexIntent.HOROSCOPE,
@@ -130,7 +138,9 @@ class DialogFlowManager:
         if flow_key in self.active_flows:
             flow = self.active_flows[flow_key]
             if flow.is_expired():
-                self.logger.info(f"Dialog flow {flow_key} expired, creating new one")
+                self.logger.info(
+                    f"Dialog flow {flow_key} expired, creating new one"
+                )
                 flow = DialogFlow(flow_key, DialogState.INITIAL, {})
                 self.active_flows[flow_key] = flow
         else:
@@ -155,7 +165,9 @@ class DialogFlowManager:
         next_state = self._determine_next_state(flow, intent, entities)
 
         # Формируем рекомендации для ответа
-        response_context = self._build_response_context(flow, next_state, entities)
+        response_context = self._build_response_context(
+            flow, next_state, entities
+        )
 
         # Обновляем состояние потока
         if next_state != current_state:
@@ -203,7 +215,9 @@ class DialogFlowManager:
         # По умолчанию остаемся в текущем состоянии
         return current_state
 
-    def _update_flow_context(self, flow: DialogFlow, entities: Dict[str, Any]) -> None:
+    def _update_flow_context(
+        self, flow: DialogFlow, entities: Dict[str, Any]
+    ) -> None:
         """Обновляет контекст потока новыми сущностями."""
         if entities.get("zodiac_signs"):
             if "user_zodiac" not in flow.context:
@@ -243,18 +257,24 @@ class DialogFlowManager:
             "step_count": flow.step_count,
             "suggestions": self._get_state_suggestions(next_state),
             "required_data": self._get_required_data(next_state, flow.context),
-            "can_provide_service": self._can_provide_service(next_state, flow.context),
+            "can_provide_service": self._can_provide_service(
+                next_state, flow.context
+            ),
         }
 
         # Добавляем специфичную для состояния информацию
         if next_state == DialogState.COLLECTING_BIRTH_DATA:
-            context["missing_birth_info"] = self._get_missing_birth_info(flow.context)
+            context["missing_birth_info"] = self._get_missing_birth_info(
+                flow.context
+            )
         elif next_state == DialogState.COLLECTING_PARTNER_DATA:
             context["missing_partner_info"] = self._get_missing_partner_info(
                 flow.context
             )
         elif next_state == DialogState.ERROR_RECOVERY:
-            context["error_suggestions"] = self._get_error_recovery_suggestions(flow)
+            context[
+                "error_suggestions"
+            ] = self._get_error_recovery_suggestions(flow)
 
         return context
 
@@ -333,7 +353,9 @@ class DialogFlowManager:
 
         return required
 
-    def _can_provide_service(self, state: DialogState, context: Dict[str, Any]) -> bool:
+    def _can_provide_service(
+        self, state: DialogState, context: Dict[str, Any]
+    ) -> bool:
         """Проверяет, можно ли предоставить запрашиваемую услугу."""
         required_data = self._get_required_data(state, context)
         return len(required_data) == 0
@@ -363,11 +385,15 @@ class DialogFlowManager:
             "Назовите свой знак зодиака",
         ]
 
-    def _has_birth_date(self, flow: DialogFlow, entities: Dict[str, Any]) -> bool:
+    def _has_birth_date(
+        self, flow: DialogFlow, entities: Dict[str, Any]
+    ) -> bool:
         """Проверяет наличие даты рождения."""
         return "birth_date" in flow.context or entities.get("dates")
 
-    def _has_partner_data(self, flow: DialogFlow, entities: Dict[str, Any]) -> bool:
+    def _has_partner_data(
+        self, flow: DialogFlow, entities: Dict[str, Any]
+    ) -> bool:
         """Проверяет наличие данных о партнере."""
         return (
             "user_zodiac" in flow.context and "partner_zodiac" in flow.context

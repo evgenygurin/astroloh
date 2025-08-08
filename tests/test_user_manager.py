@@ -76,7 +76,9 @@ class TestUserManager:
         birth_location = "Moscow"
         zodiac_sign = "taurus"
 
-        with patch.object(data_protection, "encrypt_birth_data") as mock_encrypt:
+        with patch.object(
+            data_protection, "encrypt_birth_data"
+        ) as mock_encrypt:
             mock_encrypt.return_value = {
                 "encrypted_birth_date": b"encrypted_date",
                 "encrypted_birth_time": b"encrypted_time",
@@ -107,7 +109,9 @@ class TestUserManager:
         user_id = uuid.uuid4()
         zodiac_sign = "leo"
 
-        with patch.object(data_protection, "encrypt_birth_data") as mock_encrypt:
+        with patch.object(
+            data_protection, "encrypt_birth_data"
+        ) as mock_encrypt:
             mock_encrypt.return_value = {
                 "encrypted_birth_date": b"encrypted_date",
                 "encrypted_birth_time": b"encrypted_time",
@@ -145,7 +149,9 @@ class TestUserManager:
         mock_result.scalar_one_or_none.return_value = mock_user
         self.mock_db.execute.return_value = mock_result
 
-        with patch.object(data_protection, "decrypt_birth_data") as mock_decrypt:
+        with patch.object(
+            data_protection, "decrypt_birth_data"
+        ) as mock_decrypt:
             mock_decrypt.return_value = {
                 "birth_date": "1990-05-15",
                 "birth_time": "14:30:00",
@@ -236,7 +242,9 @@ class TestUserManager:
         mock_result.scalars.return_value.all.return_value = mock_users
         self.mock_db.execute.return_value = mock_result
 
-        users = await self.user_manager.get_users_for_cleanup(days_threshold=30)
+        users = await self.user_manager.get_users_for_cleanup(
+            days_threshold=30
+        )
 
         assert len(users) == 2
         assert self.mock_db.execute.called
@@ -247,7 +255,9 @@ class TestUserManager:
         user_id = "test_user_123"
 
         # Mock no existing user
-        self.mock_db.execute.return_value.scalar_one_or_none.return_value = None
+        self.mock_db.execute.return_value.scalar_one_or_none.return_value = (
+            None
+        )
 
         await self.user_manager.create_user_with_consent(user_id, consent=True)
 
@@ -311,7 +321,9 @@ class TestUserManager:
         active_user = MagicMock()
         active_user.last_accessed = datetime.now() - timedelta(days=5)
 
-        assert await self.user_manager.is_user_active(active_user, days_threshold=30)
+        assert await self.user_manager.is_user_active(
+            active_user, days_threshold=30
+        )
 
         # Inactive user
         inactive_user = MagicMock()
@@ -387,7 +399,9 @@ class TestUserManager:
         user_id = "test_user_full"
 
         # Mock no existing user
-        self.mock_db.execute.return_value.scalar_one_or_none.return_value = None
+        self.mock_db.execute.return_value.scalar_one_or_none.return_value = (
+            None
+        )
 
         user_data = {
             "zodiac_sign": YandexZodiacSign.VIRGO,

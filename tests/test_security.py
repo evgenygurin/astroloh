@@ -160,7 +160,9 @@ class TestDataProtectionManager:
         birth_time = "14:30"
         birth_location = "Moscow, Russia"
 
-        encrypted = manager.encrypt_birth_data(birth_date, birth_time, birth_location)
+        encrypted = manager.encrypt_birth_data(
+            birth_date, birth_time, birth_location
+        )
 
         assert "encrypted_birth_date" in encrypted
         assert "encrypted_birth_time" in encrypted
@@ -176,7 +178,9 @@ class TestDataProtectionManager:
         birth_time = "14:30"
         birth_location = "Moscow, Russia"
 
-        encrypted = manager.encrypt_birth_data(birth_date, birth_time, birth_location)
+        encrypted = manager.encrypt_birth_data(
+            birth_date, birth_time, birth_location
+        )
         decrypted = manager.decrypt_birth_data(
             encrypted["encrypted_birth_date"],
             encrypted["encrypted_birth_time"],
@@ -434,7 +438,9 @@ class TestGDPRCompliance:
         mock_count_result.scalar.return_value = 5
 
         mock_activity_result = MagicMock()
-        mock_activity_result.scalar_one_or_none.return_value = datetime.utcnow()
+        mock_activity_result.scalar_one_or_none.return_value = (
+            datetime.utcnow()
+        )
 
         # Configure side_effect to return different results for each call
         mock_db.execute.side_effect = [
@@ -554,7 +560,9 @@ class TestDataMinimization:
             "another_field": "also not needed",
         }
 
-        essential = DataMinimizationService.extract_essential_birth_data(full_data)
+        essential = DataMinimizationService.extract_essential_birth_data(
+            full_data
+        )
 
         assert len(essential) == 3
         assert "birth_date" in essential

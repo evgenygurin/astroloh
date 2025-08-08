@@ -10,25 +10,25 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_database
-from app.services.recommendation_engine import (
-    HybridRecommendationEngine,
-    TemporalPatternAnalyzer,
-    UserClusteringManager,
-    ABTestManager,
-    MetricsCollector,
+from app.services.ml_analytics_service import (
+    AnomalyDetectionSystem,
+    ChurnPredictionModel,
+    EngagementOptimizer,
+    PreferenceLearningEngine,
 )
 from app.services.personalization_service import (
-    DynamicHoroscopeGenerator,
-    InterestProfilingSystem,
     CommunicationStyleAdapter,
     ComplexityLevelAdjuster,
     CulturalSensitivityManager,
+    DynamicHoroscopeGenerator,
+    InterestProfilingSystem,
 )
-from app.services.ml_analytics_service import (
-    PreferenceLearningEngine,
-    ChurnPredictionModel,
-    EngagementOptimizer,
-    AnomalyDetectionSystem,
+from app.services.recommendation_engine import (
+    ABTestManager,
+    HybridRecommendationEngine,
+    MetricsCollector,
+    TemporalPatternAnalyzer,
+    UserClusteringManager,
 )
 from app.services.user_manager import UserManager
 
@@ -114,11 +114,15 @@ async def get_user_recommendations(
         return response
 
     except Exception as e:
-        logger.error(f"Error getting recommendations for user {user_id}: {str(e)}")
+        logger.error(
+            f"Error getting recommendations for user {user_id}: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/user/{user_id}/horoscope", response_model=PersonalizedHoroscopeResponse)
+@router.get(
+    "/user/{user_id}/horoscope", response_model=PersonalizedHoroscopeResponse
+)
 async def get_personalized_horoscope(
     user_id: str,
     horoscope_type: str = Query("daily", regex="^(daily|weekly|monthly)$"),
@@ -145,12 +149,16 @@ async def get_personalized_horoscope(
 
         # Генерируем персонализированный гороскоп
         horoscope_generator = DynamicHoroscopeGenerator(db)
-        horoscope_data = await horoscope_generator.generate_personalized_horoscope(
-            user.id, horoscope_type
+        horoscope_data = (
+            await horoscope_generator.generate_personalized_horoscope(
+                user.id, horoscope_type
+            )
         )
 
         if not horoscope_data:
-            raise HTTPException(status_code=500, detail="Could not generate horoscope")
+            raise HTTPException(
+                status_code=500, detail="Could not generate horoscope"
+            )
 
         # Адаптируем стиль общения
         style_adapter = CommunicationStyleAdapter(db)
@@ -160,8 +168,10 @@ async def get_personalized_horoscope(
 
         # Настраиваем сложность
         complexity_adjuster = ComplexityLevelAdjuster(db)
-        adjusted_horoscope = await complexity_adjuster.adjust_content_complexity(
-            horoscope_data, user.id
+        adjusted_horoscope = (
+            await complexity_adjuster.adjust_content_complexity(
+                horoscope_data, user.id
+            )
         )
 
         # Применяем культурную адаптацию
@@ -179,8 +189,12 @@ async def get_personalized_horoscope(
                 "cultural_context",
                 "life_situation",
             ],
-            complexity_level=adjusted_horoscope.get("complexity", "intermediate"),
-            cultural_context=culturally_adapted.get("cultural_note", "western"),
+            complexity_level=adjusted_horoscope.get(
+                "complexity", "intermediate"
+            ),
+            cultural_context=culturally_adapted.get(
+                "cultural_note", "western"
+            ),
         )
 
     except Exception as e:
@@ -222,16 +236,20 @@ async def get_user_analytics(
 
         # Анализируем вовлеченность
         engagement_optimizer = EngagementOptimizer(db)
-        engagement_analysis = await engagement_optimizer.optimize_user_engagement(
-            user.id
+        engagement_analysis = (
+            await engagement_optimizer.optimize_user_engagement(user.id)
         )
 
         # Получаем количество рекомендаций
         recommendation_engine = HybridRecommendationEngine(db)
-        recommendations = await recommendation_engine.generate_recommendations(user.id)
+        recommendations = await recommendation_engine.generate_recommendations(
+            user.id
+        )
 
         return UserAnalyticsResponse(
-            engagement_level=engagement_analysis["current_engagement"]["overall_level"],
+            engagement_level=engagement_analysis["current_engagement"][
+                "overall_level"
+            ],
             churn_risk=churn_prediction["risk_level"],
             interests=interests,
             recommendations_count=len(recommendations),
@@ -286,7 +304,9 @@ async def record_user_interaction(
         return {"status": "success", "message": "Interaction recorded"}
 
     except Exception as e:
-        logger.error(f"Error recording interaction for user {user_id}: {str(e)}")
+        logger.error(
+            f"Error recording interaction for user {user_id}: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -314,7 +334,9 @@ async def get_seasonal_recommendations(
 
         # Получаем сезонные рекомендации
         temporal_analyzer = TemporalPatternAnalyzer(db)
-        seasonal_data = await temporal_analyzer.get_seasonal_recommendations(user.id)
+        seasonal_data = await temporal_analyzer.get_seasonal_recommendations(
+            user.id
+        )
 
         return seasonal_data
 
@@ -351,7 +373,9 @@ async def assign_ab_test(
 
         # Назначаем в тест
         ab_test_manager = ABTestManager(db)
-        assigned_group = await ab_test_manager.assign_user_to_test(user.id, test_name)
+        assigned_group = await ab_test_manager.assign_user_to_test(
+            user.id, test_name
+        )
 
         # Получаем параметры теста
         test_parameters = ab_test_manager._get_test_parameters(
@@ -422,12 +446,19 @@ async def learn_user_preferences(
 
         # Обучаемся на предпочтениях
         preference_engine = PreferenceLearningEngine(db)
-        learned_preferences = await preference_engine.learn_user_preferences(user.id)
+        learned_preferences = await preference_engine.learn_user_preferences(
+            user.id
+        )
 
-        return {"status": "success", "learned_preferences": learned_preferences}
+        return {
+            "status": "success",
+            "learned_preferences": learned_preferences,
+        }
 
     except Exception as e:
-        logger.error(f"Error learning preferences for user {user_id}: {str(e)}")
+        logger.error(
+            f"Error learning preferences for user {user_id}: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -467,7 +498,8 @@ async def detect_user_anomalies(
 # Metrics endpoints
 @router.get("/metrics")
 async def get_recommendation_metrics(
-    period_days: int = Query(7, ge=1, le=30), db: AsyncSession = Depends(get_database)
+    period_days: int = Query(7, ge=1, le=30),
+    db: AsyncSession = Depends(get_database),
 ) -> Dict[str, Any]:
     """
     Получает метрики эффективности рекомендательной системы.
@@ -481,7 +513,9 @@ async def get_recommendation_metrics(
     """
     try:
         metrics_collector = MetricsCollector(db)
-        metrics = await metrics_collector.get_recommendation_metrics(period_days)
+        metrics = await metrics_collector.get_recommendation_metrics(
+            period_days
+        )
 
         return {
             "status": "success",

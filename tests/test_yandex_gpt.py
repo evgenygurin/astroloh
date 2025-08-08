@@ -2,8 +2,9 @@
 Тесты для Yandex GPT клиента.
 """
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 from aiohttp import ClientError, ClientTimeout
 
 from app.services.yandex_gpt import YandexGPTClient, YandexGPTMessage, YandexGPTRequest
@@ -29,7 +30,9 @@ class TestYandexGPTClient:
         assert session is not None
         assert not session.closed
         assert session.timeout.total == 30
-        assert session._default_headers["Authorization"] == "Api-Key test_api_key"
+        assert (
+            session._default_headers["Authorization"] == "Api-Key test_api_key"
+        )
         assert session._default_headers["Content-Type"] == "application/json"
 
     @pytest.mark.asyncio
@@ -52,7 +55,11 @@ class TestYandexGPTClient:
     async def test_generate_text_success(self):
         """Тест успешной генерации текста."""
         mock_response_data = {
-            "result": {"alternatives": [{"message": {"text": "Сгенерированный текст"}}]}
+            "result": {
+                "alternatives": [
+                    {"message": {"text": "Сгенерированный текст"}}
+                ]
+            }
         }
 
         # Mock HTTP session
@@ -107,7 +114,10 @@ class TestYandexGPTClient:
         assert call_args[0][0] == self.client.completion_url
 
         request_json = call_args[1]["json"]
-        assert request_json["modelUri"] == "gpt://test_folder_id/yandexgpt-lite/latest"
+        assert (
+            request_json["modelUri"]
+            == "gpt://test_folder_id/yandexgpt-lite/latest"
+        )
         assert request_json["completionOptions"]["temperature"] == 0.5
         assert request_json["completionOptions"]["maxTokens"] == "500"
         assert len(request_json["messages"]) == 2
@@ -119,7 +129,9 @@ class TestYandexGPTClient:
         """Тест генерации текста без системного промпта."""
         mock_response_data = {
             "result": {
-                "alternatives": [{"message": {"text": "Ответ без системного промпта"}}]
+                "alternatives": [
+                    {"message": {"text": "Ответ без системного промпта"}}
+                ]
             }
         }
 
@@ -257,7 +269,9 @@ class TestYandexGPTClient:
 
         self.client._get_session = AsyncMock(return_value=mock_session)
 
-        result = await self.client.generate_text(prompt="Тест неожиданного формата")
+        result = await self.client.generate_text(
+            prompt="Тест неожиданного формата"
+        )
         assert result is None
 
     @pytest.mark.asyncio
@@ -281,7 +295,9 @@ class TestYandexGPTClient:
 
         self.client._get_session = mock_get_session
 
-        result = await self.client.generate_text(prompt="Тест клиентской ошибки")
+        result = await self.client.generate_text(
+            prompt="Тест клиентской ошибки"
+        )
         assert result is None
 
     @pytest.mark.asyncio
@@ -293,7 +309,9 @@ class TestYandexGPTClient:
 
         self.client._get_session = mock_get_session
 
-        result = await self.client.generate_text(prompt="Тест общего исключения")
+        result = await self.client.generate_text(
+            prompt="Тест общего исключения"
+        )
         assert result is None
 
     @pytest.mark.asyncio
@@ -350,7 +368,9 @@ class TestYandexGPTClient:
         self.client.generate_text = AsyncMock(return_value=expected_analysis)
 
         result = await self.client.generate_compatibility_analysis(
-            sign1="овен", sign2="лев", context={"relationship_type": "романтические"}
+            sign1="овен",
+            sign2="лев",
+            context={"relationship_type": "романтические"},
         )
 
         assert result == expected_analysis
@@ -386,7 +406,10 @@ class TestYandexGPTClient:
         result = await self.client.generate_advice(
             zodiac_sign="дева",
             topic="карьера",
-            context={"mood": "оптимистичное", "current_challenges": "новый проект"},
+            context={
+                "mood": "оптимистичное",
+                "current_challenges": "новый проект",
+            },
         )
 
         assert result == expected_advice
@@ -457,7 +480,9 @@ class TestYandexGPTClient:
     @pytest.mark.asyncio
     async def test_is_available_exception(self):
         """Тест проверки доступности с исключением."""
-        self.client.generate_text = AsyncMock(side_effect=Exception("API Error"))
+        self.client.generate_text = AsyncMock(
+            side_effect=Exception("API Error")
+        )
 
         result = await self.client.is_available()
         assert result is False
@@ -499,7 +524,9 @@ class TestYandexGPTClient:
             assert client.folder_id == "test_folder"
             assert client.catalog_id == "test_catalog"
             assert client.base_url == "https://llm.api.cloud.yandex.net"
-            assert client.model_uri == "gpt://test_folder/yandexgpt-lite/latest"
+            assert (
+                client.model_uri == "gpt://test_folder/yandexgpt-lite/latest"
+            )
 
     def test_client_initialization_without_catalog_id(self):
         """Тест инициализации клиента без catalog_id."""
@@ -510,7 +537,9 @@ class TestYandexGPTClient:
 
             client = YandexGPTClient()
 
-            assert client.catalog_id == "test_folder"  # Should fallback to folder_id
+            assert (
+                client.catalog_id == "test_folder"
+            )  # Should fallback to folder_id
 
     @pytest.mark.asyncio
     async def test_session_recreation_after_close(self):

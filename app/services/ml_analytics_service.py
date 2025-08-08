@@ -8,15 +8,15 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
-from sqlalchemy import select, and_, desc, func
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.database import (
+    HoroscopeRequest,
     User,
     UserInteraction,
     UserPreference,
     UserSession,
-    HoroscopeRequest,
 )
 
 
@@ -26,7 +26,9 @@ class PreferenceLearningEngine:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def learn_user_preferences(self, user_id: uuid.UUID) -> Dict[str, Any]:
+    async def learn_user_preferences(
+        self, user_id: uuid.UUID
+    ) -> Dict[str, Any]:
         """
         Обучается на поведении пользователя и обновляет его предпочтения.
 
@@ -43,14 +45,18 @@ class PreferenceLearningEngine:
             return {}
 
         # Анализируем паттерны
-        learned_preferences = await self._analyze_behavior_patterns(behavior_data)
+        learned_preferences = await self._analyze_behavior_patterns(
+            behavior_data
+        )
 
         # Обновляем предпочтения в БД
         await self._update_learned_preferences(user_id, learned_preferences)
 
         return learned_preferences
 
-    async def _collect_behavior_data(self, user_id: uuid.UUID) -> Dict[str, Any]:
+    async def _collect_behavior_data(
+        self, user_id: uuid.UUID
+    ) -> Dict[str, Any]:
         """Собирает данные о поведении пользователя."""
 
         # Взаимодействия за последние 3 месяца
@@ -156,14 +162,19 @@ class PreferenceLearningEngine:
                 score *= 0.5
 
             # Увеличиваем за длительное взаимодействие
-            if interaction.session_duration and interaction.session_duration > 120:
+            if (
+                interaction.session_duration
+                and interaction.session_duration > 120
+            ):
                 score *= 1.2
 
             # Увеличиваем за позитивную обратную связь
             if interaction.interaction_type in ["like", "save", "share"]:
                 score *= 1.3
 
-            content_scores[content_type] = content_scores.get(content_type, 0) + score
+            content_scores[content_type] = (
+                content_scores.get(content_type, 0) + score
+            )
 
         # Нормализуем скоры
         if content_scores:
@@ -204,7 +215,9 @@ class PreferenceLearningEngine:
         if day_counts:
             max_day_count = max(day_counts.values())
             preferred_days = [
-                day for day, count in day_counts.items() if count >= max_day_count * 0.7
+                day
+                for day, count in day_counts.items()
+                if count >= max_day_count * 0.7
             ]
 
         return {
@@ -246,14 +259,18 @@ class PreferenceLearningEngine:
         ]
 
         patterns["avg_session_duration"] = (
-            sum(session_durations) / len(session_durations) if session_durations else 0
+            sum(session_durations) / len(session_durations)
+            if session_durations
+            else 0
         )
 
         # Частота обращений
         if requests:
             request_dates = [req.processed_at.date() for req in requests]
             unique_dates = len(set(request_dates))
-            total_days = (datetime.utcnow().date() - min(request_dates)).days + 1
+            total_days = (
+                datetime.utcnow().date() - min(request_dates)
+            ).days + 1
             patterns["usage_frequency"] = unique_dates / total_days
         else:
             patterns["usage_frequency"] = 0
@@ -340,7 +357,10 @@ class PreferenceLearningEngine:
             self.db.add(preferences)
 
         # Обновляем предпочтения (сохраняем как JSON)
-        if not hasattr(preferences, "preferences") or not preferences.preferences:
+        if (
+            not hasattr(preferences, "preferences")
+            or not preferences.preferences
+        ):
             preferences.preferences = {}
 
         # Объединяем с существующими предпочтениями
@@ -388,10 +408,14 @@ class ChurnPredictionModel:
             "risk_level": risk_level,
             "probability": risk_score,
             "risk_factors": risk_factors,
-            "recommendations": self._get_retention_recommendations(risk_factors),
+            "recommendations": self._get_retention_recommendations(
+                risk_factors
+            ),
         }
 
-    async def _extract_churn_features(self, user_id: uuid.UUID) -> Dict[str, float]:
+    async def _extract_churn_features(
+        self, user_id: uuid.UUID
+    ) -> Dict[str, float]:
         """Извлекает признаки для предсказания оттока."""
 
         # Временные рамки для анализа
@@ -402,7 +426,9 @@ class ChurnPredictionModel:
         features = {}
 
         # Получаем пользователя
-        user_result = await self.db.execute(select(User).where(User.id == user_id))
+        user_result = await self.db.execute(
+            select(User).where(User.id == user_id)
+        )
         user = user_result.scalar_one_or_none()
 
         if not user:
@@ -411,7 +437,9 @@ class ChurnPredictionModel:
         # Признак 1: Дни с момента последней активности
         if user.last_accessed:
             days_since_last_access = (now - user.last_accessed).days
-            features["days_since_last_access"] = min(days_since_last_access / 30.0, 2.0)
+            features["days_since_last_access"] = min(
+                days_since_last_access / 30.0, 2.0
+            )
         else:
             features["days_since_last_access"] = 2.0  # Максимальный риск
 
@@ -468,13 +496,19 @@ class ChurnPredictionModel:
         avg_rating = ratings_result.scalar()
 
         if avg_rating is not None:
-            features["satisfaction"] = max((3.0 - avg_rating) / 3.0, 0)  # Инвертируем
+            features["satisfaction"] = max(
+                (3.0 - avg_rating) / 3.0, 0
+            )  # Инвертируем
         else:
-            features["satisfaction"] = 0.5  # Нейтральная оценка при отсутствии данных
+            features[
+                "satisfaction"
+            ] = 0.5  # Нейтральная оценка при отсутствии данных
 
         # Признак 5: Разнообразие взаимодействий
         interaction_types = await self.db.execute(
-            select(func.count(func.distinct(UserInteraction.interaction_type))).where(
+            select(
+                func.count(func.distinct(UserInteraction.interaction_type))
+            ).where(
                 and_(
                     UserInteraction.user_id == user_id,
                     UserInteraction.timestamp >= last_month,
@@ -540,7 +574,9 @@ class ChurnPredictionModel:
 
         return risk_factors
 
-    def _get_retention_recommendations(self, risk_factors: List[str]) -> List[str]:
+    def _get_retention_recommendations(
+        self, risk_factors: List[str]
+    ) -> List[str]:
         """Получает рекомендации по удержанию пользователя."""
 
         recommendations = []
@@ -551,7 +587,9 @@ class ChurnPredictionModel:
             )
 
         if "low_recent_activity" in risk_factors:
-            recommendations.append("Предложить простые и интересные взаимодействия")
+            recommendations.append(
+                "Предложить простые и интересные взаимодействия"
+            )
 
         if "declining_engagement" in risk_factors:
             recommendations.append("Провести A/B тест новых форматов контента")
@@ -580,7 +618,9 @@ class EngagementOptimizer:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def optimize_user_engagement(self, user_id: uuid.UUID) -> Dict[str, Any]:
+    async def optimize_user_engagement(
+        self, user_id: uuid.UUID
+    ) -> Dict[str, Any]:
         """
         Оптимизирует вовлеченность конкретного пользователя.
 
@@ -608,7 +648,9 @@ class EngagementOptimizer:
             "expected_impact": self._estimate_impact(strategies),
         }
 
-    async def _analyze_current_engagement(self, user_id: uuid.UUID) -> Dict[str, Any]:
+    async def _analyze_current_engagement(
+        self, user_id: uuid.UUID
+    ) -> Dict[str, Any]:
         """Анализирует текущий уровень вовлеченности."""
 
         # Период анализа - последние 30 дней
@@ -639,19 +681,27 @@ class EngagementOptimizer:
         analysis = {
             "total_interactions": len(interactions),
             "unique_sessions": len(sessions),
-            "avg_session_duration": self._calculate_avg_session_duration(sessions),
+            "avg_session_duration": self._calculate_avg_session_duration(
+                sessions
+            ),
             "interaction_frequency": len(interactions) / 30.0,  # в день
-            "content_diversity": self._calculate_content_diversity(interactions),
+            "content_diversity": self._calculate_content_diversity(
+                interactions
+            ),
             "satisfaction_score": self._calculate_satisfaction(interactions),
             "retention_pattern": self._analyze_retention_pattern(sessions),
         }
 
         # Определяем общий уровень вовлеченности
-        analysis["overall_level"] = self._calculate_overall_engagement(analysis)
+        analysis["overall_level"] = self._calculate_overall_engagement(
+            analysis
+        )
 
         return analysis
 
-    def _calculate_avg_session_duration(self, sessions: List[UserSession]) -> float:
+    def _calculate_avg_session_duration(
+        self, sessions: List[UserSession]
+    ) -> float:
         """Вычисляет среднюю продолжительность сессии в минутах."""
 
         if not sessions:
@@ -675,10 +725,16 @@ class EngagementOptimizer:
         if not interactions:
             return 0.0
 
-        content_types = set(interaction.content_type for interaction in interactions)
-        return len(content_types) / 5.0  # Предполагаем максимум 5 типов контента
+        content_types = set(
+            interaction.content_type for interaction in interactions
+        )
+        return (
+            len(content_types) / 5.0
+        )  # Предполагаем максимум 5 типов контента
 
-    def _calculate_satisfaction(self, interactions: List[UserInteraction]) -> float:
+    def _calculate_satisfaction(
+        self, interactions: List[UserInteraction]
+    ) -> float:
         """Вычисляет средний уровень удовлетворенности."""
 
         ratings = [
@@ -699,7 +755,9 @@ class EngagementOptimizer:
             return "new_user"
 
         # Анализируем промежутки между сессиями
-        session_dates = sorted([session.created_at.date() for session in sessions])
+        session_dates = sorted(
+            [session.created_at.date() for session in sessions]
+        )
         intervals = []
 
         for i in range(1, len(session_dates)):
@@ -773,53 +831,67 @@ class EngagementOptimizer:
 
         # Низкая частота взаимодействий
         if engagement_analysis["interaction_frequency"] < 1:
-            opportunities.append({
-                "type": "frequency",
-                "description": "Увеличить частоту взаимодействий",
-                "current_value": engagement_analysis["interaction_frequency"],
-                "target_value": 1.5,
-                "priority": "high",
-            })
+            opportunities.append(
+                {
+                    "type": "frequency",
+                    "description": "Увеличить частоту взаимодействий",
+                    "current_value": engagement_analysis[
+                        "interaction_frequency"
+                    ],
+                    "target_value": 1.5,
+                    "priority": "high",
+                }
+            )
 
         # Короткие сессии
         if engagement_analysis["avg_session_duration"] < 3:
-            opportunities.append({
-                "type": "session_length",
-                "description": "Увеличить продолжительность сессий",
-                "current_value": engagement_analysis["avg_session_duration"],
-                "target_value": 5.0,
-                "priority": "medium",
-            })
+            opportunities.append(
+                {
+                    "type": "session_length",
+                    "description": "Увеличить продолжительность сессий",
+                    "current_value": engagement_analysis[
+                        "avg_session_duration"
+                    ],
+                    "target_value": 5.0,
+                    "priority": "medium",
+                }
+            )
 
         # Низкое разнообразие контента
         if engagement_analysis["content_diversity"] < 0.4:
-            opportunities.append({
-                "type": "content_diversity",
-                "description": "Расширить потребление разных типов контента",
-                "current_value": engagement_analysis["content_diversity"],
-                "target_value": 0.6,
-                "priority": "medium",
-            })
+            opportunities.append(
+                {
+                    "type": "content_diversity",
+                    "description": "Расширить потребление разных типов контента",
+                    "current_value": engagement_analysis["content_diversity"],
+                    "target_value": 0.6,
+                    "priority": "medium",
+                }
+            )
 
         # Низкая удовлетворенность
         if engagement_analysis["satisfaction_score"] < 3.5:
-            opportunities.append({
-                "type": "satisfaction",
-                "description": "Повысить качество и релевантность контента",
-                "current_value": engagement_analysis["satisfaction_score"],
-                "target_value": 4.0,
-                "priority": "high",
-            })
+            opportunities.append(
+                {
+                    "type": "satisfaction",
+                    "description": "Повысить качество и релевантность контента",
+                    "current_value": engagement_analysis["satisfaction_score"],
+                    "target_value": 4.0,
+                    "priority": "high",
+                }
+            )
 
         # Нерегулярность возвратов
         if engagement_analysis["retention_pattern"] == "irregular":
-            opportunities.append({
-                "type": "retention",
-                "description": "Установить регулярный паттерн использования",
-                "current_value": "irregular",
-                "target_value": "weekly",
-                "priority": "high",
-            })
+            opportunities.append(
+                {
+                    "type": "retention",
+                    "description": "Установить регулярный паттерн использования",
+                    "current_value": "irregular",
+                    "target_value": "weekly",
+                    "priority": "high",
+                }
+            )
 
         return opportunities
 
@@ -832,73 +904,85 @@ class EngagementOptimizer:
 
         for opportunity in opportunities:
             if opportunity["type"] == "frequency":
-                strategies.append({
-                    "name": "Персонализированные уведомления",
-                    "description": "Отправка персонализированного контента в оптимальное время",
-                    "actions": [
-                        "Определить лучшее время для уведомлений",
-                        "Создать персонализированный контент",
-                        "Настроить автоматические уведомления",
-                    ],
-                    "expected_improvement": 0.5,
-                    "timeframe": "2 недели",
-                })
+                strategies.append(
+                    {
+                        "name": "Персонализированные уведомления",
+                        "description": "Отправка персонализированного контента в оптимальное время",
+                        "actions": [
+                            "Определить лучшее время для уведомлений",
+                            "Создать персонализированный контент",
+                            "Настроить автоматические уведомления",
+                        ],
+                        "expected_improvement": 0.5,
+                        "timeframe": "2 недели",
+                    }
+                )
 
             elif opportunity["type"] == "session_length":
-                strategies.append({
-                    "name": "Интерактивный контент",
-                    "description": "Добавление интерактивных элементов для удержания внимания",
-                    "actions": [
-                        "Создать интерактивные гороскопы",
-                        "Добавить викторины и опросы",
-                        "Внедрить прогрессивное раскрытие информации",
-                    ],
-                    "expected_improvement": 2.0,
-                    "timeframe": "1 месяц",
-                })
+                strategies.append(
+                    {
+                        "name": "Интерактивный контент",
+                        "description": "Добавление интерактивных элементов для удержания внимания",
+                        "actions": [
+                            "Создать интерактивные гороскопы",
+                            "Добавить викторины и опросы",
+                            "Внедрить прогрессивное раскрытие информации",
+                        ],
+                        "expected_improvement": 2.0,
+                        "timeframe": "1 месяц",
+                    }
+                )
 
             elif opportunity["type"] == "content_diversity":
-                strategies.append({
-                    "name": "Рекомендации новых разделов",
-                    "description": "Умные рекомендации неиспользуемых функций",
-                    "actions": [
-                        "Анализ неиспользуемых функций",
-                        "Создание вводных материалов",
-                        "Мягкое знакомство с новыми возможностями",
-                    ],
-                    "expected_improvement": 0.3,
-                    "timeframe": "3 недели",
-                })
+                strategies.append(
+                    {
+                        "name": "Рекомендации новых разделов",
+                        "description": "Умные рекомендации неиспользуемых функций",
+                        "actions": [
+                            "Анализ неиспользуемых функций",
+                            "Создание вводных материалов",
+                            "Мягкое знакомство с новыми возможностями",
+                        ],
+                        "expected_improvement": 0.3,
+                        "timeframe": "3 недели",
+                    }
+                )
 
             elif opportunity["type"] == "satisfaction":
-                strategies.append({
-                    "name": "Улучшение качества контента",
-                    "description": "Оптимизация алгоритмов и персонализации",
-                    "actions": [
-                        "A/B тест новых алгоритмов рекомендаций",
-                        "Сбор детальной обратной связи",
-                        "Настройка персонализации",
-                    ],
-                    "expected_improvement": 0.7,
-                    "timeframe": "6 недель",
-                })
+                strategies.append(
+                    {
+                        "name": "Улучшение качества контента",
+                        "description": "Оптимизация алгоритмов и персонализации",
+                        "actions": [
+                            "A/B тест новых алгоритмов рекомендаций",
+                            "Сбор детальной обратной связи",
+                            "Настройка персонализации",
+                        ],
+                        "expected_improvement": 0.7,
+                        "timeframe": "6 недель",
+                    }
+                )
 
             elif opportunity["type"] == "retention":
-                strategies.append({
-                    "name": "Программа лояльности",
-                    "description": "Создание регулярных активностей и поощрений",
-                    "actions": [
-                        "Создать систему достижений",
-                        "Настроить регулярные челленджи",
-                        "Внедрить программу лояльности",
-                    ],
-                    "expected_improvement": "weekly",
-                    "timeframe": "2 месяца",
-                })
+                strategies.append(
+                    {
+                        "name": "Программа лояльности",
+                        "description": "Создание регулярных активностей и поощрений",
+                        "actions": [
+                            "Создать систему достижений",
+                            "Настроить регулярные челленджи",
+                            "Внедрить программу лояльности",
+                        ],
+                        "expected_improvement": "weekly",
+                        "timeframe": "2 месяца",
+                    }
+                )
 
         return strategies
 
-    def _estimate_impact(self, strategies: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _estimate_impact(
+        self, strategies: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Оценивает ожидаемое влияние стратегий."""
 
         if not strategies:
@@ -912,10 +996,13 @@ class EngagementOptimizer:
         )
 
         return {
-            "overall_improvement": min(total_improvement, 100),  # Максимум 100%
+            "overall_improvement": min(
+                total_improvement, 100
+            ),  # Максимум 100%
             "confidence": min(len(strategies) * 20, 100),
             "implementation_time": max(
-                self._parse_timeframe(s.get("timeframe", "1 week")) for s in strategies
+                self._parse_timeframe(s.get("timeframe", "1 week"))
+                for s in strategies
             ),
         }
 
@@ -956,7 +1043,9 @@ class AnomalyDetectionSystem:
             Список выявленных аномалий
         """
         # Собираем данные о поведении
-        behavior_data = await self._collect_behavior_data_for_anomaly_detection(user_id)
+        behavior_data = (
+            await self._collect_behavior_data_for_anomaly_detection(user_id)
+        )
 
         if not behavior_data:
             return {"anomalies": [], "status": "insufficient_data"}
@@ -969,7 +1058,9 @@ class AnomalyDetectionSystem:
         anomalies.extend(activity_anomalies)
 
         # Аномалии взаимодействий
-        interaction_anomalies = self._detect_interaction_anomalies(behavior_data)
+        interaction_anomalies = self._detect_interaction_anomalies(
+            behavior_data
+        )
         anomalies.extend(interaction_anomalies)
 
         # Аномалии предпочтений
@@ -980,7 +1071,9 @@ class AnomalyDetectionSystem:
             "anomalies": anomalies,
             "total_count": len(anomalies),
             "status": "analyzed",
-            "recommendations": self._generate_anomaly_recommendations(anomalies),
+            "recommendations": self._generate_anomaly_recommendations(
+                anomalies
+            ),
         }
 
     async def _collect_behavior_data_for_anomaly_detection(
@@ -1024,7 +1117,9 @@ class AnomalyDetectionSystem:
             daily_data[date_key]["content_types"].add(interaction.content_type)
 
             if interaction.session_duration:
-                daily_data[date_key]["total_duration"] += interaction.session_duration
+                daily_data[date_key][
+                    "total_duration"
+                ] += interaction.session_duration
 
             if interaction.rating:
                 daily_data[date_key]["ratings"].append(interaction.rating)
@@ -1064,25 +1159,29 @@ class AnomalyDetectionSystem:
 
             # Аномально высокая активность (> 3x среднего)
             if interaction_count > avg_count * 3 and avg_count > 1:
-                anomalies.append({
-                    "type": "high_activity",
-                    "date": date,
-                    "description": f"Необычно высокая активность: {interaction_count} взаимодействий",
-                    "severity": "medium",
-                    "value": interaction_count,
-                    "baseline": avg_count,
-                })
+                anomalies.append(
+                    {
+                        "type": "high_activity",
+                        "date": date,
+                        "description": f"Необычно высокая активность: {interaction_count} взаимодействий",
+                        "severity": "medium",
+                        "value": interaction_count,
+                        "baseline": avg_count,
+                    }
+                )
 
             # Аномально долгие сессии
             if total_duration > avg_duration * 4 and avg_duration > 60:
-                anomalies.append({
-                    "type": "long_session",
-                    "date": date,
-                    "description": f"Необычно долгая сессия: {total_duration // 60} минут",
-                    "severity": "low",
-                    "value": total_duration,
-                    "baseline": avg_duration,
-                })
+                anomalies.append(
+                    {
+                        "type": "long_session",
+                        "date": date,
+                        "description": f"Необычно долгая сессия: {total_duration // 60} минут",
+                        "severity": "low",
+                        "value": total_duration,
+                        "baseline": avg_duration,
+                    }
+                )
 
         # Находим периоды полного отсутствия активности
         dates = sorted(daily_data.keys())
@@ -1092,14 +1191,16 @@ class AnomalyDetectionSystem:
 
             gap_days = (current_date - prev_date).days
             if gap_days > 7:  # Пропуск более недели
-                anomalies.append({
-                    "type": "activity_gap",
-                    "date_range": f"{prev_date} - {current_date}",
-                    "description": f"Отсутствие активности в течение {gap_days} дней",
-                    "severity": "high",
-                    "value": gap_days,
-                    "baseline": 1,
-                })
+                anomalies.append(
+                    {
+                        "type": "activity_gap",
+                        "date_range": f"{prev_date} - {current_date}",
+                        "description": f"Отсутствие активности в течение {gap_days} дней",
+                        "severity": "high",
+                        "value": gap_days,
+                        "baseline": 1,
+                    }
+                )
 
         return anomalies
 
@@ -1130,25 +1231,32 @@ class AnomalyDetectionSystem:
 
                 # Аномально низкие рейтинги
                 if day_avg_rating < avg_rating - 1.5 and len(ratings) >= 3:
-                    anomalies.append({
-                        "type": "low_satisfaction",
-                        "date": date,
-                        "description": f"Необычно низкие оценки: {day_avg_rating:.1f}",
-                        "severity": "high",
-                        "value": day_avg_rating,
-                        "baseline": avg_rating,
-                    })
+                    anomalies.append(
+                        {
+                            "type": "low_satisfaction",
+                            "date": date,
+                            "description": f"Необычно низкие оценки: {day_avg_rating:.1f}",
+                            "severity": "high",
+                            "value": day_avg_rating,
+                            "baseline": avg_rating,
+                        }
+                    )
 
                 # Только негативные оценки в день
-                if all(rating <= 2 for rating in ratings) and len(ratings) >= 2:
-                    anomalies.append({
-                        "type": "negative_feedback",
-                        "date": date,
-                        "description": "Только негативные оценки в этот день",
-                        "severity": "high",
-                        "value": len(ratings),
-                        "baseline": 0,
-                    })
+                if (
+                    all(rating <= 2 for rating in ratings)
+                    and len(ratings) >= 2
+                ):
+                    anomalies.append(
+                        {
+                            "type": "negative_feedback",
+                            "date": date,
+                            "description": "Только негативные оценки в этот день",
+                            "severity": "high",
+                            "value": len(ratings),
+                            "baseline": 0,
+                        }
+                    )
 
         return anomalies
 
@@ -1170,7 +1278,9 @@ class AnomalyDetectionSystem:
             daily_diversity.append(len(content_types))
 
         avg_diversity = (
-            sum(daily_diversity) / len(daily_diversity) if daily_diversity else 0
+            sum(daily_diversity) / len(daily_diversity)
+            if daily_diversity
+            else 0
         )
 
         # Находим дни с необычно ограниченным разнообразием
@@ -1179,14 +1289,16 @@ class AnomalyDetectionSystem:
             content_types = day_data["content_types"]
 
             if len(interactions) >= 5 and len(content_types) == 1:
-                anomalies.append({
-                    "type": "content_fixation",
-                    "date": date,
-                    "description": f"Фокус только на одном типе контента: {list(content_types)[0]}",
-                    "severity": "medium",
-                    "value": len(content_types),
-                    "baseline": avg_diversity,
-                })
+                anomalies.append(
+                    {
+                        "type": "content_fixation",
+                        "date": date,
+                        "description": f"Фокус только на одном типе контента: {list(content_types)[0]}",
+                        "severity": "medium",
+                        "value": len(content_types),
+                        "baseline": avg_diversity,
+                    }
+                )
 
         # Анализируем резкие изменения в предпочтениях
         content_type_trends = {}
@@ -1204,14 +1316,16 @@ class AnomalyDetectionSystem:
                 days_since_last = (datetime.utcnow().date() - last_date).days
 
                 if days_since_last > 14:  # Не использовался больше 2 недель
-                    anomalies.append({
-                        "type": "preference_abandonment",
-                        "content_type": content_type,
-                        "description": f"Прекращение использования {content_type}",
-                        "severity": "medium",
-                        "value": days_since_last,
-                        "baseline": 7,
-                    })
+                    anomalies.append(
+                        {
+                            "type": "preference_abandonment",
+                            "content_type": content_type,
+                            "description": f"Прекращение использования {content_type}",
+                            "severity": "medium",
+                            "value": days_since_last,
+                            "baseline": 7,
+                        }
+                    )
 
         return anomalies
 
@@ -1234,7 +1348,10 @@ class AnomalyDetectionSystem:
                 "Настроить уведомления для возврата неактивных пользователей"
             )
 
-        if "low_satisfaction" in anomaly_types or "negative_feedback" in anomaly_types:
+        if (
+            "low_satisfaction" in anomaly_types
+            or "negative_feedback" in anomaly_types
+        ):
             recommendations.append(
                 "Провести анализ качества контента и собрать детальную обратную связь"
             )
@@ -1250,6 +1367,8 @@ class AnomalyDetectionSystem:
             )
 
         if not recommendations:
-            recommendations.append("Продолжать мониторинг поведения пользователя")
+            recommendations.append(
+                "Продолжать мониторинг поведения пользователя"
+            )
 
         return recommendations

@@ -7,16 +7,16 @@ from unittest.mock import patch
 import pytest
 
 from app.models.yandex_models import (
-    YandexRequestData,
-    YandexRequestModel,
-    YandexRequestMeta,
-    YandexSession,
-    YandexRequestType,
     UserContext,
+    YandexRequestData,
+    YandexRequestMeta,
+    YandexRequestModel,
+    YandexRequestType,
     YandexResponse,
+    YandexSession,
 )
-from app.services.dialog_handler import DialogHandler
 from app.services.dialog_flow_manager import DialogState
+from app.services.dialog_handler import DialogHandler
 
 
 class TestSimpleWorkflowScenarios:
@@ -34,7 +34,9 @@ class TestSimpleWorkflowScenarios:
     ) -> YandexRequestModel:
         """Create mock Yandex request."""
         return YandexRequestModel(
-            meta=YandexRequestMeta(locale="ru-RU", timezone="UTC", client_id="test"),
+            meta=YandexRequestMeta(
+                locale="ru-RU", timezone="UTC", client_id="test"
+            ),
             request=YandexRequestData(
                 command=command,
                 original_utterance=command,
@@ -67,7 +69,8 @@ class TestSimpleWorkflowScenarios:
                 self.dialog_handler.session_manager, "update_user_context"
             ) as mock_update,
             patch.object(
-                self.dialog_handler.conversation_manager, "process_conversation"
+                self.dialog_handler.conversation_manager,
+                "process_conversation",
             ) as mock_conversation,
         ):
             # Setup mocks with real UserContext
@@ -101,7 +104,8 @@ class TestSimpleWorkflowScenarios:
                 self.dialog_handler.session_manager, "is_new_session"
             ) as mock_is_new,
             patch.object(
-                self.dialog_handler.conversation_manager, "process_conversation"
+                self.dialog_handler.conversation_manager,
+                "process_conversation",
             ) as mock_conversation,
             patch.object(
                 self.dialog_handler.response_formatter,
@@ -137,7 +141,8 @@ class TestSimpleWorkflowScenarios:
                 self.dialog_handler.session_manager, "is_new_session"
             ) as mock_is_new,
             patch.object(
-                self.dialog_handler.conversation_manager, "process_conversation"
+                self.dialog_handler.conversation_manager,
+                "process_conversation",
             ) as mock_conversation,
             patch.object(
                 self.dialog_handler.response_formatter, "format_help_response"

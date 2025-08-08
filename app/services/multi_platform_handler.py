@@ -52,15 +52,21 @@ class MultiPlatformHandler:
             if universal_request.platform == Platform.YANDEX:
                 return await self._handle_yandex_request(universal_request, db)
             elif universal_request.platform == Platform.TELEGRAM:
-                return await self._handle_telegram_request(universal_request, db)
+                return await self._handle_telegram_request(
+                    universal_request, db
+                )
             elif universal_request.platform == Platform.GOOGLE_ASSISTANT:
                 return await self._handle_google_request(universal_request, db)
             else:
-                logger.error(f"Unsupported platform: {universal_request.platform}")
+                logger.error(
+                    f"Unsupported platform: {universal_request.platform}"
+                )
                 return self._create_error_response("Unsupported platform")
 
         except Exception as e:
-            logger.error(f"Error in multi-platform handler: {str(e)}", exc_info=True)
+            logger.error(
+                f"Error in multi-platform handler: {str(e)}", exc_info=True
+            )
             return self._create_error_response("Internal error occurred")
 
     async def _handle_yandex_request(
@@ -79,7 +85,9 @@ class MultiPlatformHandler:
             yandex_request = YandexRequestModel(**original_yandex_data)
 
             # Use existing dialog handler
-            yandex_response = await dialog_handler.handle_request(yandex_request)
+            yandex_response = await dialog_handler.handle_request(
+                yandex_request
+            )
 
             # Convert Yandex response to universal format
             universal_response = UniversalResponse(
@@ -99,7 +107,9 @@ class MultiPlatformHandler:
                 universal_buttons = []
                 for btn in yandex_response.response.buttons:
                     universal_buttons.append(
-                        Button(title=btn.title, payload=btn.payload, url=btn.url)
+                        Button(
+                            title=btn.title, payload=btn.payload, url=btn.url
+                        )
                     )
                 universal_response.buttons = universal_buttons
 
@@ -107,7 +117,9 @@ class MultiPlatformHandler:
 
         except Exception as e:
             logger.error(f"Error handling Yandex request: {str(e)}")
-            return self._create_error_response("Error processing Yandex request")
+            return self._create_error_response(
+                "Error processing Yandex request"
+            )
 
     async def _handle_telegram_request(
         self, universal_request: UniversalRequest, db: AsyncSession
@@ -118,10 +130,14 @@ class MultiPlatformHandler:
             # In the future, this could have Telegram-specific features
 
             # Create a mock Yandex request to reuse existing logic
-            mock_yandex_request = self._create_mock_yandex_request(universal_request)
+            mock_yandex_request = self._create_mock_yandex_request(
+                universal_request
+            )
 
             # Process through existing dialog handler
-            yandex_response = await dialog_handler.handle_request(mock_yandex_request)
+            yandex_response = await dialog_handler.handle_request(
+                mock_yandex_request
+            )
 
             # Convert to universal format
             universal_response = UniversalResponse(
@@ -137,18 +153,24 @@ class MultiPlatformHandler:
                 universal_buttons = []
                 for btn in yandex_response.response.buttons:
                     universal_buttons.append(
-                        Button(title=btn.title, payload=btn.payload, url=btn.url)
+                        Button(
+                            title=btn.title, payload=btn.payload, url=btn.url
+                        )
                     )
                 universal_response.buttons = universal_buttons
 
             # Add Telegram-specific formatting
-            universal_response.text = self._format_for_telegram(universal_response.text)
+            universal_response.text = self._format_for_telegram(
+                universal_response.text
+            )
 
             return universal_response
 
         except Exception as e:
             logger.error(f"Error handling Telegram request: {str(e)}")
-            return self._create_error_response("Error processing Telegram request")
+            return self._create_error_response(
+                "Error processing Telegram request"
+            )
 
     async def _handle_google_request(
         self, universal_request: UniversalRequest, db: AsyncSession
@@ -156,10 +178,14 @@ class MultiPlatformHandler:
         """Handle Google Assistant requests."""
         try:
             # Create a mock Yandex request to reuse existing logic
-            mock_yandex_request = self._create_mock_yandex_request(universal_request)
+            mock_yandex_request = self._create_mock_yandex_request(
+                universal_request
+            )
 
             # Process through existing dialog handler
-            yandex_response = await dialog_handler.handle_request(mock_yandex_request)
+            yandex_response = await dialog_handler.handle_request(
+                mock_yandex_request
+            )
 
             # Convert to universal format
             universal_response = UniversalResponse(
@@ -177,18 +203,24 @@ class MultiPlatformHandler:
                 universal_buttons = []
                 for btn in yandex_response.response.buttons:
                     universal_buttons.append(
-                        Button(title=btn.title, payload=btn.payload, url=btn.url)
+                        Button(
+                            title=btn.title, payload=btn.payload, url=btn.url
+                        )
                     )
                 universal_response.buttons = universal_buttons
 
             # Format text for Google Assistant
-            universal_response.text = self._format_for_google(universal_response.text)
+            universal_response.text = self._format_for_google(
+                universal_response.text
+            )
 
             return universal_response
 
         except Exception as e:
             logger.error(f"Error handling Google request: {str(e)}")
-            return self._create_error_response("Error processing Google request")
+            return self._create_error_response(
+                "Error processing Google request"
+            )
 
     def _create_mock_yandex_request(self, universal_request: UniversalRequest):
         """Create a mock Yandex request from universal request."""
@@ -218,7 +250,11 @@ class MultiPlatformHandler:
         )
 
         return YandexRequestModel(
-            meta={"locale": "ru-RU", "timezone": "UTC", "client_id": "multi_platform"},
+            meta={
+                "locale": "ru-RU",
+                "timezone": "UTC",
+                "client_id": "multi_platform",
+            },
             session=session,
             request=request,
             version="1.0",

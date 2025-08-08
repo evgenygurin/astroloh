@@ -44,7 +44,9 @@ class TelegramAdapter(PlatformAdapter):
             logger.error(f"Telegram request validation error: {e}")
             return False
 
-    def to_universal_request(self, telegram_data: Dict[str, Any]) -> UniversalRequest:
+    def to_universal_request(
+        self, telegram_data: Dict[str, Any]
+    ) -> UniversalRequest:
         """Convert Telegram update to universal request format."""
         try:
             update = TelegramUpdate(**telegram_data)
@@ -100,10 +102,14 @@ class TelegramAdapter(PlatformAdapter):
                 text = callback.data or ""
                 user_id = str(callback.user.id)
                 chat_id = str(
-                    callback.message.chat.id if callback.message else callback.user.id
+                    callback.message.chat.id
+                    if callback.message
+                    else callback.user.id
                 )
                 message_id = str(
-                    callback.message.message_id if callback.message else callback.id
+                    callback.message.message_id
+                    if callback.message
+                    else callback.id
                 )
 
                 user_context = {
@@ -132,7 +138,9 @@ class TelegramAdapter(PlatformAdapter):
                     original_request=telegram_data,
                 )
 
-            raise ValueError("No valid message or callback_query in Telegram update")
+            raise ValueError(
+                "No valid message or callback_query in Telegram update"
+            )
 
         except Exception as e:
             logger.error(f"Error converting Telegram request: {e}")
@@ -190,7 +198,8 @@ class TelegramAdapter(PlatformAdapter):
                 send_photo = TelegramSendPhoto(
                     chat_id=int(chat_id),
                     photo=universal_response.image_url,
-                    caption=universal_response.image_caption or universal_response.text,
+                    caption=universal_response.image_caption
+                    or universal_response.text,
                     reply_markup=reply_markup,
                 )
                 response_data["send_photo"] = send_photo.dict()

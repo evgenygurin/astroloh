@@ -3,8 +3,8 @@
 """
 
 import hashlib
-import re
 import logging
+import re
 from typing import Any, Dict, List, Tuple
 
 from app.models.yandex_models import (
@@ -330,21 +330,27 @@ class IntentRecognizer:
         self, text: str, user_context: UserContext
     ) -> ProcessedRequest:
         """Распознает интент из текста пользователя."""
-        logger.info(f"INTENT_RECOGNITION_START: text='{text[:100]}{'...' if len(text) > 100 else ''}'")
+        logger.info(
+            f"INTENT_RECOGNITION_START: text='{text[:100]}{'...' if len(text) > 100 else ''}'"
+        )
         text_lower = text.lower()
 
         # Проверяем ожидание данных от пользователя
         if user_context.awaiting_data:
-            logger.info(f"INTENT_AWAITING_DATA: processing awaited data")
+            logger.info("INTENT_AWAITING_DATA: processing awaited data")
             return self._process_awaited_data(text, text_lower, user_context)
 
         # Распознаем новый интент
         intent, confidence = self._match_intent(text_lower)
         entities = self._extract_entities(text_lower)
-        logger.info(f"INTENT_RECOGNIZED: intent={intent.value}, confidence={confidence:.2f}, entities={list(entities.keys())}")
+        logger.info(
+            f"INTENT_RECOGNIZED: intent={intent.value}, confidence={confidence:.2f}, entities={list(entities.keys())}"
+        )
 
         # Обновляем статистику
-        self._intent_frequency[intent] = self._intent_frequency.get(intent, 0) + 1
+        self._intent_frequency[intent] = (
+            self._intent_frequency.get(intent, 0) + 1
+        )
         user_id = getattr(user_context, "user_id", None)
         if user_id:
             if user_id not in self._user_patterns:
@@ -362,17 +368,21 @@ class IntentRecognizer:
     def _match_intent(self, text: str) -> Tuple[YandexIntent, float]:
         """Определяет интент по тексту с улучшенной обработкой для Alice."""
         logger.debug(f"INTENT_MATCH_START: analyzing text='{text[:100]}'")
-        
+
         # Проверяем кеш
         cache_key = hashlib.md5(text.encode()).hexdigest()
         if cache_key in self._intent_cache:
             cached_intent, cached_confidence = self._intent_cache[cache_key]
-            logger.debug(f"INTENT_MATCH_CACHE_HIT: intent={cached_intent.value}, confidence={cached_confidence:.2f}")
+            logger.debug(
+                f"INTENT_MATCH_CACHE_HIT: intent={cached_intent.value}, confidence={cached_confidence:.2f}"
+            )
             return self._intent_cache[cache_key]
 
         # Преобразуем текст для лучшей обработки голосового ввода
         processed_text = self._preprocess_voice_input(text)
-        logger.debug(f"INTENT_MATCH_PROCESSED: original='{text}', processed='{processed_text}'")
+        logger.debug(
+            f"INTENT_MATCH_PROCESSED: original='{text}', processed='{processed_text}'"
+        )
 
         best_intent = YandexIntent.UNKNOWN
         max_confidence = 0.0
@@ -420,14 +430,20 @@ class IntentRecognizer:
             if confidence > max_confidence:
                 max_confidence = confidence
                 best_intent = intent
-                logger.debug(f"INTENT_MATCH_NEW_BEST: intent={intent.value}, confidence={confidence:.2f}, matches={matches}")
+                logger.debug(
+                    f"INTENT_MATCH_NEW_BEST: intent={intent.value}, confidence={confidence:.2f}, matches={matches}"
+                )
 
         result = (best_intent, min(max_confidence, 1.0))
-        logger.debug(f"INTENT_MATCH_RESULT: final_intent={best_intent.value}, final_confidence={result[1]:.2f}")
+        logger.debug(
+            f"INTENT_MATCH_RESULT: final_intent={best_intent.value}, final_confidence={result[1]:.2f}"
+        )
 
         # Сохраняем в кеш
         if len(self._intent_cache) >= self.cache_size_limit:
-            logger.debug(f"INTENT_MATCH_CACHE_CLEAR: clearing cache (size={len(self._intent_cache)})")
+            logger.debug(
+                f"INTENT_MATCH_CACHE_CLEAR: clearing cache (size={len(self._intent_cache)})"
+            )
             self._intent_cache.clear()
         self._intent_cache[cache_key] = result
 
@@ -436,12 +452,14 @@ class IntentRecognizer:
     def _extract_entities(self, text: str) -> Dict[str, Any]:
         """Извлекает сущности из текста."""
         logger.debug(f"ENTITY_EXTRACTION_START: text='{text[:100]}'")
-        
+
         # Проверяем кеш
         cache_key = hashlib.md5(text.encode()).hexdigest()
         if cache_key in self._entity_cache:
             cached_entities = self._entity_cache[cache_key]
-            logger.debug(f"ENTITY_EXTRACTION_CACHE_HIT: entities={list(cached_entities.keys())}")
+            logger.debug(
+                f"ENTITY_EXTRACTION_CACHE_HIT: entities={list(cached_entities.keys())}"
+            )
             return self._entity_cache[cache_key]
 
         entities: Dict[str, Any] = {}
@@ -487,10 +505,14 @@ class IntentRecognizer:
             for pattern in patterns:
                 if re.search(pattern, text):
                     found_signs.append(sign)
-                    logger.debug(f"ZODIAC_EXTRACTION_MATCH: sign={sign.value}, pattern='{pattern}'")
+                    logger.debug(
+                        f"ZODIAC_EXTRACTION_MATCH: sign={sign.value}, pattern='{pattern}'"
+                    )
                     break
 
-        logger.debug(f"ZODIAC_EXTRACTION_RESULT: found_signs={[s.value for s in found_signs]}")
+        logger.debug(
+            f"ZODIAC_EXTRACTION_RESULT: found_signs={[s.value for s in found_signs]}"
+        )
         return found_signs
 
     def _extract_dates(self, text: str) -> List[str]:
@@ -504,7 +526,9 @@ class IntentRecognizer:
             for match in matches:
                 date_found = match.group()
                 dates.append(date_found)
-                logger.debug(f"DATE_EXTRACTION_PATTERN_MATCH: date='{date_found}', pattern='{pattern}'")
+                logger.debug(
+                    f"DATE_EXTRACTION_PATTERN_MATCH: date='{date_found}', pattern='{pattern}'"
+                )
 
         # Извлекаем относительные даты
         from datetime import date, timedelta
@@ -518,11 +542,15 @@ class IntentRecognizer:
         if re.search(r"вчера", text):
             yesterday_str = (today - timedelta(days=1)).strftime("%d.%m.%Y")
             dates.append(yesterday_str)
-            logger.debug(f"DATE_EXTRACTION_RELATIVE: yesterday='{yesterday_str}'")
+            logger.debug(
+                f"DATE_EXTRACTION_RELATIVE: yesterday='{yesterday_str}'"
+            )
         if re.search(r"завтра", text):
             tomorrow_str = (today + timedelta(days=1)).strftime("%d.%m.%Y")
             dates.append(tomorrow_str)
-            logger.debug(f"DATE_EXTRACTION_RELATIVE: tomorrow='{tomorrow_str}'")
+            logger.debug(
+                f"DATE_EXTRACTION_RELATIVE: tomorrow='{tomorrow_str}'"
+            )
 
         logger.debug(f"DATE_EXTRACTION_RESULT: dates={dates}")
         return dates
@@ -537,7 +565,9 @@ class IntentRecognizer:
             for match in matches:
                 time_found = match.group()
                 times.append(time_found)
-                logger.debug(f"TIME_EXTRACTION_MATCH: time='{time_found}', pattern='{pattern}'")
+                logger.debug(
+                    f"TIME_EXTRACTION_MATCH: time='{time_found}', pattern='{pattern}'"
+                )
 
         logger.debug(f"TIME_EXTRACTION_RESULT: times={times}")
         return times
@@ -563,7 +593,9 @@ class IntentRecognizer:
             for pattern in patterns:
                 if re.search(pattern, text):
                     periods.append(period)
-                    logger.debug(f"PERIOD_EXTRACTION_MATCH: period='{period}', pattern='{pattern}'")
+                    logger.debug(
+                        f"PERIOD_EXTRACTION_MATCH: period='{period}', pattern='{pattern}'"
+                    )
                     break  # Avoid duplicates for same period
 
         logger.debug(f"PERIOD_EXTRACTION_RESULT: periods={periods}")
@@ -572,7 +604,7 @@ class IntentRecognizer:
     def _analyze_sentiment(self, text: str) -> str:
         """Анализирует настроение в тексте."""
         logger.debug(f"SENTIMENT_ANALYSIS_START: text='{text[:50]}'")
-        
+
         positive_words = [
             r"отлично",
             r"хорошо",
@@ -588,10 +620,16 @@ class IntentRecognizer:
             r"болею",
         ]
 
-        positive_count = sum(1 for word in positive_words if re.search(word, text))
-        negative_count = sum(1 for word in negative_words if re.search(word, text))
+        positive_count = sum(
+            1 for word in positive_words if re.search(word, text)
+        )
+        negative_count = sum(
+            1 for word in negative_words if re.search(word, text)
+        )
 
-        logger.debug(f"SENTIMENT_ANALYSIS_COUNTS: positive={positive_count}, negative={negative_count}")
+        logger.debug(
+            f"SENTIMENT_ANALYSIS_COUNTS: positive={positive_count}, negative={negative_count}"
+        )
 
         if positive_count > negative_count:
             sentiment = "positive"
@@ -599,7 +637,7 @@ class IntentRecognizer:
             sentiment = "negative"
         else:
             sentiment = "neutral"
-            
+
         logger.debug(f"SENTIMENT_ANALYSIS_RESULT: sentiment='{sentiment}'")
         return sentiment
 
@@ -607,14 +645,20 @@ class IntentRecognizer:
         self, text: str, text_lower: str, user_context: UserContext
     ) -> ProcessedRequest:
         """Обрабатывает ожидаемые данные от пользователя."""
-        logger.debug(f"AWAITED_DATA_PROCESSING_START: awaiting='{user_context.awaiting_data}', text='{text[:50]}'")
+        logger.debug(
+            f"AWAITED_DATA_PROCESSING_START: awaiting='{user_context.awaiting_data}', text='{text[:50]}'"
+        )
         entities = self._extract_entities(text_lower)
 
         if user_context.awaiting_data == "birth_date":
-            logger.debug(f"AWAITED_DATA_BIRTH_DATE: extracted_entities={list(entities.keys())}")
+            logger.debug(
+                f"AWAITED_DATA_BIRTH_DATE: extracted_entities={list(entities.keys())}"
+            )
             if entities.get("dates"):
                 entities["birth_date"] = entities["dates"][0]
-                logger.info(f"AWAITED_DATA_SUCCESS: birth_date='{entities['birth_date']}'")
+                logger.info(
+                    f"AWAITED_DATA_SUCCESS: birth_date='{entities['birth_date']}'"
+                )
                 return ProcessedRequest(
                     intent=YandexIntent.HOROSCOPE,
                     entities=entities,
@@ -624,10 +668,14 @@ class IntentRecognizer:
                 )
 
         elif user_context.awaiting_data == "zodiac_sign":
-            logger.debug(f"AWAITED_DATA_ZODIAC_SIGN: extracted_entities={list(entities.keys())}")
+            logger.debug(
+                f"AWAITED_DATA_ZODIAC_SIGN: extracted_entities={list(entities.keys())}"
+            )
             if entities.get("zodiac_signs"):
                 entities["zodiac_sign"] = entities["zodiac_signs"][0]
-                logger.info(f"AWAITED_DATA_SUCCESS: zodiac_sign='{entities['zodiac_sign'].value}'")
+                logger.info(
+                    f"AWAITED_DATA_SUCCESS: zodiac_sign='{entities['zodiac_sign'].value}'"
+                )
                 return ProcessedRequest(
                     intent=user_context.intent or YandexIntent.COMPATIBILITY,
                     entities=entities,
@@ -637,10 +685,14 @@ class IntentRecognizer:
                 )
 
         elif user_context.awaiting_data == "partner_sign":
-            logger.debug(f"AWAITED_DATA_PARTNER_SIGN: extracted_entities={list(entities.keys())}")
+            logger.debug(
+                f"AWAITED_DATA_PARTNER_SIGN: extracted_entities={list(entities.keys())}"
+            )
             if entities.get("zodiac_signs"):
                 entities["partner_sign"] = entities["zodiac_signs"][0]
-                logger.info(f"AWAITED_DATA_SUCCESS: partner_sign='{entities['partner_sign'].value}'")
+                logger.info(
+                    f"AWAITED_DATA_SUCCESS: partner_sign='{entities['partner_sign'].value}'"
+                )
                 return ProcessedRequest(
                     intent=YandexIntent.COMPATIBILITY,
                     entities=entities,
@@ -650,7 +702,9 @@ class IntentRecognizer:
                 )
 
         # Если ожидаемые данные не найдены, пытаемся распознать как новый интент
-        logger.warning("AWAITED_DATA_NOT_FOUND: falling_back_to_intent_recognition")
+        logger.warning(
+            "AWAITED_DATA_NOT_FOUND: falling_back_to_intent_recognition"
+        )
         intent, confidence = self._match_intent(text_lower)
         return ProcessedRequest(
             intent=intent,
@@ -674,16 +728,18 @@ class IntentRecognizer:
         """Очищает кеш."""
         intent_cache_size = len(self._intent_cache)
         entity_cache_size = len(self._entity_cache)
-        
+
         self._intent_cache.clear()
         self._entity_cache.clear()
-        
-        logger.info(f"CACHE_CLEARED: intent_cache_size={intent_cache_size}, entity_cache_size={entity_cache_size}")
+
+        logger.info(
+            f"CACHE_CLEARED: intent_cache_size={intent_cache_size}, entity_cache_size={entity_cache_size}"
+        )
 
     def _preprocess_voice_input(self, text: str) -> str:
         """Преобразует текст для лучшей обработки голосового ввода."""
         logger.debug(f"VOICE_PREPROCESSING_START: text='{text[:50]}'")
-        
+
         # Общие ошибки распознавания речи
         voice_corrections = {
             r"гороскоп.*на.*сигодня": "гороскоп на сегодня",
@@ -694,23 +750,29 @@ class IntentRecognizer:
 
         processed = text.lower()
         corrections_applied = 0
-        
+
         for pattern, replacement in voice_corrections.items():
             if re.search(pattern, processed):
                 processed = re.sub(pattern, replacement, processed)
                 corrections_applied += 1
-                logger.debug(f"VOICE_PREPROCESSING_CORRECTION: pattern='{pattern}' -> '{replacement}'")
+                logger.debug(
+                    f"VOICE_PREPROCESSING_CORRECTION: pattern='{pattern}' -> '{replacement}'"
+                )
 
-        logger.debug(f"VOICE_PREPROCESSING_RESULT: corrections={corrections_applied}, processed='{processed[:50]}'")
+        logger.debug(
+            f"VOICE_PREPROCESSING_RESULT: corrections={corrections_applied}, processed='{processed[:50]}'"
+        )
         return processed
 
     def get_user_preferences(self, user_id: str) -> List[YandexIntent]:
         """Получает предпочтения пользователя."""
         logger.debug(f"USER_PREFERENCES_START: user_id='{user_id}'")
-        
+
         if user_id not in self._user_patterns:
             self._user_patterns[user_id] = []
-            logger.debug(f"USER_PREFERENCES_NEW_USER: created pattern list for user_id='{user_id}'")
+            logger.debug(
+                f"USER_PREFERENCES_NEW_USER: created pattern list for user_id='{user_id}'"
+            )
 
         # Подсчитываем частоту интентов
         from collections import Counter
@@ -718,5 +780,7 @@ class IntentRecognizer:
         counter = Counter(self._user_patterns[user_id])
         preferences = [intent for intent, _count in counter.most_common()]
 
-        logger.debug(f"USER_PREFERENCES_RESULT: user_id='{user_id}', preferences={[p.value for p in preferences]}")
+        logger.debug(
+            f"USER_PREFERENCES_RESULT: user_id='{user_id}', preferences={[p.value for p in preferences]}"
+        )
         return preferences

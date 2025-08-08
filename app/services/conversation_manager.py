@@ -79,7 +79,9 @@ class ConversationContext:
             intent_counts[intent] = intent_counts.get(intent, 0) + 1
 
         # Сортируем по частоте
-        sorted_intents = sorted(intent_counts.items(), key=lambda x: x[1], reverse=True)
+        sorted_intents = sorted(
+            intent_counts.items(), key=lambda x: x[1], reverse=True
+        )
         return [intent for intent, _ in sorted_intents[:3]]
 
 
@@ -88,7 +90,9 @@ class ConversationManager:
 
     def __init__(self, db_session=None):
         self.dialog_flow_manager = DialogFlowManager()
-        self.user_manager = None  # Will be initialized when db_session is available
+        self.user_manager = (
+            None  # Will be initialized when db_session is available
+        )
         self.db_session = db_session
         self.encryption_service = EncryptionService()
         self.active_conversations: Dict[str, ConversationContext] = {}
@@ -139,7 +143,9 @@ class ConversationManager:
         """Обрабатывает разговор с учетом контекста и персонализации."""
 
         # Получаем или создаем контекст разговора
-        conversation = await self._get_or_create_conversation(user_id, session_id)
+        conversation = await self._get_or_create_conversation(
+            user_id, session_id
+        )
 
         # Получаем диалоговый поток
         flow = self.dialog_flow_manager.get_or_create_flow(session_id, user_id)
@@ -156,7 +162,9 @@ class ConversationManager:
         (
             next_state,
             response_context,
-        ) = self.dialog_flow_manager.process_intent_in_flow(flow, enhanced_request)
+        ) = self.dialog_flow_manager.process_intent_in_flow(
+            flow, enhanced_request
+        )
 
         # Добавляем персонализированный контекст
         response_context = await self._add_personalization_context(
@@ -240,7 +248,9 @@ class ConversationManager:
         except Exception as e:
             self.logger.error(f"Error loading conversation history: {str(e)}")
 
-    async def _load_user_preferences(self, conversation: ConversationContext) -> None:
+    async def _load_user_preferences(
+        self, conversation: ConversationContext
+    ) -> None:
         """Загружает предпочтения пользователя."""
         try:
             async with get_db_session_context() as db:
@@ -256,11 +266,15 @@ class ConversationManager:
                     birth_date = self.encryption_service.decrypt_birth_date(
                         user.encrypted_birth_date
                     )
-                    conversation.preferences["birth_date"] = birth_date.isoformat()
+                    conversation.preferences[
+                        "birth_date"
+                    ] = birth_date.isoformat()
 
                     if user.encrypted_birth_time:
-                        birth_time = self.encryption_service.decrypt_birth_time(
-                            user.encrypted_birth_time
+                        birth_time = (
+                            self.encryption_service.decrypt_birth_time(
+                                user.encrypted_birth_time
+                            )
                         )
                         conversation.preferences["birth_time"] = birth_time
 
@@ -284,10 +298,13 @@ class ConversationManager:
         enhanced_entities = processed_request.entities.copy()
 
         # Добавляем сохраненные данные пользователя
-        if "birth_date" in conversation.preferences and not enhanced_entities.get(
-            "dates"
+        if (
+            "birth_date" in conversation.preferences
+            and not enhanced_entities.get("dates")
         ):
-            enhanced_entities["dates"] = [conversation.preferences["birth_date"]]
+            enhanced_entities["dates"] = [
+                conversation.preferences["birth_date"]
+            ]
 
         # Добавляем контекст недавних взаимодействий
         recent_intents = conversation.get_recent_intents(hours=2)
@@ -297,7 +314,9 @@ class ConversationManager:
             ]
 
         # Добавляем уровень персонализации
-        enhanced_entities["personalization_level"] = conversation.personalization_level
+        enhanced_entities[
+            "personalization_level"
+        ] = conversation.personalization_level
 
         # Создаем новый ProcessedRequest с дополненными данными
         enhanced_request = ProcessedRequest(
@@ -319,8 +338,12 @@ class ConversationManager:
         """Добавляет персонализированный контекст к ответу."""
 
         # Добавляем персонализированное приветствие
-        personalization_level = min(3, int(conversation.personalization_level * 4))
-        response_context["personalized_greeting"] = self.personalized_greetings.get(
+        personalization_level = min(
+            3, int(conversation.personalization_level * 4)
+        )
+        response_context[
+            "personalized_greeting"
+        ] = self.personalized_greetings.get(
             personalization_level, self.personalized_greetings[0]
         )
 
@@ -329,24 +352,29 @@ class ConversationManager:
         if recent_intents:
             last_intent = recent_intents[-1]
             if last_intent in self.contextual_suggestions:
-                response_context["contextual_suggestions"] = (
-                    self.contextual_suggestions[last_intent]
-                )
+                response_context[
+                    "contextual_suggestions"
+                ] = self.contextual_suggestions[last_intent]
 
         # Добавляем предпочитаемые темы
-        response_context["preferred_topics"] = conversation.get_preferred_topics()
+        response_context[
+            "preferred_topics"
+        ] = conversation.get_preferred_topics()
 
         # Добавляем статистику взаимодействий
         response_context["interaction_stats"] = {
             "total_interactions": conversation.interaction_count,
             "personalization_level": conversation.personalization_level,
-            "days_active": (datetime.now() - conversation.last_interaction).days + 1,
+            "days_active": (
+                datetime.now() - conversation.last_interaction
+            ).days
+            + 1,
         }
 
         # Добавляем адаптивные предложения
-        response_context["adaptive_suggestions"] = self._generate_adaptive_suggestions(
-            conversation, next_state
-        )
+        response_context[
+            "adaptive_suggestions"
+        ] = self._generate_adaptive_suggestions(conversation, next_state)
 
         return response_context
 
@@ -407,7 +435,9 @@ class ConversationManager:
         except Exception as e:
             self.logger.error(f"Error updating user preferences: {str(e)}")
 
-    async def _save_preferences_to_db(self, conversation: ConversationContext) -> None:
+    async def _save_preferences_to_db(
+        self, conversation: ConversationContext
+    ) -> None:
         """Сохраняет предпочтения в базу данных."""
         try:
             async with get_db_session_context() as db:
@@ -489,7 +519,9 @@ class ConversationManager:
             await self._save_preferences_to_db(self.active_conversations[key])
             del self.active_conversations[key]
 
-        self.logger.info(f"Cleaned up {len(inactive_keys)} inactive conversations")
+        self.logger.info(
+            f"Cleaned up {len(inactive_keys)} inactive conversations"
+        )
         return len(inactive_keys)
 
     async def get_conversation_context(
@@ -507,8 +539,10 @@ class ConversationManager:
             context.conversation_count = getattr(user, "conversation_count", 0)
             context.last_interaction = getattr(user, "last_interaction", None)
             context.preferences = getattr(user, "preferences", {})
-            context.personalization_level = self.calculate_personalization_level(
-                context.conversation_count, context.last_interaction
+            context.personalization_level = (
+                self.calculate_personalization_level(
+                    context.conversation_count, context.last_interaction
+                )
             )
         else:
             context.conversation_count = 0
@@ -518,13 +552,17 @@ class ConversationManager:
 
         return context
 
-    async def update_conversation_context(self, request, context, db_session) -> None:
+    async def update_conversation_context(
+        self, request, context, db_session
+    ) -> None:
         """Обновляет контекст разговора."""
         # Create UserManager with the current session
         user_manager = UserManager(db_session)
 
         user_id = request.session.user_id
-        await user_manager.update_user_interaction(db_session, user_id, context)
+        await user_manager.update_user_interaction(
+            db_session, user_id, context
+        )
 
     def calculate_personalization_level(
         self, conversation_count: int, last_interaction
@@ -552,7 +590,9 @@ class ConversationManager:
 
         return min(100, int(base_level))
 
-    def enhance_context_with_history(self, user_input: str, context) -> Dict[str, Any]:
+    def enhance_context_with_history(
+        self, user_input: str, context
+    ) -> Dict[str, Any]:
         """Улучшает контекст с учетом истории пользователя."""
         enhanced = {
             "conversation_count": getattr(context, "conversation_count", 0),
@@ -669,8 +709,12 @@ class ConversationManager:
 
         text_lower = text.lower()
 
-        positive_count = sum(1 for word in positive_words if word in text_lower)
-        negative_count = sum(1 for word in negative_words if word in text_lower)
+        positive_count = sum(
+            1 for word in positive_words if word in text_lower
+        )
+        negative_count = sum(
+            1 for word in negative_words if word in text_lower
+        )
 
         if positive_count > negative_count:
             return "positive"

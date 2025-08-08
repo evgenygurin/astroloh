@@ -4,26 +4,29 @@ import asyncio
 import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
 from loguru import logger
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
 
 from app.models.iot_models import (
-    IoTDevice,
-    DeviceType,
-    DeviceStatus,
     DeviceCommand,
+    DeviceStatus,
+    DeviceType,
+    IoTDevice,
     IoTDeviceCreate,
     IoTDeviceUpdate,
 )
-from app.services.encryption import EncryptionService
 from app.services.cache_service import cache_service
+from app.services.encryption import EncryptionService
 
 
 class IoTDeviceManager:
     """Manages IoT devices and their state."""
 
-    def __init__(self, db: AsyncSession, encryption_service: EncryptionService):
+    def __init__(
+        self, db: AsyncSession, encryption_service: EncryptionService
+    ):
         self.db = db
         self.encryption_service = encryption_service
         self.device_connections: Dict[str, Any] = {}
@@ -63,8 +66,10 @@ class IoTDeviceManager:
 
             # Invalidate user devices cache
             await cache_service.invalidate_user_devices(user_id)
-            
-            logger.info(f"Registered IoT device: {device.name} ({device.device_id})")
+
+            logger.info(
+                f"Registered IoT device: {device.name} ({device.device_id})"
+            )
             return device
 
         except Exception as e:
@@ -81,11 +86,16 @@ class IoTDeviceManager:
             if not device_type:
                 cached_devices = await cache_service.get_user_devices(user_id)
                 if cached_devices is not None:
-                    logger.debug(f"Retrieved {len(cached_devices)} devices from cache for user {user_id}")
-                    return [IoTDevice(**device_data) for device_data in cached_devices]
-            
+                    logger.debug(
+                        f"Retrieved {len(cached_devices)} devices from cache for user {user_id}"
+                    )
+                    return [
+                        IoTDevice(**device_data)
+                        for device_data in cached_devices
+                    ]
+
             query = select(IoTDevice).where(IoTDevice.user_id == user_id)
-            
+
             if device_type:
                 query = query.where(IoTDevice.device_type == device_type.value)
 
@@ -97,40 +107,48 @@ class IoTDeviceManager:
             for device in devices:
                 if device.configuration:
                     try:
-                        decrypted_config = await self.encryption_service.decrypt_data(
-                            device.configuration
+                        decrypted_config = (
+                            await self.encryption_service.decrypt_data(
+                                device.configuration
+                            )
                         )
                         device.configuration = json.loads(decrypted_config)
                     except Exception as e:
                         logger.warning(f"Failed to decrypt device config: {e}")
                         device.configuration = {}
-                
+
                 device_list.append(device)
 
             # Cache the result if no type filter
             if not device_type and device_list:
                 device_data_list = [
                     {
-                        'id': d.id,
-                        'user_id': d.user_id,
-                        'device_id': d.device_id,
-                        'name': d.name,
-                        'device_type': d.device_type,
-                        'protocol': d.protocol,
-                        'manufacturer': d.manufacturer,
-                        'model': d.model,
-                        'status': d.status,
-                        'capabilities': d.capabilities,
-                        'configuration': d.configuration,
-                        'location': d.location,
-                        'room': d.room,
-                        'last_seen': d.last_seen.isoformat() if d.last_seen else None,
-                        'created_at': d.created_at.isoformat() if d.created_at else None,
+                        "id": d.id,
+                        "user_id": d.user_id,
+                        "device_id": d.device_id,
+                        "name": d.name,
+                        "device_type": d.device_type,
+                        "protocol": d.protocol,
+                        "manufacturer": d.manufacturer,
+                        "model": d.model,
+                        "status": d.status,
+                        "capabilities": d.capabilities,
+                        "configuration": d.configuration,
+                        "location": d.location,
+                        "room": d.room,
+                        "last_seen": d.last_seen.isoformat()
+                        if d.last_seen
+                        else None,
+                        "created_at": d.created_at.isoformat()
+                        if d.created_at
+                        else None,
                     }
                     for d in device_list
                 ]
                 await cache_service.set_user_devices(user_id, device_data_list)
-                logger.debug(f"Cached {len(device_list)} devices for user {user_id}")
+                logger.debug(
+                    f"Cached {len(device_list)} devices for user {user_id}"
+                )
 
             return device_list
 
@@ -171,7 +189,7 @@ class IoTDeviceManager:
                 device.configuration = encrypted_config
 
             device.updated_at = datetime.utcnow()
-            
+
             await self.db.commit()
             await self.db.refresh(device)
 
@@ -187,23 +205,35 @@ class IoTDeviceManager:
             return None
 
     async def send_command(
-        self, device_id: str, command: DeviceCommand, user_id: Optional[int] = None
+        self,
+        device_id: str,
+        command: DeviceCommand,
+        user_id: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Send command to IoT device."""
         try:
             # Find device and verify user ownership if user_id provided
             if user_id:
                 query = select(IoTDevice).where(
-                    and_(IoTDevice.device_id == device_id, IoTDevice.user_id == user_id)
+                    and_(
+                        IoTDevice.device_id == device_id,
+                        IoTDevice.user_id == user_id,
+                    )
                 )
             else:
-                query = select(IoTDevice).where(IoTDevice.device_id == device_id)
-            
+                query = select(IoTDevice).where(
+                    IoTDevice.device_id == device_id
+                )
+
             result = await self.db.execute(query)
             device = result.scalar_one_or_none()
 
             if not device:
-                error_msg = "Device not found" if not user_id else "Device not found or access denied"
+                error_msg = (
+                    "Device not found"
+                    if not user_id
+                    else "Device not found or access denied"
+                )
                 raise PermissionError(error_msg)
 
             if device.status != DeviceStatus.ONLINE.value:
@@ -211,7 +241,7 @@ class IoTDeviceManager:
 
             # Route command based on device protocol
             response = await self._route_command(device, command)
-            
+
             # Update last seen
             device.last_seen = datetime.utcnow()
             await self.db.commit()
@@ -236,7 +266,10 @@ class IoTDeviceManager:
 
         handler = protocol_handlers.get(device.protocol)
         if not handler:
-            return {"success": False, "error": f"Unsupported protocol: {device.protocol}"}
+            return {
+                "success": False,
+                "error": f"Unsupported protocol: {device.protocol}",
+            }
 
         return await handler(device, command)
 
@@ -246,10 +279,10 @@ class IoTDeviceManager:
         """Handle Matter/Thread protocol commands."""
         # Implementation would connect to Matter controller
         logger.info(f"Matter command {command.command} to {device.device_id}")
-        
+
         # Simulate command execution
         await asyncio.sleep(0.1)
-        
+
         return {
             "success": True,
             "protocol": "matter",
@@ -263,10 +296,10 @@ class IoTDeviceManager:
         """Handle HomeKit protocol commands."""
         # Implementation would connect to HomeKit accessory
         logger.info(f"HomeKit command {command.command} to {device.device_id}")
-        
+
         # Simulate command execution
         await asyncio.sleep(0.1)
-        
+
         return {
             "success": True,
             "protocol": "homekit",
@@ -280,10 +313,10 @@ class IoTDeviceManager:
         """Handle MQTT protocol commands."""
         # Implementation would publish to MQTT broker
         logger.info(f"MQTT command {command.command} to {device.device_id}")
-        
+
         # Simulate MQTT publish
         await asyncio.sleep(0.1)
-        
+
         return {
             "success": True,
             "protocol": "mqtt",
@@ -295,11 +328,13 @@ class IoTDeviceManager:
         self, device: IoTDevice, command: DeviceCommand
     ) -> Dict[str, Any]:
         """Handle Google Assistant integration commands."""
-        logger.info(f"Google Assistant command {command.command} to {device.device_id}")
-        
+        logger.info(
+            f"Google Assistant command {command.command} to {device.device_id}"
+        )
+
         # Implementation would use Google Smart Home API
         await asyncio.sleep(0.1)
-        
+
         return {
             "success": True,
             "protocol": "google_assistant",
@@ -312,10 +347,10 @@ class IoTDeviceManager:
     ) -> Dict[str, Any]:
         """Handle Amazon Alexa integration commands."""
         logger.info(f"Alexa command {command.command} to {device.device_id}")
-        
+
         # Implementation would use Alexa Smart Home API
         await asyncio.sleep(0.1)
-        
+
         return {
             "success": True,
             "protocol": "alexa",
@@ -323,7 +358,9 @@ class IoTDeviceManager:
             "response": f"Alexa command executed on {device.name}",
         }
 
-    async def update_device_status(self, device_id: str, status: DeviceStatus) -> bool:
+    async def update_device_status(
+        self, device_id: str, status: DeviceStatus
+    ) -> bool:
         """Update device online/offline status."""
         try:
             query = select(IoTDevice).where(IoTDevice.device_id == device_id)
@@ -334,8 +371,10 @@ class IoTDeviceManager:
                 device.status = status.value
                 device.last_seen = datetime.utcnow()
                 await self.db.commit()
-                
-                logger.info(f"Device {device.name} status updated to {status.value}")
+
+                logger.info(
+                    f"Device {device.name} status updated to {status.value}"
+                )
                 return True
 
             return False
@@ -355,14 +394,18 @@ class IoTDeviceManager:
                 return {}
 
             capabilities = device.capabilities or {}
-            
+
             # Add runtime information
-            capabilities.update({
-                "status": device.status,
-                "last_seen": device.last_seen.isoformat() if device.last_seen else None,
-                "location": device.location,
-                "room": device.room,
-            })
+            capabilities.update(
+                {
+                    "status": device.status,
+                    "last_seen": device.last_seen.isoformat()
+                    if device.last_seen
+                    else None,
+                    "location": device.location,
+                    "room": device.room,
+                }
+            )
 
             return capabilities
 
@@ -370,10 +413,12 @@ class IoTDeviceManager:
             logger.error(f"Failed to get device capabilities: {e}")
             return {}
 
-    async def discover_devices(self, protocol: str, timeout: int = 30) -> List[Dict[str, Any]]:
+    async def discover_devices(
+        self, protocol: str, timeout: int = 30
+    ) -> List[Dict[str, Any]]:
         """Discover available devices on the network."""
         discovered = []
-        
+
         try:
             # Different discovery methods based on protocol
             if protocol == "matter":
@@ -382,7 +427,7 @@ class IoTDeviceManager:
                 discovered = await self._discover_homekit_devices(timeout)
             elif protocol == "mqtt":
                 discovered = await self._discover_mqtt_devices(timeout)
-            
+
             logger.info(f"Discovered {len(discovered)} {protocol} devices")
             return discovered
 
@@ -390,7 +435,9 @@ class IoTDeviceManager:
             logger.error(f"Device discovery failed for {protocol}: {e}")
             return []
 
-    async def _discover_matter_devices(self, timeout: int) -> List[Dict[str, Any]]:
+    async def _discover_matter_devices(
+        self, timeout: int
+    ) -> List[Dict[str, Any]]:
         """Discover Matter devices."""
         # Simulate device discovery
         await asyncio.sleep(1)
@@ -405,7 +452,9 @@ class IoTDeviceManager:
             }
         ]
 
-    async def _discover_homekit_devices(self, timeout: int) -> List[Dict[str, Any]]:
+    async def _discover_homekit_devices(
+        self, timeout: int
+    ) -> List[Dict[str, Any]]:
         """Discover HomeKit devices."""
         # Simulate device discovery
         await asyncio.sleep(1)
@@ -420,13 +469,15 @@ class IoTDeviceManager:
             }
         ]
 
-    async def _discover_mqtt_devices(self, timeout: int) -> List[Dict[str, Any]]:
+    async def _discover_mqtt_devices(
+        self, timeout: int
+    ) -> List[Dict[str, Any]]:
         """Discover MQTT devices."""
         # Simulate device discovery
         await asyncio.sleep(1)
         return [
             {
-                "device_id": "mqtt_sensor_001", 
+                "device_id": "mqtt_sensor_001",
                 "name": "Temperature Sensor",
                 "device_type": "sensor",
                 "manufacturer": "Generic",

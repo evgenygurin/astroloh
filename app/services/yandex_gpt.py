@@ -11,7 +11,6 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -88,18 +87,30 @@ class YandexGPTClient:
             Сгенерированный текст или None при ошибке
         """
         request_id = f"ygpt_{int(asyncio.get_event_loop().time() * 1000)}"
-        logger.info(f"[{request_id}] YANDEX_GPT_GENERATION_START: model={model}, temp={temperature}, tokens={max_tokens}")
-        logger.debug(f"[{request_id}] YANDEX_GPT_PROMPT_LENGTH: {len(prompt)} chars")
-        logger.debug(f"[{request_id}] YANDEX_GPT_PROMPT: {prompt[:200]}{'...' if len(prompt) > 200 else ''}")
-        logger.debug(f"[{request_id}] YANDEX_GPT_CONFIG: api_key_exists={bool(self.api_key)}, folder_id={self.folder_id}")
-        
+        logger.info(
+            f"[{request_id}] YANDEX_GPT_GENERATION_START: model={model}, temp={temperature}, tokens={max_tokens}"
+        )
+        logger.debug(
+            f"[{request_id}] YANDEX_GPT_PROMPT_LENGTH: {len(prompt)} chars"
+        )
+        logger.debug(
+            f"[{request_id}] YANDEX_GPT_PROMPT: {prompt[:200]}{'...' if len(prompt) > 200 else ''}"
+        )
+        logger.debug(
+            f"[{request_id}] YANDEX_GPT_CONFIG: api_key_exists={bool(self.api_key)}, folder_id={self.folder_id}"
+        )
+
         try:
             # Подготавливаем сообщения
             messages = []
 
             if system_prompt:
-                messages.append(YandexGPTMessage(role="system", text=system_prompt))
-                logger.debug(f"[{request_id}] YANDEX_GPT_SYSTEM_PROMPT: {system_prompt[:200]}{'...' if len(system_prompt) > 200 else ''}")
+                messages.append(
+                    YandexGPTMessage(role="system", text=system_prompt)
+                )
+                logger.debug(
+                    f"[{request_id}] YANDEX_GPT_SYSTEM_PROMPT: {system_prompt[:200]}{'...' if len(system_prompt) > 200 else ''}"
+                )
 
             messages.append(YandexGPTMessage(role="user", text=prompt))
 
@@ -115,7 +126,9 @@ class YandexGPTClient:
                 messages=messages,
             )
 
-            logger.info(f"[{request_id}] YANDEX_GPT_API_CALL: uri={model_uri}, folder={self.folder_id}")
+            logger.info(
+                f"[{request_id}] YANDEX_GPT_API_CALL: uri={model_uri}, folder={self.folder_id}"
+            )
 
             # Отправляем запрос
             session = await self._get_session()
@@ -123,26 +136,38 @@ class YandexGPTClient:
             async with session.post(
                 self.completion_url, json=request_data.dict()
             ) as response:
-                logger.info(f"[{request_id}] YANDEX_GPT_HTTP_STATUS: {response.status}")
-                
+                logger.info(
+                    f"[{request_id}] YANDEX_GPT_HTTP_STATUS: {response.status}"
+                )
+
                 if response.status != 200:
                     error_text = await response.text()
-                    logger.error(f"[{request_id}] YANDEX_GPT_ERROR {response.status}: {error_text}")
+                    logger.error(
+                        f"[{request_id}] YANDEX_GPT_ERROR {response.status}: {error_text}"
+                    )
                     return None
 
                 result = await response.json()
-                logger.debug(f"[{request_id}] YANDEX_GPT_RAW_RESPONSE: {str(result)[:500]}{'...' if len(str(result)) > 500 else ''}")
+                logger.debug(
+                    f"[{request_id}] YANDEX_GPT_RAW_RESPONSE: {str(result)[:500]}{'...' if len(str(result)) > 500 else ''}"
+                )
 
                 # Извлекаем текст ответа
                 if "result" in result and "alternatives" in result["result"]:
                     alternatives = result["result"]["alternatives"]
                     if alternatives and "message" in alternatives[0]:
                         generated_text = alternatives[0]["message"]["text"]
-                        logger.info(f"[{request_id}] YANDEX_GPT_SUCCESS: generated {len(generated_text)} chars")
-                        logger.debug(f"[{request_id}] YANDEX_GPT_TEXT: {generated_text[:200]}{'...' if len(generated_text) > 200 else ''}")
+                        logger.info(
+                            f"[{request_id}] YANDEX_GPT_SUCCESS: generated {len(generated_text)} chars"
+                        )
+                        logger.debug(
+                            f"[{request_id}] YANDEX_GPT_TEXT: {generated_text[:200]}{'...' if len(generated_text) > 200 else ''}"
+                        )
                         return generated_text
 
-                logger.warning(f"[{request_id}] YANDEX_GPT_UNEXPECTED_FORMAT: {result}")
+                logger.warning(
+                    f"[{request_id}] YANDEX_GPT_UNEXPECTED_FORMAT: {result}"
+                )
                 return None
 
         except asyncio.TimeoutError:
@@ -190,7 +215,7 @@ class YandexGPTClient:
         date_text = period
         if forecast_date:
             date_text = f"{forecast_date}"
-        
+
         prompt_parts = [
             f"Составь персональный гороскоп для знака {zodiac_sign} на {date_text}."
         ]
@@ -212,21 +237,26 @@ class YandexGPTClient:
                     f"Уровень энергии: {additional_context['energy_level']}%"
                 )
 
-        prompt_parts.extend([
-            "Включи:",
-            "- Общий прогноз",
-            "- Совет для любовных отношений",
-            "- Рекомендации для карьеры",
-            "- Совет по здоровью",
-            "- 2-3 счастливых числа",
-            "",
-            "Ответ должен быть структурированным и оптимистичным.",
-        ])
+        prompt_parts.extend(
+            [
+                "Включи:",
+                "- Общий прогноз",
+                "- Совет для любовных отношений",
+                "- Рекомендации для карьеры",
+                "- Совет по здоровью",
+                "- 2-3 счастливых числа",
+                "",
+                "Ответ должен быть структурированным и оптимистичным.",
+            ]
+        )
 
         prompt = "\n".join(prompt_parts)
 
         return await self.generate_text(
-            prompt=prompt, system_prompt=system_prompt, temperature=0.7, max_tokens=800
+            prompt=prompt,
+            system_prompt=system_prompt,
+            temperature=0.7,
+            max_tokens=800,
         )
 
     async def generate_compatibility_analysis(
@@ -267,12 +297,17 @@ class YandexGPTClient:
 
         if context:
             if "relationship_type" in context:
-                prompt_parts.insert(1, f"Тип отношений: {context['relationship_type']}")
+                prompt_parts.insert(
+                    1, f"Тип отношений: {context['relationship_type']}"
+                )
 
         prompt = "\n".join(prompt_parts)
 
         return await self.generate_text(
-            prompt=prompt, system_prompt=system_prompt, temperature=0.6, max_tokens=600
+            prompt=prompt,
+            system_prompt=system_prompt,
+            temperature=0.6,
+            max_tokens=600,
         )
 
     async def generate_advice(
@@ -311,17 +346,24 @@ class YandexGPTClient:
             if "mood" in context:
                 prompt_parts.append(f"Настроение: {context['mood']}")
             if "current_challenges" in context:
-                prompt_parts.append(f"Текущие вызовы: {context['current_challenges']}")
+                prompt_parts.append(
+                    f"Текущие вызовы: {context['current_challenges']}"
+                )
 
-        prompt_parts.extend([
-            "",
-            "Совет должен быть мотивирующим и содержать конкретные действия.",
-        ])
+        prompt_parts.extend(
+            [
+                "",
+                "Совет должен быть мотивирующим и содержать конкретные действия.",
+            ]
+        )
 
         prompt = ". ".join(prompt_parts)
 
         return await self.generate_text(
-            prompt=prompt, system_prompt=system_prompt, temperature=0.8, max_tokens=300
+            prompt=prompt,
+            system_prompt=system_prompt,
+            temperature=0.8,
+            max_tokens=300,
         )
 
     async def is_available(self) -> bool:

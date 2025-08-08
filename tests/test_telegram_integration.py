@@ -2,8 +2,9 @@
 Tests for Telegram Bot integration.
 """
 
-from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
+
+from fastapi.testclient import TestClient
 
 from app.main import app
 from app.services.telegram_adapter import TelegramAdapter
@@ -25,7 +26,7 @@ class TestTelegramWebhook:
         mock_user_manager.return_value = mock_user_manager_instance
 
         # Mock handler response
-        from app.models.platform_models import UniversalResponse, Button
+        from app.models.platform_models import Button, UniversalResponse
 
         mock_response = UniversalResponse(
             text="Привет! Я астролог. Как дела?",
@@ -62,7 +63,9 @@ class TestTelegramWebhook:
             },
         }
 
-        response = self.client.post("/api/v1/telegram/webhook", json=telegram_update)
+        response = self.client.post(
+            "/api/v1/telegram/webhook", json=telegram_update
+        )
 
         assert response.status_code == 200
         assert response.json()["ok"]
@@ -72,7 +75,9 @@ class TestTelegramWebhook:
 
     @patch("app.api.telegram_bot.multi_platform_handler")
     @patch("app.api.telegram_bot.UserManager")
-    def test_telegram_webhook_callback_query(self, mock_user_manager, mock_handler):
+    def test_telegram_webhook_callback_query(
+        self, mock_user_manager, mock_handler
+    ):
         """Test Telegram webhook with callback query."""
         # Mock user manager
         mock_user_manager_instance = AsyncMock()
@@ -92,10 +97,18 @@ class TestTelegramWebhook:
             "update_id": 123456790,
             "callback_query": {
                 "id": "callback123",
-                "from": {"id": 987654321, "is_bot": False, "first_name": "Test"},
+                "from": {
+                    "id": 987654321,
+                    "is_bot": False,
+                    "first_name": "Test",
+                },
                 "message": {
                     "message_id": 2,
-                    "from": {"id": 987654321, "is_bot": False, "first_name": "Test"},
+                    "from": {
+                        "id": 987654321,
+                        "is_bot": False,
+                        "first_name": "Test",
+                    },
                     "chat": {"id": 987654321, "type": "private"},
                     "date": 1234567891,
                 },
@@ -104,7 +117,9 @@ class TestTelegramWebhook:
             },
         }
 
-        response = self.client.post("/api/v1/telegram/webhook", json=telegram_update)
+        response = self.client.post(
+            "/api/v1/telegram/webhook", json=telegram_update
+        )
 
         assert response.status_code == 200
         assert response.json()["ok"]
@@ -116,7 +131,9 @@ class TestTelegramWebhook:
         """Test Telegram webhook with invalid request."""
         invalid_request = {"invalid": "data"}
 
-        response = self.client.post("/api/v1/telegram/webhook", json=invalid_request)
+        response = self.client.post(
+            "/api/v1/telegram/webhook", json=invalid_request
+        )
 
         assert response.status_code == 400
         assert "Invalid Telegram request" in response.json()["detail"]
@@ -211,25 +228,35 @@ class TestTelegramAdapter:
 
         # Check user context
         assert "telegram_user" in universal_request.user_context
-        assert universal_request.user_context["telegram_user"]["first_name"] == "John"
-        assert universal_request.user_context["telegram_user"]["username"] == "johndoe"
+        assert (
+            universal_request.user_context["telegram_user"]["first_name"]
+            == "John"
+        )
+        assert (
+            universal_request.user_context["telegram_user"]["username"]
+            == "johndoe"
+        )
 
     def test_convert_universal_response_to_telegram(self):
         """Test converting universal response to Telegram format."""
-        from app.models.platform_models import UniversalResponse, Button
+        from app.models.platform_models import Button, UniversalResponse
 
         universal_response = UniversalResponse(
             text="Ваш гороскоп на сегодня очень позитивный! ⭐",
             buttons=[
                 Button(title="Завтра", payload={"action": "tomorrow"}),
-                Button(title="Совместимость", payload={"action": "compatibility"}),
+                Button(
+                    title="Совместимость", payload={"action": "compatibility"}
+                ),
                 Button(title="Помощь", payload={"action": "help"}),
             ],
             end_session=False,
             platform_specific={"chat_id": "987654321"},
         )
 
-        telegram_response = self.adapter.from_universal_response(universal_response)
+        telegram_response = self.adapter.from_universal_response(
+            universal_response
+        )
 
         assert "send_message" in telegram_response
 
@@ -258,7 +285,9 @@ class TestTelegramAdapter:
             platform_specific={"chat_id": "987654321"},
         )
 
-        telegram_response = self.adapter.from_universal_response(universal_response)
+        telegram_response = self.adapter.from_universal_response(
+            universal_response
+        )
 
         assert "send_photo" in telegram_response
 

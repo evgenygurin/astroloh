@@ -226,7 +226,8 @@ class TestHoroscopeGenerator:
 
         # Проверяем, что фазы Луны различаются
         moon_phases = [
-            h["astrological_influences"]["moon_phase"]["phase_name"] for h in horoscopes
+            h["astrological_influences"]["moon_phase"]["phase_name"]
+            for h in horoscopes
         ]
 
         # Должно быть как минимум 2 разные фазы
@@ -274,9 +275,9 @@ class TestHoroscopeGenerator:
         assert len(advice) > 10  # Совет должен быть содержательным
 
         # Проверяем, что совет содержит ключевые слова для Весов
-        sign_keywords = self.generator.sign_characteristics[YandexZodiacSign.LIBRA][
-            "keywords"
-        ]
+        sign_keywords = self.generator.sign_characteristics[
+            YandexZodiacSign.LIBRA
+        ]["keywords"]
         advice_lower = advice.lower()
 
         # Хотя бы одно ключевое слово должно присутствовать в совете
@@ -308,7 +309,8 @@ class TestHoroscopeGenerator:
         assert horoscope1["period"] == horoscope2["period"]
         assert horoscope1["date"] == horoscope2["date"]
         assert (
-            horoscope1["energy_level"]["level"] == horoscope2["energy_level"]["level"]
+            horoscope1["energy_level"]["level"]
+            == horoscope2["energy_level"]["level"]
         )
 
         # Астрологические влияния должны быть одинаковыми

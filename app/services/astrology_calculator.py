@@ -86,7 +86,9 @@ class AstrologyCalculator:
 
                 self.skyfield_loader = load
                 self.skyfield_ts = load.timescale()
-                self.skyfield_planets = load("de421.bsp")  # JPL planetary ephemeris
+                self.skyfield_planets = load(
+                    "de421.bsp"
+                )  # JPL planetary ephemeris
             except (ImportError, Exception):
                 # Fallback to astropy or None if skyfield not available
                 import importlib.util
@@ -203,8 +205,10 @@ class AstrologyCalculator:
     def get_zodiac_sign_by_date(self, birth_date: date) -> YandexZodiacSign:
         """Определяет знак зодиака по дате рождения."""
         logger = logging.getLogger(__name__)
-        logger.debug(f"ZODIAC_SIGN_CALCULATION_START: date={birth_date.strftime('%Y-%m-%d')}")
-        
+        logger.debug(
+            f"ZODIAC_SIGN_CALCULATION_START: date={birth_date.strftime('%Y-%m-%d')}"
+        )
+
         month = birth_date.month
         day = birth_date.day
         logger.debug(f"ZODIAC_SIGN_DATE_PARSE: month={month}, day={day}")
@@ -234,8 +238,10 @@ class AstrologyCalculator:
             result = YandexZodiacSign.AQUARIUS
         else:  # (month == 2 and day >= 19) or (month == 3 and day <= 20)
             result = YandexZodiacSign.PISCES
-            
-        logger.info(f"ZODIAC_SIGN_CALCULATED: date={birth_date.strftime('%Y-%m-%d')}, sign={result.value}")
+
+        logger.info(
+            f"ZODIAC_SIGN_CALCULATED: date={birth_date.strftime('%Y-%m-%d')}, sign={result.value}"
+        )
         return result
 
     def calculate_planet_positions(
@@ -270,7 +276,9 @@ class AstrologyCalculator:
                     }
 
                 except Exception:
-                    positions[planet_name] = self._get_fallback_position(planet_name)
+                    positions[planet_name] = self._get_fallback_position(
+                        planet_name
+                    )
 
         elif self.backend == "skyfield":
             positions = self._calculate_positions_skyfield(
@@ -285,7 +293,9 @@ class AstrologyCalculator:
         else:
             # Fallback: используем упрощенные позиции
             for planet_name in self.planets_universal:
-                positions[planet_name] = self._get_fallback_position(planet_name)
+                positions[planet_name] = self._get_fallback_position(
+                    planet_name
+                )
 
         return positions
 
@@ -295,7 +305,9 @@ class AstrologyCalculator:
         """Вычисляет позиции планет с использованием Skyfield."""
         positions = {}
         try:
-            t = self.skyfield_ts.from_datetime(birth_datetime.replace(tzinfo=pytz.UTC))
+            t = self.skyfield_ts.from_datetime(
+                birth_datetime.replace(tzinfo=pytz.UTC)
+            )
 
             # Получаем позиции планет
             planet_mapping = {
@@ -330,12 +342,16 @@ class AstrologyCalculator:
                         "sign_number": sign_num,
                     }
                 except Exception:
-                    positions[planet_name] = self._get_fallback_position(planet_name)
+                    positions[planet_name] = self._get_fallback_position(
+                        planet_name
+                    )
 
         except Exception:
             # Fallback для всех планет
             for planet_name in self.planets_universal:
-                positions[planet_name] = self._get_fallback_position(planet_name)
+                positions[planet_name] = self._get_fallback_position(
+                    planet_name
+                )
 
         return positions
 
@@ -377,11 +393,15 @@ class AstrologyCalculator:
                 "Neptune",
                 "Pluto",
             ]:
-                positions[planet_name] = self._get_fallback_position(planet_name)
+                positions[planet_name] = self._get_fallback_position(
+                    planet_name
+                )
 
         except Exception:
             for planet_name in self.planets_universal:
-                positions[planet_name] = self._get_fallback_position(planet_name)
+                positions[planet_name] = self._get_fallback_position(
+                    planet_name
+                )
 
         return positions
 
@@ -473,7 +493,9 @@ class AstrologyCalculator:
         else:
             # Fallback: создаем упрощенную систему домов для не-swisseph бэкендов
             # Добавляем зависимость от широты для получения разных результатов для разных локаций
-            latitude_offset = int(latitude) % 30  # Используем широту для сдвига
+            latitude_offset = (
+                int(latitude) % 30
+            )  # Используем широту для сдвига
 
             for i in range(12):
                 cusp_longitude = (i * 30 + latitude_offset) % 360
@@ -532,14 +554,16 @@ class AstrologyCalculator:
                 for aspect_angle, orb in aspect_orbs.items():
                     if abs(angle - aspect_angle) <= orb:
                         aspect_name = self._get_aspect_name(aspect_angle)
-                        aspects.append({
-                            "planet1": planet1,
-                            "planet2": planet2,
-                            "aspect": aspect_name,
-                            "angle": aspect_angle,
-                            "orb": abs(angle - aspect_angle),
-                            "exact_angle": angle,
-                        })
+                        aspects.append(
+                            {
+                                "planet1": planet1,
+                                "planet2": planet2,
+                                "aspect": aspect_name,
+                                "angle": aspect_angle,
+                                "orb": abs(angle - aspect_angle),
+                                "exact_angle": angle,
+                            }
+                        )
                         break
 
         return aspects
@@ -558,8 +582,10 @@ class AstrologyCalculator:
     def calculate_moon_phase(self, target_date: datetime) -> Dict[str, Any]:
         """Вычисляет фазу Луны на заданную дату."""
         logger = logging.getLogger(__name__)
-        logger.info(f"MOON_PHASE_CALCULATION_START: date={target_date.strftime('%Y-%m-%d')}, backend={self.backend}")
-        
+        logger.info(
+            f"MOON_PHASE_CALCULATION_START: date={target_date.strftime('%Y-%m-%d')}, backend={self.backend}"
+        )
+
         try:
             if self.backend == "swisseph":
                 logger.debug("MOON_PHASE_SWISSEPH: using_swiss_ephemeris")
@@ -567,7 +593,9 @@ class AstrologyCalculator:
                 # Получаем позиции Солнца и Луны
                 sun_pos, _ = swe.calc_ut(jd, swe.SUN)
                 moon_pos, _ = swe.calc_ut(jd, swe.MOON)
-                logger.debug(f"MOON_PHASE_POSITIONS: sun_lon={sun_pos[0]:.2f}, moon_lon={moon_pos[0]:.2f}")
+                logger.debug(
+                    f"MOON_PHASE_POSITIONS: sun_lon={sun_pos[0]:.2f}, moon_lon={moon_pos[0]:.2f}"
+                )
 
                 # Вычисляем угол между Солнцем и Луной
                 angle = moon_pos[0] - sun_pos[0]
@@ -576,7 +604,9 @@ class AstrologyCalculator:
 
             elif self.backend == "skyfield":
                 logger.debug("MOON_PHASE_SKYFIELD: using_skyfield")
-                t = self.skyfield_ts.from_datetime(target_date.replace(tzinfo=pytz.UTC))
+                t = self.skyfield_ts.from_datetime(
+                    target_date.replace(tzinfo=pytz.UTC)
+                )
                 sun = self.skyfield_planets["sun"].at(t)
                 moon = self.skyfield_planets["moon"].at(t)
 
@@ -584,7 +614,9 @@ class AstrologyCalculator:
                 _, moon_lon, _ = moon.ecliptic_latlon()
 
                 angle = (moon_lon.degrees - sun_lon.degrees) % 360
-                logger.debug(f"MOON_PHASE_SKYFIELD_POSITIONS: sun_lon={sun_lon.degrees:.2f}, moon_lon={moon_lon.degrees:.2f}")
+                logger.debug(
+                    f"MOON_PHASE_SKYFIELD_POSITIONS: sun_lon={sun_lon.degrees:.2f}, moon_lon={moon_lon.degrees:.2f}"
+                )
 
             elif self.backend == "astropy":
                 logger.debug("MOON_PHASE_ASTROPY: using_astropy")
@@ -599,11 +631,15 @@ class AstrologyCalculator:
                 moon_lon = moon.geocentrictrueecliptic.lon.degree
 
                 angle = (moon_lon - sun_lon) % 360
-                logger.debug(f"MOON_PHASE_ASTROPY_POSITIONS: sun_lon={sun_lon:.2f}, moon_lon={moon_lon:.2f}")
+                logger.debug(
+                    f"MOON_PHASE_ASTROPY_POSITIONS: sun_lon={sun_lon:.2f}, moon_lon={moon_lon:.2f}"
+                )
 
             else:
                 # Fallback: упрощенный расчет
-                logger.warning("MOON_PHASE_FALLBACK: using_simplified_calculation")
+                logger.warning(
+                    "MOON_PHASE_FALLBACK: using_simplified_calculation"
+                )
                 day_of_month = target_date.day
                 angle = (day_of_month / 29.5) * 360
 
@@ -611,11 +647,15 @@ class AstrologyCalculator:
 
             # Определяем фазу
             phase_info = self._get_moon_phase_info(angle)
-            logger.debug(f"MOON_PHASE_INFO: phase_name='{phase_info['name']}', description='{phase_info['description']}'")
+            logger.debug(
+                f"MOON_PHASE_INFO: phase_name='{phase_info['name']}', description='{phase_info['description']}'"
+            )
 
             # Вычисляем освещенность
             illumination = (1 - math.cos(math.radians(angle))) / 2 * 100
-            logger.debug(f"MOON_PHASE_ILLUMINATION: illumination={illumination:.1f}%")
+            logger.debug(
+                f"MOON_PHASE_ILLUMINATION: illumination={illumination:.1f}%"
+            )
 
             result = {
                 "phase_name": phase_info["name"],
@@ -624,15 +664,19 @@ class AstrologyCalculator:
                 "illumination_percent": round(illumination, 1),
                 "is_waxing": bool(angle < 180),
             }
-            
-            logger.info(f"MOON_PHASE_CALCULATION_SUCCESS: phase='{result['phase_name']}', illumination={result['illumination_percent']}%")
+
+            logger.info(
+                f"MOON_PHASE_CALCULATION_SUCCESS: phase='{result['phase_name']}', illumination={result['illumination_percent']}%"
+            )
             return result
 
         except Exception as e:
             # Упрощенный расчет в случае ошибки
             logger.error(f"MOON_PHASE_CALCULATION_ERROR: {e}")
-            logger.warning("MOON_PHASE_FALLBACK_CALCULATION: using_simplified_approach")
-            
+            logger.warning(
+                "MOON_PHASE_FALLBACK_CALCULATION: using_simplified_approach"
+            )
+
             day_of_month = target_date.day
             phase_angle = (day_of_month / 29.5) * 360
             phase_info = self._get_moon_phase_info(phase_angle)
@@ -644,8 +688,10 @@ class AstrologyCalculator:
                 "illumination_percent": 50,
                 "is_waxing": bool(day_of_month <= 14),
             }
-            
-            logger.warning(f"MOON_PHASE_FALLBACK_RESULT: phase='{result['phase_name']}', using_simplified_illumination")
+
+            logger.warning(
+                f"MOON_PHASE_FALLBACK_RESULT: phase='{result['phase_name']}', using_simplified_illumination"
+            )
             return result
 
     def _get_moon_phase_info(self, angle: float) -> Dict[str, str]:
@@ -696,8 +742,10 @@ class AstrologyCalculator:
     ) -> Dict[str, Any]:
         """Вычисляет совместимость знаков зодиака."""
         logger = logging.getLogger(__name__)
-        logger.info(f"COMPATIBILITY_CALCULATION_START: sign1={sign1.value}, sign2={sign2.value}")
-        
+        logger.info(
+            f"COMPATIBILITY_CALCULATION_START: sign1={sign1.value}, sign2={sign2.value}"
+        )
+
         sign1_name = sign1.value
         sign2_name = sign2.value
 
@@ -706,9 +754,13 @@ class AstrologyCalculator:
         element2 = self.elements.get(sign2_name, "earth")
         quality1 = self.qualities.get(sign1_name, "mutable")
         quality2 = self.qualities.get(sign2_name, "mutable")
-        
-        logger.debug(f"COMPATIBILITY_ELEMENTS: {sign1_name}={element1}, {sign2_name}={element2}")
-        logger.debug(f"COMPATIBILITY_QUALITIES: {sign1_name}={quality1}, {sign2_name}={quality2}")
+
+        logger.debug(
+            f"COMPATIBILITY_ELEMENTS: {sign1_name}={element1}, {sign2_name}={element2}"
+        )
+        logger.debug(
+            f"COMPATIBILITY_QUALITIES: {sign1_name}={quality1}, {sign2_name}={quality2}"
+        )
 
         # Базовая совместимость по элементам
         element_compatibility = self._calculate_element_compatibility(
@@ -727,7 +779,9 @@ class AstrologyCalculator:
         logger.debug(f"COMPATIBILITY_TOTAL_SCORE: {total_score:.1f}")
 
         result = {
-            "score": round(total_score, 1),  # For backward compatibility with tests
+            "score": round(
+                total_score, 1
+            ),  # For backward compatibility with tests
             "total_score": round(total_score, 1),
             "element_score": element_compatibility,
             "quality_score": quality_compatibility,
@@ -737,11 +791,15 @@ class AstrologyCalculator:
             "quality2": quality2,
             "description": self._get_compatibility_description(total_score),
         }
-        
-        logger.info(f"COMPATIBILITY_CALCULATION_SUCCESS: {sign1.value}+{sign2.value}={result['total_score']}, description='{result['description']}'")
+
+        logger.info(
+            f"COMPATIBILITY_CALCULATION_SUCCESS: {sign1.value}+{sign2.value}={result['total_score']}, description='{result['description']}'"
+        )
         return result
 
-    def _calculate_element_compatibility(self, element1: str, element2: str) -> float:
+    def _calculate_element_compatibility(
+        self, element1: str, element2: str
+    ) -> float:
         """Вычисляет совместимость по элементам."""
         # Совместимость элементов (0-100)
         compatibility_matrix = {
@@ -764,7 +822,9 @@ class AstrologyCalculator:
 
         return score
 
-    def _calculate_quality_compatibility(self, quality1: str, quality2: str) -> float:
+    def _calculate_quality_compatibility(
+        self, quality1: str, quality2: str
+    ) -> float:
         """Вычисляет совместимость по качествам."""
         compatibility_matrix = {
             ("cardinal", "cardinal"): 75,
@@ -797,8 +857,10 @@ class AstrologyCalculator:
     def get_planetary_hours(self, target_date: datetime) -> Dict[str, Any]:
         """Вычисляет планетные часы для заданной даты."""
         logger = logging.getLogger(__name__)
-        logger.debug(f"PLANETARY_HOURS_CALCULATION_START: date={target_date.strftime('%Y-%m-%d %H:%M')}")
-        
+        logger.debug(
+            f"PLANETARY_HOURS_CALCULATION_START: date={target_date.strftime('%Y-%m-%d %H:%M')}"
+        )
+
         # Упрощенный расчет планетных часов
         weekday = target_date.weekday()  # 0 = понедельник
         hour = target_date.hour
@@ -818,8 +880,10 @@ class AstrologyCalculator:
         ruler = day_rulers[weekday]
         hour_ruler = self._get_hour_ruler(weekday, hour)
         favorable_hours = self._get_favorable_hours(weekday)
-        
-        logger.debug(f"PLANETARY_HOURS_RULERS: day_ruler={ruler}, hour_ruler={hour_ruler}")
+
+        logger.debug(
+            f"PLANETARY_HOURS_RULERS: day_ruler={ruler}, hour_ruler={hour_ruler}"
+        )
         logger.debug(f"PLANETARY_HOURS_FAVORABLE: hours={favorable_hours}")
 
         result = {
@@ -828,8 +892,10 @@ class AstrologyCalculator:
             "favorable_hours": favorable_hours,
             "description": f"День управляется {ruler}",
         }
-        
-        logger.info(f"PLANETARY_HOURS_CALCULATION_SUCCESS: day_ruler={ruler}, current_hour_ruler={hour_ruler}")
+
+        logger.info(
+            f"PLANETARY_HOURS_CALCULATION_SUCCESS: day_ruler={ruler}, current_hour_ruler={hour_ruler}"
+        )
         return result
 
     def _get_hour_ruler(self, weekday: int, hour: int) -> str:

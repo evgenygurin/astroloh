@@ -6,31 +6,31 @@ import logging
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.api.astrology import router as astrology_router
+from app.api.auth import router as auth_router
 from app.api.google_assistant import router as google_router
+from app.api.iot_api import router as iot_router
+from app.api.lunar import router as lunar_router
+from app.api.recommendations import router as recommendations_router
 from app.api.security import router as security_router
 from app.api.telegram_bot import router as telegram_router
 from app.api.yandex_dialogs import router as yandex_router
-from app.api.recommendations import router as recommendations_router
-from app.api.iot_api import router as iot_router
-from app.api.auth import router as auth_router
-from app.api.astrology import router as astrology_router
-from app.api.lunar import router as lunar_router
 from app.core.config import settings
 from app.core.database import close_database, init_database
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Middleware для добавления заголовков безопасности."""
-    
+
     async def dispatch(self, request: Request, call_next):
         """Добавляет заголовки безопасности к каждому ответу."""
         response: Response = await call_next(request)
-        
+
         # Content Security Policy (CSP)
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
@@ -41,28 +41,30 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "connect-src 'self' https:; "
             "frame-ancestors 'none';"
         )
-        
+
         # HTTP Strict Transport Security (HSTS)
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        
+        response.headers[
+            "Strict-Transport-Security"
+        ] = "max-age=31536000; includeSubDomains"
+
         # X-Content-Type-Options
         response.headers["X-Content-Type-Options"] = "nosniff"
-        
+
         # X-Frame-Options
         response.headers["X-Frame-Options"] = "DENY"
-        
+
         # X-XSS-Protection
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        
+
         # Referrer Policy
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        
+
         # Permissions Policy
         response.headers["Permissions-Policy"] = (
             "camera=(), microphone=(), geolocation=(), "
             "payment=(), usb=(), magnetometer=(), gyroscope=()"
         )
-        
+
         return response
 
 
@@ -110,7 +112,12 @@ async def root() -> dict[str, str | list[str]]:
     """Корневой эндпоинт для проверки работы API."""
     return {
         "message": "Astroloh - Multi-Platform Astrological Assistant is running!",
-        "platforms": ["Yandex Alice", "Telegram Bot", "Google Assistant", "IoT Smart Home"],
+        "platforms": [
+            "Yandex Alice",
+            "Telegram Bot",
+            "Google Assistant",
+            "IoT Smart Home",
+        ],
     }
 
 
@@ -129,26 +136,25 @@ async def health_check() -> dict[str, str]:
 @app.on_event("startup")
 async def startup_event() -> None:
     """Инициализация при запуске приложения."""
-    # Настройка логирования с принудительным INFO уровнем
-    logging.basicConfig(
-        level=logging.INFO,  # Принудительно INFO для всех логов
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        force=True  # Переопределить существующую конфигурацию
-    )
+    # Импортируем и настраиваем логирование
+    from app.core.logging_config import log_startup_info, setup_logging
+
+    # Применяем конфигурацию логирования
+    setup_logging()
+
+    # Логируем информацию о запуске
+    log_startup_info()
+
     logger = logging.getLogger(__name__)
-    
-    # Установить INFO уровень для всех логгеров приложения
-    for logger_name in ['app', 'app.api', 'app.services', 'app.api.yandex_dialogs']:
-        logging.getLogger(logger_name).setLevel(logging.INFO)
-    
-    logger.info("🚀 STARTUP: Logging configuration applied - INFO level enabled")
 
     try:
         if settings.DATABASE_URL:
             await init_database()
             logger.info("Database initialized successfully")
         else:
-            logger.warning("DATABASE_URL not configured, running without database")
+            logger.warning(
+                "DATABASE_URL not configured, running without database"
+            )
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
 

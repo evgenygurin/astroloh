@@ -2,8 +2,9 @@
 Tests for Google Assistant integration.
 """
 
-from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
+
+from fastapi.testclient import TestClient
 
 from app.main import app
 from app.services.google_adapter import GoogleAssistantAdapter
@@ -25,14 +26,16 @@ class TestGoogleAssistantWebhook:
         mock_user_manager.return_value = mock_user_manager_instance
 
         # Mock handler response
-        from app.models.platform_models import UniversalResponse, Button
+        from app.models.platform_models import Button, UniversalResponse
 
         mock_response = UniversalResponse(
             text="Добро пожаловать в мир астрологии! Я помогу вам с гороскопами.",
             tts="Добро пожаловать в мир астрологии! Я помогу вам с гороскопами.",
             buttons=[
                 Button(title="Мой гороскоп", payload={"action": "horoscope"}),
-                Button(title="Совместимость", payload={"action": "compatibility"}),
+                Button(
+                    title="Совместимость", payload={"action": "compatibility"}
+                ),
             ],
             end_session=False,
         )
@@ -57,7 +60,9 @@ class TestGoogleAssistantWebhook:
             },
         }
 
-        response = self.client.post("/api/v1/google/webhook", json=google_request)
+        response = self.client.post(
+            "/api/v1/google/webhook", json=google_request
+        )
 
         assert response.status_code == 200
         response_data = response.json()
@@ -101,7 +106,9 @@ class TestGoogleAssistantWebhook:
             "session": "projects/test/agent/sessions/session_789",
         }
 
-        response = self.client.post("/api/v1/google/webhook", json=dialogflow_request)
+        response = self.client.post(
+            "/api/v1/google/webhook", json=dialogflow_request
+        )
 
         assert response.status_code == 200
         response_data = response.json()
@@ -117,7 +124,9 @@ class TestGoogleAssistantWebhook:
         """Test Google webhook with invalid request."""
         invalid_request = {"invalid": "data"}
 
-        response = self.client.post("/api/v1/google/webhook", json=invalid_request)
+        response = self.client.post(
+            "/api/v1/google/webhook", json=invalid_request
+        )
 
         assert response.status_code == 400
         assert "Invalid Google Assistant request" in response.json()["detail"]
@@ -180,7 +189,9 @@ class TestGoogleAssistantAdapter:
                 }
             ],
             "device": {"location": {"country": "RU"}},
-            "surface": {"capabilities": [{"name": "actions.capability.SCREEN_OUTPUT"}]},
+            "surface": {
+                "capabilities": [{"name": "actions.capability.SCREEN_OUTPUT"}]
+            },
         }
 
         universal_request = self.adapter.to_universal_request(google_request)
@@ -193,8 +204,12 @@ class TestGoogleAssistantAdapter:
 
         # Check user context
         assert "google_user" in universal_request.user_context
-        assert universal_request.user_context["google_user"]["locale"] == "ru-RU"
-        assert universal_request.user_context["conversation_token"] == "token_789"
+        assert (
+            universal_request.user_context["google_user"]["locale"] == "ru-RU"
+        )
+        assert (
+            universal_request.user_context["conversation_token"] == "token_789"
+        )
         assert universal_request.user_context["intent"] == "horoscope.get"
 
     def test_convert_dialogflow_to_universal(self):
@@ -213,7 +228,9 @@ class TestGoogleAssistantAdapter:
             "session": "projects/test/agent/sessions/session_abc123",
         }
 
-        universal_request = self.adapter.to_universal_request(dialogflow_request)
+        universal_request = self.adapter.to_universal_request(
+            dialogflow_request
+        )
 
         assert universal_request.platform.value == "google_assistant"
         assert universal_request.user_id == "session_abc123"
@@ -227,25 +244,31 @@ class TestGoogleAssistantAdapter:
             == "Compatibility Intent"
         )
         assert (
-            universal_request.user_context["dialogflow"]["parameters"]["sign1"] == "Лев"
+            universal_request.user_context["dialogflow"]["parameters"]["sign1"]
+            == "Лев"
         )
 
     def test_convert_universal_response_to_google_actions(self):
         """Test converting universal response to Google Actions format."""
-        from app.models.platform_models import UniversalResponse, Button
+        from app.models.platform_models import Button, UniversalResponse
 
         universal_response = UniversalResponse(
             text="Совместимость Льва и Рыб составляет 75%. Это хорошая пара!",
             tts="Совместимость Льва и Рыб составляет семьдесят пять процентов. Это хорошая пара!",
             buttons=[
-                Button(title="Другая пара", payload={"action": "new_compatibility"}),
+                Button(
+                    title="Другая пара",
+                    payload={"action": "new_compatibility"},
+                ),
                 Button(title="Мой гороскоп", payload={"action": "horoscope"}),
                 Button(title="Главное меню", payload={"action": "main_menu"}),
             ],
             end_session=False,
         )
 
-        google_response = self.adapter.from_universal_response(universal_response)
+        google_response = self.adapter.from_universal_response(
+            universal_response
+        )
 
         assert "expect_user_response" in google_response
         assert google_response["expect_user_response"]
@@ -266,7 +289,7 @@ class TestGoogleAssistantAdapter:
 
     def test_convert_universal_response_to_dialogflow(self):
         """Test converting universal response to Dialogflow format."""
-        from app.models.platform_models import UniversalResponse, Button
+        from app.models.platform_models import Button, UniversalResponse
 
         universal_response = UniversalResponse(
             text="Астрологический совет: доверьтесь интуиции в принятии решений.",
@@ -278,7 +301,9 @@ class TestGoogleAssistantAdapter:
             platform_specific={"use_dialogflow": True},
         )
 
-        dialogflow_response = self.adapter.from_universal_response(universal_response)
+        dialogflow_response = self.adapter.from_universal_response(
+            universal_response
+        )
 
         assert "fulfillmentText" in dialogflow_response
         assert "совет" in dialogflow_response["fulfillmentText"].lower()
@@ -292,10 +317,15 @@ class TestGoogleAssistantAdapter:
         assert "интуиции" in text_message["text"]["text"][0]
 
         # Should have quick replies
-        quick_replies_message = next((m for m in messages if "quickReplies" in m), None)
+        quick_replies_message = next(
+            (m for m in messages if "quickReplies" in m), None
+        )
         assert quick_replies_message is not None
         assert len(quick_replies_message["quickReplies"]["quickReplies"]) == 2
-        assert "Новый совет" in quick_replies_message["quickReplies"]["quickReplies"]
+        assert (
+            "Новый совет"
+            in quick_replies_message["quickReplies"]["quickReplies"]
+        )
 
     def test_format_google_text_for_speech(self):
         """Test formatting text for Google Assistant speech synthesis."""
@@ -321,7 +351,9 @@ class TestGoogleAssistantAdapter:
             end_session=True,
         )
 
-        google_response = self.adapter.from_universal_response(universal_response)
+        google_response = self.adapter.from_universal_response(
+            universal_response
+        )
 
         assert "expect_user_response" in google_response
         assert not google_response["expect_user_response"]

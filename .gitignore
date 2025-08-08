@@ -210,6 +210,10 @@ __marimo__/
 # Swiss Ephemeris data files
 swisseph/
 
+# Application logs
+logs/
+*.log.*
+
 # IDE specific
 .vscode/
 .idea/

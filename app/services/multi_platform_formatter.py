@@ -57,7 +57,9 @@ class MultiPlatformFormatter(ResponseFormatter):
         yandex_response = self.format_welcome_response(is_returning_user)
 
         # Convert to universal format
-        universal_response = self._yandex_to_universal(yandex_response, platform)
+        universal_response = self._yandex_to_universal(
+            yandex_response, platform
+        )
 
         # Apply platform-specific optimizations
         return self._optimize_for_platform(universal_response, platform)
@@ -76,7 +78,9 @@ class MultiPlatformFormatter(ResponseFormatter):
         )
 
         # Convert to universal format
-        universal_response = self._yandex_to_universal(yandex_response, platform)
+        universal_response = self._yandex_to_universal(
+            yandex_response, platform
+        )
 
         # Apply platform-specific optimizations
         return self._optimize_for_platform(universal_response, platform)
@@ -95,29 +99,39 @@ class MultiPlatformFormatter(ResponseFormatter):
         )
 
         # Convert to universal format
-        universal_response = self._yandex_to_universal(yandex_response, platform)
+        universal_response = self._yandex_to_universal(
+            yandex_response, platform
+        )
 
         # Apply platform-specific optimizations
         return self._optimize_for_platform(universal_response, platform)
 
-    def format_universal_advice_response(self, platform: Platform) -> UniversalResponse:
+    def format_universal_advice_response(
+        self, platform: Platform
+    ) -> UniversalResponse:
         """Format advice response for any platform."""
         # Use existing logic
         yandex_response = self.format_advice_response()
 
         # Convert to universal format
-        universal_response = self._yandex_to_universal(yandex_response, platform)
+        universal_response = self._yandex_to_universal(
+            yandex_response, platform
+        )
 
         # Apply platform-specific optimizations
         return self._optimize_for_platform(universal_response, platform)
 
-    def format_universal_help_response(self, platform: Platform) -> UniversalResponse:
+    def format_universal_help_response(
+        self, platform: Platform
+    ) -> UniversalResponse:
         """Format help response for any platform."""
         # Use existing logic
         yandex_response = self.format_help_response()
 
         # Convert to universal format
-        universal_response = self._yandex_to_universal(yandex_response, platform)
+        universal_response = self._yandex_to_universal(
+            yandex_response, platform
+        )
 
         # Apply platform-specific optimizations
         return self._optimize_for_platform(universal_response, platform)
@@ -130,7 +144,9 @@ class MultiPlatformFormatter(ResponseFormatter):
         yandex_response = self.format_error_response(error_type)
 
         # Convert to universal format
-        universal_response = self._yandex_to_universal(yandex_response, platform)
+        universal_response = self._yandex_to_universal(
+            yandex_response, platform
+        )
 
         # Apply platform-specific optimizations
         return self._optimize_for_platform(universal_response, platform)
@@ -153,7 +169,9 @@ class MultiPlatformFormatter(ResponseFormatter):
         # Create universal response
         universal_response = UniversalResponse(
             text=yandex_response.text,
-            tts=yandex_response.tts if hasattr(yandex_response, "tts") else None,
+            tts=yandex_response.tts
+            if hasattr(yandex_response, "tts")
+            else None,
             buttons=buttons if buttons else None,
             end_session=yandex_response.end_session
             if hasattr(yandex_response, "end_session")

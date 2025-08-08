@@ -5,21 +5,21 @@ Authentication API endpoints for the frontend.
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
+from loguru import logger
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, field_validator
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from loguru import logger
-
-from app.core.database import get_db_session
-from app.core.config import settings
-from app.models.database import User
-from app.utils.validators import PasswordValidator
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import settings
+from app.core.database import get_db_session
+from app.models.database import User
+from app.utils.validators import PasswordValidator
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -27,7 +27,11 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 limiter = Limiter(key_func=get_remote_address)
 
 # Security settings
-SECRET_KEY = settings.SECRET_KEY if hasattr(settings, "SECRET_KEY") else "dev-secret-key-change-in-production"
+SECRET_KEY = (
+    settings.SECRET_KEY
+    if hasattr(settings, "SECRET_KEY")
+    else "dev-secret-key-change-in-production"
+)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -95,7 +99,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -109,13 +113,11 @@ async def get_current_user(
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    
+
     # Get user from database
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
-    
+
     if user is None:
         raise credentials_exception
     return user
@@ -126,7 +128,7 @@ async def get_current_user(
 async def register(
     request: Request,
     user_data: UserRegister,
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ):
     """Register a new user."""
     # Check if user already exists (by email in yandex_user_id field)
@@ -134,35 +136,40 @@ async def register(
         select(User).where(User.yandex_user_id == user_data.email)
     )
     existing_user = result.scalar_one_or_none()
-    
+
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Email already registered",
         )
-    
+
     # Create new user
     # Store email in yandex_user_id field and hashed password in encrypted_name field
     user = User(
         yandex_user_id=user_data.email,  # Using yandex_user_id to store email
-        encrypted_name=get_password_hash(user_data.password).encode(),  # Store hashed password
-        preferences={"name": user_data.name, "email": user_data.email},  # Store actual name in preferences
+        encrypted_name=get_password_hash(
+            user_data.password
+        ).encode(),  # Store hashed password
+        preferences={
+            "name": user_data.name,
+            "email": user_data.email,
+        },  # Store actual name in preferences
         data_consent=True,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
-    
+
     db.add(user)
     await db.commit()
     await db.refresh(user)
-    
+
     logger.info(f"New user registered: {user_data.email}")
-    
+
     # Create access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
-    
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -171,7 +178,7 @@ async def register(
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ):
     """Login user and return access token."""
     # Find user by email
@@ -179,14 +186,14 @@ async def login(
         select(User).where(User.yandex_user_id == form_data.username)
     )
     user = result.scalar_one_or_none()
-    
+
     if not user or not user.encrypted_name:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Verify password (stored in encrypted_name field)
     if not verify_password(form_data.password, user.encrypted_name.decode()):
         raise HTTPException(
@@ -194,35 +201,43 @@ async def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Update last accessed
     user.last_accessed = datetime.utcnow()
     await db.commit()
-    
+
     logger.info(f"User logged in: {form_data.username}")
-    
+
     # Create access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
-    
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get current user information."""
     # Extract name from preferences
-    name = current_user.preferences.get("name", "Unknown") if current_user.preferences else "Unknown"
-    email = current_user.preferences.get("email", current_user.yandex_user_id) if current_user.preferences else current_user.yandex_user_id
-    
+    name = (
+        current_user.preferences.get("name", "Unknown")
+        if current_user.preferences
+        else "Unknown"
+    )
+    email = (
+        current_user.preferences.get("email", current_user.yandex_user_id)
+        if current_user.preferences
+        else current_user.yandex_user_id
+    )
+
     return UserResponse(
         id=str(current_user.id),
         email=email,
         name=name,
         zodiac_sign=current_user.zodiac_sign,
-        created_at=current_user.created_at
+        created_at=current_user.created_at,
     )

@@ -141,7 +141,9 @@ class ErrorRecoveryManager:
         self._log_error(error_context)
 
         # Применяем стратегию восстановления
-        recovery_response = self._apply_recovery_strategy(error_context, context)
+        recovery_response = self._apply_recovery_strategy(
+            error_context, context
+        )
 
         return error_context, recovery_response
 
@@ -163,19 +165,22 @@ class ErrorRecoveryManager:
 
         # Ошибки валидации
         if any(
-            keyword in error_message for keyword in ["validation", "invalid", "format"]
+            keyword in error_message
+            for keyword in ["validation", "invalid", "format"]
         ):
             return ErrorType.VALIDATION_ERROR, ErrorSeverity.LOW
 
         # Отсутствующие данные
         if any(
-            keyword in error_message for keyword in ["missing", "required", "not found"]
+            keyword in error_message
+            for keyword in ["missing", "required", "not found"]
         ):
             return ErrorType.DATA_MISSING, ErrorSeverity.MEDIUM
 
         # Ошибки вычислений
         if any(
-            keyword in error_message for keyword in ["calculation", "math", "division"]
+            keyword in error_message
+            for keyword in ["calculation", "math", "division"]
         ):
             return ErrorType.CALCULATION_ERROR, ErrorSeverity.MEDIUM
 
@@ -188,7 +193,8 @@ class ErrorRecoveryManager:
 
         # Ошибки внешних сервисов
         if any(
-            keyword in error_message for keyword in ["connection", "timeout", "service"]
+            keyword in error_message
+            for keyword in ["connection", "timeout", "service"]
         ):
             return ErrorType.EXTERNAL_SERVICE_ERROR, ErrorSeverity.HIGH
 
@@ -198,7 +204,8 @@ class ErrorRecoveryManager:
 
         # Ошибки доступа
         if any(
-            keyword in error_message for keyword in ["permission", "access", "denied"]
+            keyword in error_message
+            for keyword in ["permission", "access", "denied"]
         ):
             return ErrorType.PERMISSION_DENIED, ErrorSeverity.HIGH
 
@@ -235,12 +242,17 @@ class ErrorRecoveryManager:
             ErrorType.UNKNOWN_ERROR: RecoveryStrategy.FALLBACK,
         }
 
-        base_strategy = type_strategies.get(error_type, RecoveryStrategy.FALLBACK)
+        base_strategy = type_strategies.get(
+            error_type, RecoveryStrategy.FALLBACK
+        )
 
         # Модификация на основе серьезности
         if severity == ErrorSeverity.CRITICAL:
             return RecoveryStrategy.GRACEFUL_DEGRADATION
-        elif severity == ErrorSeverity.HIGH and base_strategy == RecoveryStrategy.RETRY:
+        elif (
+            severity == ErrorSeverity.HIGH
+            and base_strategy == RecoveryStrategy.RETRY
+        ):
             return RecoveryStrategy.GRACEFUL_DEGRADATION
 
         return base_strategy
@@ -268,9 +280,13 @@ class ErrorRecoveryManager:
         text = "Кажется, данные введены неверно. Давайте попробуем ещё раз!"
 
         buttons = [
-            YandexButton(title="Пример формата", payload={"action": "format_example"}),
+            YandexButton(
+                title="Пример формата", payload={"action": "format_example"}
+            ),
             YandexButton(title="Помощь", payload={"action": "help"}),
-            YandexButton(title="Начать сначала", payload={"action": "restart"}),
+            YandexButton(
+                title="Начать сначала", payload={"action": "restart"}
+            ),
         ]
 
         # Добавляем специфичные предложения
@@ -283,7 +299,9 @@ class ErrorRecoveryManager:
                 ),
             )
 
-        return YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        return YandexResponse(
+            text=text, tts=text, buttons=buttons, end_session=False
+        )
 
     def _handle_missing_data(
         self, error_context: ErrorContext, context: Dict[str, Any] = None
@@ -298,7 +316,9 @@ class ErrorRecoveryManager:
         if error_context.intent == YandexIntent.HOROSCOPE:
             text += " Назовите вашу дату рождения."
             buttons = [
-                YandexButton(title="Указать дату", payload={"action": "provide_date"}),
+                YandexButton(
+                    title="Указать дату", payload={"action": "provide_date"}
+                ),
                 YandexButton(
                     title="Общий гороскоп",
                     payload={"action": "general_horoscope"},
@@ -308,13 +328,19 @@ class ErrorRecoveryManager:
             text += " Назовите знаки зодиака для проверки совместимости."
             buttons = [
                 YandexButton(title="Мой знак", payload={"action": "my_sign"}),
-                YandexButton(title="Знак партнера", payload={"action": "partner_sign"}),
+                YandexButton(
+                    title="Знак партнера", payload={"action": "partner_sign"}
+                ),
             ]
 
-        buttons.extend([
-            YandexButton(title="Помощь", payload={"action": "help"}),
-            YandexButton(title="Другой вопрос", payload={"action": "restart"}),
-        ])
+        buttons.extend(
+            [
+                YandexButton(title="Помощь", payload={"action": "help"}),
+                YandexButton(
+                    title="Другой вопрос", payload={"action": "restart"}
+                ),
+            ]
+        )
 
         return YandexResponse(
             text=text,
@@ -328,18 +354,24 @@ class ErrorRecoveryManager:
     ) -> YandexResponse:
         """Обрабатывает ошибки вычислений."""
 
-        text = (
-            "Произошла ошибка в астрологических вычислениях. Попробуем другой подход!"
-        )
+        text = "Произошла ошибка в астрологических вычислениях. Попробуем другой подход!"
 
         buttons = [
-            YandexButton(title="Общий прогноз", payload={"action": "general_forecast"}),
-            YandexButton(title="Другая дата", payload={"action": "different_date"}),
-            YandexButton(title="Совет дня", payload={"action": "daily_advice"}),
+            YandexButton(
+                title="Общий прогноз", payload={"action": "general_forecast"}
+            ),
+            YandexButton(
+                title="Другая дата", payload={"action": "different_date"}
+            ),
+            YandexButton(
+                title="Совет дня", payload={"action": "daily_advice"}
+            ),
             YandexButton(title="Помощь", payload={"action": "help"}),
         ]
 
-        return YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        return YandexResponse(
+            text=text, tts=text, buttons=buttons, end_session=False
+        )
 
     def _handle_service_error(
         self, error_context: ErrorContext, context: Dict[str, Any] = None
@@ -350,12 +382,16 @@ class ErrorRecoveryManager:
 
         buttons = [
             YandexButton(title="Повторить", payload={"action": "retry"}),
-            YandexButton(title="Общий совет", payload={"action": "general_advice"}),
+            YandexButton(
+                title="Общий совет", payload={"action": "general_advice"}
+            ),
             YandexButton(title="Позже", payload={"action": "try_later"}),
             YandexButton(title="Помощь", payload={"action": "help"}),
         ]
 
-        return YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        return YandexResponse(
+            text=text, tts=text, buttons=buttons, end_session=False
+        )
 
     def _handle_ambiguous_intent(
         self, error_context: ErrorContext, context: Dict[str, Any] = None
@@ -365,13 +401,21 @@ class ErrorRecoveryManager:
         text = "Не совсем поняла ваш запрос. Выберите, что вас интересует:"
 
         buttons = [
-            YandexButton(title="Мой гороскоп", payload={"action": "horoscope"}),
-            YandexButton(title="Совместимость", payload={"action": "compatibility"}),
-            YandexButton(title="Лунный календарь", payload={"action": "lunar"}),
+            YandexButton(
+                title="Мой гороскоп", payload={"action": "horoscope"}
+            ),
+            YandexButton(
+                title="Совместимость", payload={"action": "compatibility"}
+            ),
+            YandexButton(
+                title="Лунный календарь", payload={"action": "lunar"}
+            ),
             YandexButton(title="Совет", payload={"action": "advice"}),
         ]
 
-        return YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        return YandexResponse(
+            text=text, tts=text, buttons=buttons, end_session=False
+        )
 
     def _handle_unclear_input(
         self, error_context: ErrorContext, context: Dict[str, Any] = None
@@ -381,13 +425,21 @@ class ErrorRecoveryManager:
         text = "Попробуйте переформулировать вопрос или выберите из предложенных вариантов:"
 
         buttons = [
-            YandexButton(title="Что умеешь?", payload={"action": "capabilities"}),
-            YandexButton(title="Примеры вопросов", payload={"action": "examples"}),
+            YandexButton(
+                title="Что умеешь?", payload={"action": "capabilities"}
+            ),
+            YandexButton(
+                title="Примеры вопросов", payload={"action": "examples"}
+            ),
             YandexButton(title="Помощь", payload={"action": "help"}),
-            YandexButton(title="Начать сначала", payload={"action": "restart"}),
+            YandexButton(
+                title="Начать сначала", payload={"action": "restart"}
+            ),
         ]
 
-        return YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        return YandexResponse(
+            text=text, tts=text, buttons=buttons, end_session=False
+        )
 
     def _handle_system_overload(
         self, error_context: ErrorContext, context: Dict[str, Any] = None
@@ -401,32 +453,40 @@ class ErrorRecoveryManager:
                 title="Простой гороскоп",
                 payload={"action": "simple_horoscope"},
             ),
-            YandexButton(title="Совет дня", payload={"action": "daily_advice"}),
+            YandexButton(
+                title="Совет дня", payload={"action": "daily_advice"}
+            ),
             YandexButton(title="Позже", payload={"action": "try_later"}),
             YandexButton(title="Завершить", payload={"action": "end"}),
         ]
 
-        return YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        return YandexResponse(
+            text=text, tts=text, buttons=buttons, end_session=False
+        )
 
     def _handle_permission_error(
         self, error_context: ErrorContext, context: Dict[str, Any] = None
     ) -> YandexResponse:
         """Обрабатывает ошибки доступа."""
 
-        text = (
-            "Недостаточно прав для выполнения этого действия. Попробуйте что-то другое."
-        )
+        text = "Недостаточно прав для выполнения этого действия. Попробуйте что-то другое."
 
         buttons = [
             YandexButton(
                 title="Общий гороскоп", payload={"action": "public_horoscope"}
             ),
-            YandexButton(title="Совет дня", payload={"action": "daily_advice"}),
+            YandexButton(
+                title="Совет дня", payload={"action": "daily_advice"}
+            ),
             YandexButton(title="Помощь", payload={"action": "help"}),
-            YandexButton(title="Главное меню", payload={"action": "main_menu"}),
+            YandexButton(
+                title="Главное меню", payload={"action": "main_menu"}
+            ),
         ]
 
-        return YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        return YandexResponse(
+            text=text, tts=text, buttons=buttons, end_session=False
+        )
 
     def _handle_unknown_error(
         self, error_context: ErrorContext, context: Dict[str, Any] = None
@@ -435,7 +495,9 @@ class ErrorRecoveryManager:
 
         return self._create_fallback_response(error_context)
 
-    def _create_fallback_response(self, error_context: ErrorContext) -> YandexResponse:
+    def _create_fallback_response(
+        self, error_context: ErrorContext
+    ) -> YandexResponse:
         """Создает резервный ответ."""
 
         text = self.fallback_responses.get(
@@ -444,12 +506,16 @@ class ErrorRecoveryManager:
         )
 
         buttons = [
-            YandexButton(title="Начать сначала", payload={"action": "restart"}),
+            YandexButton(
+                title="Начать сначала", payload={"action": "restart"}
+            ),
             YandexButton(title="Помощь", payload={"action": "help"}),
             YandexButton(title="Завершить", payload={"action": "end"}),
         ]
 
-        return YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        return YandexResponse(
+            text=text, tts=text, buttons=buttons, end_session=False
+        )
 
     def _log_error(self, error_context: ErrorContext) -> None:
         """Логирует ошибку."""
@@ -467,7 +533,9 @@ class ErrorRecoveryManager:
             extra={
                 "user_id": error_context.user_id,
                 "session_id": error_context.session_id,
-                "intent": error_context.intent.value if error_context.intent else None,
+                "intent": error_context.intent.value
+                if error_context.intent
+                else None,
                 "dialog_state": error_context.dialog_state.value
                 if error_context.dialog_state
                 else None,
@@ -507,7 +575,9 @@ class ErrorRecoveryManager:
             "error_types": error_types,
             "severity_counts": severity_counts,
             "recent_errors_24h": recent_errors,
-            "most_common_error": max(error_types.items(), key=lambda x: x[1])[0]
+            "most_common_error": max(error_types.items(), key=lambda x: x[1])[
+                0
+            ]
             if error_types
             else None,
         }
@@ -519,7 +589,9 @@ class ErrorRecoveryManager:
         initial_count = len(self.error_history)
 
         self.error_history = [
-            error for error in self.error_history if error.timestamp > cutoff_time
+            error
+            for error in self.error_history
+            if error.timestamp > cutoff_time
         ]
 
         cleaned_count = initial_count - len(self.error_history)
@@ -529,7 +601,9 @@ class ErrorRecoveryManager:
 
         return cleaned_count
 
-    def get_recovery_suggestions(self, user_id: str, session_id: str) -> List[str]:
+    def get_recovery_suggestions(
+        self, user_id: str, session_id: str
+    ) -> List[str]:
         """Возвращает предложения для восстановления на основе истории ошибок пользователя."""
 
         user_errors = [
@@ -564,11 +638,13 @@ class ErrorRecoveryManager:
             suggestions.append("Используйте простые фразы: 'мой гороскоп'")
 
         # Добавляем общие предложения
-        suggestions.extend([
-            "Попробуйте переформулировать вопрос",
-            "Выберите из предложенных вариантов",
-            "Скажите 'помощь' для инструкций",
-        ])
+        suggestions.extend(
+            [
+                "Попробуйте переформулировать вопрос",
+                "Выберите из предложенных вариантов",
+                "Скажите 'помощь' для инструкций",
+            ]
+        )
 
         return suggestions[:4]  # Максимум 4 предложения
 
@@ -614,7 +690,9 @@ class ErrorRecoveryManager:
 
         return error_context, response
 
-    async def handle_error(self, error: Exception, request, context) -> YandexResponse:
+    async def handle_error(
+        self, error: Exception, request, context
+    ) -> YandexResponse:
         """Асинхронная версия handle_error для совместимости с тестами."""
         # Classify the error
         error_type, severity = self.classify_error(error, request)
@@ -627,7 +705,9 @@ class ErrorRecoveryManager:
 
         if strategy == RecoveryStrategy.REQUEST_CLARIFICATION:
             # Call the method that tests expect to be mocked
-            return formatter.format_clarification_response(error, request, context)
+            return formatter.format_clarification_response(
+                error, request, context
+            )
         elif strategy == RecoveryStrategy.FALLBACK or str(error).startswith(
             "Service unavailable"
         ):
@@ -651,7 +731,8 @@ class ErrorRecoveryManager:
                 "Попробуйте другой формат даты",
             ]
         elif (
-            error_type == ErrorType.MISSING_DATA or error_type == ErrorType.DATA_MISSING
+            error_type == ErrorType.MISSING_DATA
+            or error_type == ErrorType.DATA_MISSING
         ):
             return [
                 "Необходима дата рождения для точного прогноза",
@@ -763,4 +844,6 @@ class ErrorRecoveryManager:
             },
         }
 
-        return messages.get(locale, messages["en"]).get(error_type, "Error occurred.")
+        return messages.get(locale, messages["en"]).get(
+            error_type, "Error occurred."
+        )

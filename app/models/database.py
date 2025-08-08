@@ -6,12 +6,12 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Column,
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     LargeBinary,
     String,
     Text,
@@ -21,7 +21,7 @@ from sqlalchemy.dialects.postgresql import UUID as PostgreSQL_UUID
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy.types import TypeDecorator, CHAR
+from sqlalchemy.types import CHAR, TypeDecorator
 
 Base = declarative_base()
 
@@ -71,7 +71,9 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    yandex_user_id = Column(String(255), unique=True, index=True, nullable=False)
+    yandex_user_id = Column(
+        String(255), unique=True, index=True, nullable=False
+    )
 
     # Зашифрованные персональные данные
     encrypted_birth_date = Column(LargeBinary, nullable=True)
@@ -92,7 +94,9 @@ class User(Base):
 
     # Метаданные
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
     last_accessed = Column(DateTime, default=datetime.utcnow)
 
     # Связи
@@ -132,7 +136,9 @@ class UserSession(Base):
 
     # Состояние диалога
     current_state = Column(String(50), default="initial", nullable=False)
-    context_data = Column(Text, nullable=True)  # JSON string with session context
+    context_data = Column(
+        Text, nullable=True
+    )  # JSON string with session context
 
     # Безопасность сессии
     is_active = Column(Boolean, default=True, nullable=False)
@@ -140,7 +146,9 @@ class UserSession(Base):
 
     # Метаданные
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    last_activity = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_activity = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     user = relationship("User", back_populates="sessions")
 
@@ -260,21 +268,29 @@ class UserPreference(Base):
     timezone = Column(String(50), nullable=True)
 
     # Культурные настройки
-    cultural_context = Column(String(20), nullable=True)  # western, vedic, chinese
+    cultural_context = Column(
+        String(20), nullable=True
+    )  # western, vedic, chinese
     language_preference = Column(String(10), default="ru")
 
     # Персонализация контента
     content_length_preference = Column(
         String(20), default="medium"
     )  # short, medium, long
-    detail_level = Column(String(20), default="standard")  # brief, standard, detailed
+    detail_level = Column(
+        String(20), default="standard"
+    )  # brief, standard, detailed
 
     # Изученные предпочтения (машинное обучение)
-    preferences = Column(JSON, nullable=True)  # Хранит изученные предпочтения из ML
+    preferences = Column(
+        JSON, nullable=True
+    )  # Хранит изученные предпочтения из ML
 
     # Метаданные
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Связи
     user = relationship("User", back_populates="user_preferences")
@@ -294,7 +310,9 @@ class UserInteraction(Base):
     interaction_type = Column(
         String(50), nullable=False
     )  # view, like, dislike, save, share
-    content_type = Column(String(50), nullable=False)  # horoscope, compatibility, lunar
+    content_type = Column(
+        String(50), nullable=False
+    )  # horoscope, compatibility, lunar
     content_id = Column(String(255), nullable=True)
 
     # Контекст взаимодействия
@@ -323,8 +341,12 @@ class Recommendation(Base):
     user_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
 
     # Тип рекомендации
-    recommendation_type = Column(String(50), nullable=False)  # content, action, timing
-    content_type = Column(String(50), nullable=False)  # daily, weekly, compatibility
+    recommendation_type = Column(
+        String(50), nullable=False
+    )  # content, action, timing
+    content_type = Column(
+        String(50), nullable=False
+    )  # daily, weekly, compatibility
 
     # Содержание рекомендации
     title = Column(String(255), nullable=False)
@@ -342,7 +364,9 @@ class Recommendation(Base):
     model_version = Column(String(20), nullable=False)
 
     # Статус
-    status = Column(String(20), default="active")  # active, shown, dismissed, expired
+    status = Column(
+        String(20), default="active"
+    )  # active, shown, dismissed, expired
     expires_at = Column(DateTime, nullable=True)
     shown_at = Column(DateTime, nullable=True)
 
@@ -374,7 +398,9 @@ class UserCluster(Base):
     # Метаданные
     algorithm_version = Column(String(20), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Связи
     user = relationship("User", back_populates="user_clusters")
@@ -392,7 +418,9 @@ class ABTestGroup(Base):
 
     # Тест
     test_name = Column(String(100), nullable=False)
-    group_name = Column(String(50), nullable=False)  # control, variant_a, variant_b
+    group_name = Column(
+        String(50), nullable=False
+    )  # control, variant_a, variant_b
 
     # Параметры теста
     test_parameters = Column(JSON, nullable=True)
@@ -418,10 +446,14 @@ class RecommendationMetrics(Base):
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     user_id = Column(GUID(), ForeignKey("users.id"), nullable=True)
-    recommendation_id = Column(GUID(), ForeignKey("recommendations.id"), nullable=True)
+    recommendation_id = Column(
+        GUID(), ForeignKey("recommendations.id"), nullable=True
+    )
 
     # Метрики
-    metric_name = Column(String(50), nullable=False)  # ctr, conversion, satisfaction
+    metric_name = Column(
+        String(50), nullable=False
+    )  # ctr, conversion, satisfaction
     metric_value = Column(Integer, nullable=False)
 
     # Контекст
@@ -456,16 +488,20 @@ class DatabaseManager:
 
         # Add pool settings only for PostgreSQL
         if not self.database_url.startswith("sqlite"):
-            engine_kwargs.update({
-                "pool_size": 20,
-                "max_overflow": 0,
-                "pool_pre_ping": True,
-                "pool_recycle": 300,
-            })
+            engine_kwargs.update(
+                {
+                    "pool_size": 20,
+                    "max_overflow": 0,
+                    "pool_pre_ping": True,
+                    "pool_recycle": 300,
+                }
+            )
 
         self.engine = create_async_engine(self.database_url, **engine_kwargs)
 
-        self.async_session = async_sessionmaker(self.engine, expire_on_commit=False)
+        self.async_session = async_sessionmaker(
+            self.engine, expire_on_commit=False
+        )
 
     async def create_tables(self):
         """Создание таблиц в базе данных."""

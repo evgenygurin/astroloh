@@ -2,10 +2,11 @@
 Tests for database connection and configuration.
 """
 
-import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
 
-from app.core.database import get_database, init_database, close_database
+import pytest
+
+from app.core.database import close_database, get_database, init_database
 
 
 class TestDatabase:
@@ -25,7 +26,9 @@ class TestDatabase:
                 async def __aexit__(self, exc_type, exc_val, exc_tb):
                     return None
 
-            mock_db_manager.async_session.return_value = MockAsyncContextManager()
+            mock_db_manager.async_session.return_value = (
+                MockAsyncContextManager()
+            )
 
             # Get database session
             async for db in get_database():
@@ -35,7 +38,9 @@ class TestDatabase:
     @pytest.mark.asyncio
     async def test_init_database(self):
         """Test database initialization."""
-        with patch("app.core.database.DatabaseManager") as mock_db_manager_class:
+        with patch(
+            "app.core.database.DatabaseManager"
+        ) as mock_db_manager_class:
             with patch("app.core.database.settings") as mock_settings:
                 mock_settings.DATABASE_URL = "postgresql://test"
                 mock_db_manager = AsyncMock()
@@ -61,7 +66,9 @@ class TestDatabase:
     def test_database_url_configuration(self):
         """Test database URL configuration."""
         with patch("app.core.database.settings") as mock_settings:
-            mock_settings.DATABASE_URL = "postgresql://test:test@localhost:5432/testdb"
+            mock_settings.DATABASE_URL = (
+                "postgresql://test:test@localhost:5432/testdb"
+            )
 
             # Import module to trigger URL configuration
 

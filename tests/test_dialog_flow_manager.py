@@ -126,7 +126,9 @@ class TestDialogFlowManager:
             {"birth_date": "15.03.1990"},
         )
 
-        flow_without_data = DialogFlow("test", DialogState.COLLECTING_BIRTH_DATA, {})
+        flow_without_data = DialogFlow(
+            "test", DialogState.COLLECTING_BIRTH_DATA, {}
+        )
 
         # С данными можем перейти к гороскопу
         assert dialog_manager._has_birth_date(flow_with_data, {})
@@ -230,14 +232,18 @@ class TestConversationManager:
         """Тест определения предпочитаемых тем."""
         # Добавляем разные интенты с разной частотой
         for _ in range(3):
-            conversation_context.add_interaction(YandexIntent.HOROSCOPE, {}, "response")
+            conversation_context.add_interaction(
+                YandexIntent.HOROSCOPE, {}, "response"
+            )
 
         for _ in range(2):
             conversation_context.add_interaction(
                 YandexIntent.COMPATIBILITY, {}, "response"
             )
 
-        conversation_context.add_interaction(YandexIntent.ADVICE, {}, "response")
+        conversation_context.add_interaction(
+            YandexIntent.ADVICE, {}, "response"
+        )
 
         preferred = conversation_context.get_preferred_topics()
         assert preferred[0] == "horoscope"  # Самый частый
@@ -297,7 +303,9 @@ class TestConversationManager:
 
         # Добавляем историю взаимодействий
         for _ in range(3):
-            conversation.add_interaction(YandexIntent.HOROSCOPE, {}, "response")
+            conversation.add_interaction(
+                YandexIntent.HOROSCOPE, {}, "response"
+            )
 
         suggestions = conversation_manager._generate_adaptive_suggestions(
             conversation, DialogState.INITIAL
@@ -322,8 +330,10 @@ class TestConversationManager:
             user_context=UserContext(),
         )
 
-        enhanced_request = await conversation_manager._enhance_request_with_context(
-            original_request, conversation
+        enhanced_request = (
+            await conversation_manager._enhance_request_with_context(
+                original_request, conversation
+            )
         )
 
         # Проверяем что добавлены сохраненные данные

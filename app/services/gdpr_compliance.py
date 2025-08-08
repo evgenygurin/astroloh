@@ -37,7 +37,9 @@ class GDPRComplianceService:
             Сводка данных пользователя
         """
         try:
-            result = await self.db.execute(select(User).where(User.id == user_id))
+            result = await self.db.execute(
+                select(User).where(User.id == user_id)
+            )
             user = result.scalar_one_or_none()
 
             if not user:
@@ -71,8 +73,12 @@ class GDPRComplianceService:
                 "data_consent": user.data_consent,
                 "data_retention_days": user.data_retention_days,
                 "personal_data": {
-                    "has_birth_date": bool(birth_data and birth_data.get("birth_date")),
-                    "has_birth_time": bool(birth_data and birth_data.get("birth_time")),
+                    "has_birth_date": bool(
+                        birth_data and birth_data.get("birth_date")
+                    ),
+                    "has_birth_time": bool(
+                        birth_data and birth_data.get("birth_time")
+                    ),
                     "has_birth_location": bool(
                         birth_data and birth_data.get("birth_location")
                     ),
@@ -427,7 +433,9 @@ class GDPRComplianceService:
 
         return report
 
-    async def _get_horoscope_history(self, user_id: uuid.UUID) -> List[Dict[str, Any]]:
+    async def _get_horoscope_history(
+        self, user_id: uuid.UUID
+    ) -> List[Dict[str, Any]]:
         """Получение истории запросов гороскопов."""
         result = await self.db.execute(
             select(HoroscopeRequest)
@@ -439,12 +447,14 @@ class GDPRComplianceService:
 
         history = []
         for req in requests:
-            history.append({
-                "request_type": req.request_type,
-                "processed_at": req.processed_at.isoformat(),
-                "has_target_date": bool(req.encrypted_target_date),
-                "has_partner_data": bool(req.encrypted_partner_data),
-            })
+            history.append(
+                {
+                    "request_type": req.request_type,
+                    "processed_at": req.processed_at.isoformat(),
+                    "has_target_date": bool(req.encrypted_target_date),
+                    "has_partner_data": bool(req.encrypted_partner_data),
+                }
+            )
 
         return history
 
@@ -476,7 +486,9 @@ class DataMinimizationService:
     """
 
     @staticmethod
-    def extract_essential_birth_data(full_data: Dict[str, Any]) -> Dict[str, Any]:
+    def extract_essential_birth_data(
+        full_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Извлечение только необходимых данных о рождении.
 
@@ -487,7 +499,9 @@ class DataMinimizationService:
             Минимизированные данные
         """
         essential_fields = ["birth_date", "birth_time", "birth_location"]
-        return {k: v for k, v in full_data.items() if k in essential_fields and v}
+        return {
+            k: v for k, v in full_data.items() if k in essential_fields and v
+        }
 
     @staticmethod
     def anonymize_analytics_data(data: Dict[str, Any]) -> Dict[str, Any]:

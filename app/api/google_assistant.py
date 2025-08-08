@@ -55,7 +55,9 @@ async def google_assistant_webhook(
             return {"fulfillmentText": "Invalid request encoding"}
         except json.JSONDecodeError as e:
             logger.error(
-                "Failed to parse JSON: %s. Body content: '%s...'", e, body_text[:200]
+                "Failed to parse JSON: %s. Body content: '%s...'",
+                e,
+                body_text[:200],
             )
             return {"fulfillmentText": "Invalid request format"}
 
@@ -91,15 +93,17 @@ async def google_assistant_webhook(
             universal_request.user_context
             and "conversation_token" in universal_request.user_context
         ):
-            platform_specific["conversation_token"] = universal_request.user_context[
+            platform_specific[
                 "conversation_token"
-            ]
+            ] = universal_request.user_context["conversation_token"]
 
         if platform_specific:
             universal_response.platform_specific = platform_specific
 
         # Convert response to Google format
-        google_response = google_adapter.from_universal_response(universal_response)
+        google_response = google_adapter.from_universal_response(
+            universal_response
+        )
 
         logger.info("Successfully processed Google Assistant request")
 
@@ -110,14 +114,14 @@ async def google_assistant_webhook(
         raise
     except Exception as e:
         logger.error(
-            "Error processing Google Assistant request: %s", str(e), exc_info=True
+            "Error processing Google Assistant request: %s",
+            str(e),
+            exc_info=True,
         )
 
         # Handle error gracefully with proper Google response format
         try:
-            error_text = (
-                "Извините, произошла ошибка. Попробуйте еще раз или скажите 'помощь'."
-            )
+            error_text = "Извините, произошла ошибка. Попробуйте еще раз или скажите 'помощь'."
 
             # Return proper error response based on request format
             if (

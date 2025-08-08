@@ -57,14 +57,20 @@ async def telegram_webhook(
             )
             return {"ok": True, "error": "Invalid JSON"}
 
-        logger.info(f"Received Telegram update: {telegram_data.get('update_id')}")
+        logger.info(
+            f"Received Telegram update: {telegram_data.get('update_id')}"
+        )
 
         # Validate request
         if not telegram_adapter.validate_request(telegram_data):
-            raise HTTPException(status_code=400, detail="Invalid Telegram request")
+            raise HTTPException(
+                status_code=400, detail="Invalid Telegram request"
+            )
 
         # Convert to universal format
-        universal_request = telegram_adapter.to_universal_request(telegram_data)
+        universal_request = telegram_adapter.to_universal_request(
+            telegram_data
+        )
 
         # Initialize user manager
         user_manager = UserManager(db)
@@ -90,9 +96,9 @@ async def telegram_webhook(
 
             # Extract callback_query_id if this is a callback
             if "callback_query" in universal_request.user_context:
-                callback_query_id = universal_request.user_context["callback_query"][
-                    "id"
-                ]
+                callback_query_id = universal_request.user_context[
+                    "callback_query"
+                ]["id"]
 
             universal_response.platform_specific = {
                 "chat_id": chat_id,
@@ -111,7 +117,9 @@ async def telegram_webhook(
         # Let HTTPException pass through for proper status codes
         raise
     except Exception as e:
-        logger.error(f"Error processing Telegram request: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error processing Telegram request: {str(e)}", exc_info=True
+        )
 
         # Handle error gracefully
         try:
@@ -119,7 +127,9 @@ async def telegram_webhook(
             context = {"platform": "telegram"}
 
             if telegram_data:
-                context["update_id"] = telegram_data.get("update_id", "unknown")
+                context["update_id"] = telegram_data.get(
+                    "update_id", "unknown"
+                )
                 context["user_id"] = (
                     telegram_data.get("message", {})
                     .get("from", {})

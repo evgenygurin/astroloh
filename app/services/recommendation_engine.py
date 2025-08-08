@@ -9,18 +9,18 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import desc, select, and_
+from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.database import (
-    User,
-    UserPreference,
-    UserInteraction,
-    Recommendation,
-    UserCluster,
     ABTestGroup,
+    Recommendation,
     RecommendationMetrics,
+    User,
+    UserCluster,
+    UserInteraction,
+    UserPreference,
 )
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.user_manager import UserManager
@@ -174,7 +174,10 @@ class ContentBasedFiltering:
         return recommendations
 
     async def _generate_content_recommendation(
-        self, user: User, preferences: Optional[UserPreference], content_type: str
+        self,
+        user: User,
+        preferences: Optional[UserPreference],
+        content_type: str,
     ) -> Optional[Dict[str, Any]]:
         """Генерирует рекомендацию для конкретного типа контента."""
 
@@ -190,7 +193,9 @@ class ContentBasedFiltering:
 
         if content_type == "daily":
             recommendation.update(
-                await self._recommend_daily_content(user, preferences, current_transits)
+                await self._recommend_daily_content(
+                    user, preferences, current_transits
+                )
             )
         elif content_type == "weekly":
             recommendation.update(
@@ -205,7 +210,9 @@ class ContentBasedFiltering:
                 await self._recommend_lunar_content(user, preferences)
             )
 
-        return recommendation if recommendation["confidence_score"] > 50 else None
+        return (
+            recommendation if recommendation["confidence_score"] > 50 else None
+        )
 
     async def _get_current_transits(self, user: User) -> Dict[str, Any]:
         """Получает текущие астрологические транзиты для пользователя."""
@@ -224,7 +231,9 @@ class ContentBasedFiltering:
                 birth_data.get("birth_location", "Moscow"),
             )
 
-            current_planets = await self.astrology.get_current_planetary_positions()
+            current_planets = (
+                await self.astrology.get_current_planetary_positions()
+            )
 
             return {
                 "natal": natal_chart,
@@ -337,7 +346,9 @@ class ContentBasedFiltering:
             },
         }
 
-    def _extract_focus_areas(self, preferences: Optional[UserPreference]) -> List[str]:
+    def _extract_focus_areas(
+        self, preferences: Optional[UserPreference]
+    ) -> List[str]:
         """Извлекает области фокуса из предпочтений пользователя."""
         if not preferences or not preferences.interests:
             return ["general"]
@@ -376,8 +387,12 @@ class HybridRecommendationEngine:
             Список рекомендаций с их характеристиками
         """
         # Получаем рекомендации от обеих систем
-        collaborative_recs = await self._get_collaborative_recommendations(user_id)
-        content_recs = await self.content_based.get_content_recommendations(user_id)
+        collaborative_recs = await self._get_collaborative_recommendations(
+            user_id
+        )
+        content_recs = await self.content_based.get_content_recommendations(
+            user_id
+        )
 
         # Объединяем и ранжируем рекомендации
         hybrid_recs = await self._merge_recommendations(
@@ -416,16 +431,18 @@ class HybridRecommendationEngine:
             interactions = result.scalars().all()
 
             for interaction in interactions:
-                recommendations.append({
-                    "content_type": interaction.content_type,
-                    "confidence_score": int(similarity_score * 100),
-                    "algorithm": "collaborative",
-                    "source_similarity": similarity_score,
-                    "data": {
-                        "recommended_by": "similar_users",
-                        "interaction_type": interaction.interaction_type,
-                    },
-                })
+                recommendations.append(
+                    {
+                        "content_type": interaction.content_type,
+                        "confidence_score": int(similarity_score * 100),
+                        "algorithm": "collaborative",
+                        "source_similarity": similarity_score,
+                        "data": {
+                            "recommended_by": "similar_users",
+                            "interaction_type": interaction.interaction_type,
+                        },
+                    }
+                )
 
         return recommendations
 
@@ -503,7 +520,10 @@ class HybridRecommendationEngine:
         max_count = max(hour_counts.values())
 
         # Нормализуем в диапазон 0-0.5 для бустинга
-        return {hour: (count / max_count) * 0.5 for hour, count in hour_counts.items()}
+        return {
+            hour: (count / max_count) * 0.5
+            for hour, count in hour_counts.items()
+        }
 
     async def _personalize_recommendations(
         self, recommendations: List[Dict[str, Any]], user_id: uuid.UUID
@@ -537,7 +557,9 @@ class TemporalPatternAnalyzer:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def get_seasonal_recommendations(self, user_id: uuid.UUID) -> Dict[str, Any]:
+    async def get_seasonal_recommendations(
+        self, user_id: uuid.UUID
+    ) -> Dict[str, Any]:
         """Получает рекомендации с учетом сезонных астрологических циклов."""
 
         current_date = datetime.utcnow()
@@ -561,10 +583,16 @@ class TemporalPatternAnalyzer:
         day = date.day
 
         # Астрологические сезоны (примерные даты)
-        if (month == 3 and day >= 20) or month in [4, 5] or (month == 6 and day <= 20):
+        if (
+            (month == 3 and day >= 20)
+            or month in [4, 5]
+            or (month == 6 and day <= 20)
+        ):
             return "spring"
         elif (
-            (month == 6 and day >= 21) or month in [7, 8] or (month == 9 and day <= 22)
+            (month == 6 and day >= 21)
+            or month in [7, 8]
+            or (month == 9 and day <= 22)
         ):
             return "summer"
         elif (
@@ -582,12 +610,18 @@ class TemporalPatternAnalyzer:
         # Получаем позиции планет
         try:
             astrology = AstrologyCalculator()
-            planetary_positions = await astrology.get_current_planetary_positions()
+            planetary_positions = (
+                await astrology.get_current_planetary_positions()
+            )
 
             return {
-                "dominant_elements": self._get_dominant_elements(planetary_positions),
+                "dominant_elements": self._get_dominant_elements(
+                    planetary_positions
+                ),
                 "major_aspects": self._get_major_aspects(planetary_positions),
-                "retrograde_planets": self._get_retrograde_planets(planetary_positions),
+                "retrograde_planets": self._get_retrograde_planets(
+                    planetary_positions
+                ),
             }
         except Exception:
             return {}
@@ -615,42 +649,50 @@ class TemporalPatternAnalyzer:
         seasonal_recommendations = []
 
         if season == "spring":
-            seasonal_recommendations.extend([
-                {
-                    "type": "growth_focus",
-                    "title": "Время новых начинаний",
-                    "description": "Весенняя энергия благоприятствует новым проектам",
-                },
-                {
-                    "type": "relationship_focus",
-                    "title": "Обновление отношений",
-                    "description": "Время для укрепления связей с близкими",
-                },
-            ])
+            seasonal_recommendations.extend(
+                [
+                    {
+                        "type": "growth_focus",
+                        "title": "Время новых начинаний",
+                        "description": "Весенняя энергия благоприятствует новым проектам",
+                    },
+                    {
+                        "type": "relationship_focus",
+                        "title": "Обновление отношений",
+                        "description": "Время для укрепления связей с близкими",
+                    },
+                ]
+            )
         elif season == "summer":
-            seasonal_recommendations.extend([
-                {
-                    "type": "action_focus",
-                    "title": "Активные действия",
-                    "description": "Летняя энергия поддерживает активность и решительность",
-                }
-            ])
+            seasonal_recommendations.extend(
+                [
+                    {
+                        "type": "action_focus",
+                        "title": "Активные действия",
+                        "description": "Летняя энергия поддерживает активность и решительность",
+                    }
+                ]
+            )
         elif season == "autumn":
-            seasonal_recommendations.extend([
-                {
-                    "type": "reflection_focus",
-                    "title": "Время подведения итогов",
-                    "description": "Осень - период анализа и планирования",
-                }
-            ])
+            seasonal_recommendations.extend(
+                [
+                    {
+                        "type": "reflection_focus",
+                        "title": "Время подведения итогов",
+                        "description": "Осень - период анализа и планирования",
+                    }
+                ]
+            )
         else:  # winter
-            seasonal_recommendations.extend([
-                {
-                    "type": "inner_work",
-                    "title": "Внутренняя работа",
-                    "description": "Зима благоприятствует самопознанию и медитации",
-                }
-            ])
+            seasonal_recommendations.extend(
+                [
+                    {
+                        "type": "inner_work",
+                        "title": "Внутренняя работа",
+                        "description": "Зима благоприятствует самопознанию и медитации",
+                    }
+                ]
+            )
 
         return seasonal_recommendations
 
@@ -715,7 +757,9 @@ class UserClusteringManager:
         await self.db.commit()
         return updated_count
 
-    async def _extract_user_features(self, user: User) -> Optional[List[float]]:
+    async def _extract_user_features(
+        self, user: User
+    ) -> Optional[List[float]]:
         """Извлекает признаки пользователя для кластеризации."""
 
         features = []
@@ -818,7 +862,9 @@ class ABTestManager:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def assign_user_to_test(self, user_id: uuid.UUID, test_name: str) -> str:
+    async def assign_user_to_test(
+        self, user_id: uuid.UUID, test_name: str
+    ) -> str:
         """Назначает пользователя в A/B тест."""
 
         # Проверяем, не участвует ли уже пользователь в этом тесте
@@ -847,7 +893,9 @@ class ABTestManager:
             user_id=user_id,
             test_name=test_name,
             group_name=assigned_group,
-            test_parameters=self._get_test_parameters(test_name, assigned_group),
+            test_parameters=self._get_test_parameters(
+                test_name, assigned_group
+            ),
             test_start_date=datetime.utcnow(),
             test_end_date=datetime.utcnow() + timedelta(days=30),
         )
@@ -857,7 +905,9 @@ class ABTestManager:
 
         return assigned_group
 
-    def _get_test_parameters(self, test_name: str, group_name: str) -> Dict[str, Any]:
+    def _get_test_parameters(
+        self, test_name: str, group_name: str
+    ) -> Dict[str, Any]:
         """Получает параметры для A/B теста."""
 
         test_configs = {
@@ -903,7 +953,9 @@ class MetricsCollector:
 
         # Обновляем статус рекомендации
         await self.db.execute(
-            select(Recommendation).where(Recommendation.id == recommendation_id)
+            select(Recommendation).where(
+                Recommendation.id == recommendation_id
+            )
         )
 
         await self.db.commit()

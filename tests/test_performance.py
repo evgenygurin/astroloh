@@ -54,15 +54,15 @@ class TestPerformance:
         duration = end_time - start_time
 
         # Should complete 1200 calculations in under 0.1 seconds
-        assert duration < 0.1, (
-            f"Zodiac calculation took {duration:.3f}s, expected < 0.1s"
-        )
+        assert (
+            duration < 0.1
+        ), f"Zodiac calculation took {duration:.3f}s, expected < 0.1s"
 
         # Calculate operations per second
         ops_per_second = 1200 / duration
-        assert ops_per_second > 10000, (
-            f"Only {ops_per_second:.0f} ops/sec, expected > 10000"
-        )
+        assert (
+            ops_per_second > 10000
+        ), f"Only {ops_per_second:.0f} ops/sec, expected > 10000"
 
     def test_planetary_position_calculation_performance(self):
         """Test performance of planetary position calculations."""
@@ -71,20 +71,24 @@ class TestPerformance:
         start_time = time.time()
 
         for _ in range(50):  # 50 full calculations
-            positions = self.astrology_calculator.calculate_planet_positions(test_date)
+            positions = self.astrology_calculator.calculate_planet_positions(
+                test_date
+            )
             assert len(positions) >= 10
 
         end_time = time.time()
         duration = end_time - start_time
 
         # Should complete 50 calculations in under 2 seconds
-        assert duration < 2.0, (
-            f"Planetary calculations took {duration:.3f}s, expected < 2.0s"
-        )
+        assert (
+            duration < 2.0
+        ), f"Planetary calculations took {duration:.3f}s, expected < 2.0s"
 
         # Average time per calculation
         avg_time = duration / 50
-        assert avg_time < 0.04, f"Average time {avg_time:.3f}s, expected < 0.04s"
+        assert (
+            avg_time < 0.04
+        ), f"Average time {avg_time:.3f}s, expected < 0.04s"
 
     def test_horoscope_generation_performance(self):
         """Test performance of horoscope generation."""
@@ -102,12 +106,10 @@ class TestPerformance:
         for sign in YandexZodiacSign:
             for period_str in ["today", "week", "month"]:
                 for _ in range(10):  # 10 generations per sign/period
-                    horoscope = (
-                        self.horoscope_generator.generate_personalized_horoscope(
-                            zodiac_sign=sign,
-                            period=period_map[period_str],
-                            birth_date=date(1990, 5, 15),
-                        )
+                    horoscope = self.horoscope_generator.generate_personalized_horoscope(
+                        zodiac_sign=sign,
+                        period=period_map[period_str],
+                        birth_date=date(1990, 5, 15),
                     )
                     assert horoscope["general_forecast"]
                     assert len(horoscope["general_forecast"]) > 50
@@ -119,14 +121,14 @@ class TestPerformance:
         total_generations = 12 * 3 * 10
 
         # Should complete in under 3 seconds
-        assert duration < 3.0, (
-            f"Horoscope generation took {duration:.3f}s, expected < 3.0s"
-        )
+        assert (
+            duration < 3.0
+        ), f"Horoscope generation took {duration:.3f}s, expected < 3.0s"
 
         avg_time = duration / total_generations
-        assert avg_time < 0.01, (
-            f"Average generation time {avg_time:.3f}s, expected < 0.01s"
-        )
+        assert (
+            avg_time < 0.01
+        ), f"Average generation time {avg_time:.3f}s, expected < 0.01s"
 
     def test_intent_recognition_performance(self):
         """Test performance of intent recognition."""
@@ -151,7 +153,9 @@ class TestPerformance:
             from app.models.yandex_models import UserContext
 
             user_context = UserContext(user_id="test_user")
-            result = self.intent_recognition.recognize_intent(command, user_context)
+            result = self.intent_recognition.recognize_intent(
+                command, user_context
+            )
             assert result.intent is not None
             assert isinstance(result.entities, dict)
             assert 0 <= result.confidence <= 1
@@ -160,14 +164,14 @@ class TestPerformance:
         duration = end_time - start_time
 
         # Should complete 600 recognitions in under 0.5 seconds
-        assert duration < 0.5, (
-            f"Intent recognition took {duration:.3f}s, expected < 0.5s"
-        )
+        assert (
+            duration < 0.5
+        ), f"Intent recognition took {duration:.3f}s, expected < 0.5s"
 
         ops_per_second = 600 / duration
-        assert ops_per_second > 1000, (
-            f"Only {ops_per_second:.0f} ops/sec, expected > 1000"
-        )
+        assert (
+            ops_per_second > 1000
+        ), f"Only {ops_per_second:.0f} ops/sec, expected > 1000"
 
     def test_lunar_calendar_performance(self):
         """Test performance of lunar calendar calculations."""
@@ -186,7 +190,9 @@ class TestPerformance:
         duration = end_time - start_time
 
         # Should complete 100 calculations in under 1 second
-        assert duration < 1.0, f"Lunar calendar took {duration:.3f}s, expected < 1.0s"
+        assert (
+            duration < 1.0
+        ), f"Lunar calendar took {duration:.3f}s, expected < 1.0s"
 
     def test_compatibility_calculation_performance(self):
         """Test performance of compatibility calculations."""
@@ -199,8 +205,10 @@ class TestPerformance:
         # Test all possible sign combinations
         for sign1 in signs:
             for sign2 in signs:
-                compatibility = self.astrology_calculator.calculate_compatibility_score(
-                    sign1, sign2
+                compatibility = (
+                    self.astrology_calculator.calculate_compatibility_score(
+                        sign1, sign2
+                    )
                 )
                 assert "score" in compatibility
                 assert 0 <= compatibility["score"] <= 100
@@ -211,14 +219,14 @@ class TestPerformance:
         total_combinations = len(signs) * len(signs)  # 144 combinations
 
         # Should complete all combinations in under 0.5 seconds
-        assert duration < 0.5, (
-            f"Compatibility calculations took {duration:.3f}s, expected < 0.5s"
-        )
+        assert (
+            duration < 0.5
+        ), f"Compatibility calculations took {duration:.3f}s, expected < 0.5s"
 
         avg_time = duration / total_combinations
-        assert avg_time < 0.004, (
-            f"Average calculation time {avg_time:.4f}s, expected < 0.004s"
-        )
+        assert (
+            avg_time < 0.004
+        ), f"Average calculation time {avg_time:.4f}s, expected < 0.004s"
 
     def test_concurrent_horoscope_generation(self):
         """Test concurrent horoscope generation performance."""
@@ -253,9 +261,9 @@ class TestPerformance:
         duration = end_time - start_time
 
         # Concurrent execution should be faster than sequential
-        assert duration < 2.0, (
-            f"Concurrent generation took {duration:.3f}s, expected < 2.0s"
-        )
+        assert (
+            duration < 2.0
+        ), f"Concurrent generation took {duration:.3f}s, expected < 2.0s"
         assert len(results) == 50
 
     def test_memory_usage_stability(self):
@@ -270,20 +278,26 @@ class TestPerformance:
         # Perform many calculations
         for _ in range(1000):
             # Zodiac calculation
-            sign = self.astrology_calculator.get_zodiac_sign_by_date(date(1990, 5, 15))
+            sign = self.astrology_calculator.get_zodiac_sign_by_date(
+                date(1990, 5, 15)
+            )
 
             # Horoscope generation
-            horoscope = self.horoscope_generator.generate_personalized_horoscope(
-                zodiac_sign=sign,
-                period=HoroscopePeriod.DAILY,
-                birth_date=date(1990, 5, 15),
+            horoscope = (
+                self.horoscope_generator.generate_personalized_horoscope(
+                    zodiac_sign=sign,
+                    period=HoroscopePeriod.DAILY,
+                    birth_date=date(1990, 5, 15),
+                )
             )
 
             # Intent recognition
             from app.models.yandex_models import UserContext
 
             user_context = UserContext(user_id="test_user")
-            result = self.intent_recognition.recognize_intent("тест", user_context)
+            result = self.intent_recognition.recognize_intent(
+                "тест", user_context
+            )
             intent = result.intent
             entities = result.entities
             confidence = result.confidence
@@ -319,7 +333,9 @@ class TestPerformance:
         duration = end_time - start_time
 
         # Should complete 100 concurrent operations much faster than sequential
-        assert duration < 0.2, f"Async operations took {duration:.3f}s, expected < 0.2s"
+        assert (
+            duration < 0.2
+        ), f"Async operations took {duration:.3f}s, expected < 0.2s"
         assert len(results) == 100
 
     def test_caching_performance_improvement(self):
@@ -332,12 +348,16 @@ class TestPerformance:
 
         user_context = UserContext(user_id="test_user")
         start_time = time.time()
-        result1 = self.intent_recognition.recognize_intent(command, user_context)
+        result1 = self.intent_recognition.recognize_intent(
+            command, user_context
+        )
         first_call_duration = time.time() - start_time
 
         # Second call (should use cache)
         start_time = time.time()
-        result2 = self.intent_recognition.recognize_intent(command, user_context)
+        result2 = self.intent_recognition.recognize_intent(
+            command, user_context
+        )
         second_call_duration = time.time() - start_time
 
         # Results should be identical
@@ -346,10 +366,12 @@ class TestPerformance:
         assert result1.confidence == result2.confidence
 
         # Second call should be significantly faster (at least 2x)
-        if first_call_duration > 0.001:  # Only test if first call was measurable
-            assert second_call_duration < first_call_duration / 2, (
-                f"Caching didn't improve performance: {first_call_duration:.4f}s vs {second_call_duration:.4f}s"
-            )
+        if (
+            first_call_duration > 0.001
+        ):  # Only test if first call was measurable
+            assert (
+                second_call_duration < first_call_duration / 2
+            ), f"Caching didn't improve performance: {first_call_duration:.4f}s vs {second_call_duration:.4f}s"
 
     def test_bulk_operation_performance(self):
         """Test performance of bulk operations."""
@@ -359,18 +381,22 @@ class TestPerformance:
 
         requests = []
         for i in range(100):
-            requests.append({
-                "zodiac_sign": YandexZodiacSign.LEO,
-                "period": HoroscopePeriod.DAILY,
-                "birth_date": date(1990, 5, 15),
-            })
+            requests.append(
+                {
+                    "zodiac_sign": YandexZodiacSign.LEO,
+                    "period": HoroscopePeriod.DAILY,
+                    "birth_date": date(1990, 5, 15),
+                }
+            )
 
         start_time = time.time()
 
         results = []
         for request in requests:
-            horoscope = self.horoscope_generator.generate_personalized_horoscope(
-                **request
+            horoscope = (
+                self.horoscope_generator.generate_personalized_horoscope(
+                    **request
+                )
             )
             results.append(horoscope)
 
@@ -378,7 +404,9 @@ class TestPerformance:
         duration = end_time - start_time
 
         # Bulk operations should complete in reasonable time
-        assert duration < 1.0, f"Bulk operations took {duration:.3f}s, expected < 1.0s"
+        assert (
+            duration < 1.0
+        ), f"Bulk operations took {duration:.3f}s, expected < 1.0s"
         assert len(results) == 100
 
         # All results should be valid

@@ -56,7 +56,9 @@ class GoogleAssistantAdapter(PlatformAdapter):
             logger.error(f"Google request validation error: {e}")
             return False
 
-    def to_universal_request(self, google_data: Dict[str, Any]) -> UniversalRequest:
+    def to_universal_request(
+        self, google_data: Dict[str, Any]
+    ) -> UniversalRequest:
         """Convert Google Actions request to universal request format."""
         try:
             # Handle Dialogflow format
@@ -92,7 +94,9 @@ class GoogleAssistantAdapter(PlatformAdapter):
                     "user_id": google_request.user.user_id,
                     "locale": google_request.user.locale,
                 },
-                "device": google_request.device.dict() if google_request.device else {},
+                "device": google_request.device.dict()
+                if google_request.device
+                else {},
                 "surface_capabilities": [
                     cap for cap in google_request.surface.capabilities
                 ]
@@ -165,7 +169,9 @@ class GoogleAssistantAdapter(PlatformAdapter):
             # Check if this is a Dialogflow response
             if (
                 universal_response.platform_specific
-                and universal_response.platform_specific.get("use_dialogflow", False)
+                and universal_response.platform_specific.get(
+                    "use_dialogflow", False
+                )
             ):
                 return self._to_dialogflow_response(universal_response)
 
@@ -174,7 +180,8 @@ class GoogleAssistantAdapter(PlatformAdapter):
 
             # Add simple response (text/speech)
             simple_response = GoogleSimpleResponse(
-                text_to_speech=universal_response.tts or universal_response.text,
+                text_to_speech=universal_response.tts
+                or universal_response.text,
                 display_text=universal_response.text,
             )
             items.append({"simpleResponse": simple_response.dict()})
@@ -194,7 +201,9 @@ class GoogleAssistantAdapter(PlatformAdapter):
             if universal_response.buttons:
                 for button in universal_response.buttons[:8]:  # Google limit
                     if not button.url:  # Only text suggestions, not web links
-                        suggestions.append(GoogleSuggestion(title=button.title))
+                        suggestions.append(
+                            GoogleSuggestion(title=button.title)
+                        )
 
             # Build rich response
             rich_response = GoogleRichResponse(
@@ -205,7 +214,9 @@ class GoogleAssistantAdapter(PlatformAdapter):
             # Build final response or expected input based on end_session
             if universal_response.end_session:
                 # Final response (conversation ends)
-                final_response = GoogleFinalResponse(rich_response=rich_response)
+                final_response = GoogleFinalResponse(
+                    rich_response=rich_response
+                )
                 google_response = GoogleResponse(
                     expect_user_response=False,
                     final_response=final_response,
@@ -220,7 +231,8 @@ class GoogleAssistantAdapter(PlatformAdapter):
             # Add conversation token if provided
             if (
                 universal_response.platform_specific
-                and "conversation_token" in universal_response.platform_specific
+                and "conversation_token"
+                in universal_response.platform_specific
             ):
                 google_response.conversation_token = (
                     universal_response.platform_specific["conversation_token"]
@@ -239,18 +251,22 @@ class GoogleAssistantAdapter(PlatformAdapter):
         fulfillment_messages = []
 
         # Add text response
-        fulfillment_messages.append({"text": {"text": [universal_response.text]}})
+        fulfillment_messages.append(
+            {"text": {"text": [universal_response.text]}}
+        )
 
         # Add image card if provided
         if universal_response.image_url:
-            fulfillment_messages.append({
-                "card": {
-                    "title": "Astroloh",
-                    "subtitle": universal_response.image_caption
-                    or "Astrological insight",
-                    "imageUri": universal_response.image_url,
+            fulfillment_messages.append(
+                {
+                    "card": {
+                        "title": "Astroloh",
+                        "subtitle": universal_response.image_caption
+                        or "Astrological insight",
+                        "imageUri": universal_response.image_url,
+                    }
                 }
-            })
+            )
 
         # Add quick replies (buttons)
         if universal_response.buttons:
@@ -260,12 +276,14 @@ class GoogleAssistantAdapter(PlatformAdapter):
                     quick_replies.append(button.title)
 
             if quick_replies:
-                fulfillment_messages.append({
-                    "quickReplies": {
-                        "title": "Choose an option:",
-                        "quickReplies": quick_replies,
+                fulfillment_messages.append(
+                    {
+                        "quickReplies": {
+                            "title": "Choose an option:",
+                            "quickReplies": quick_replies,
+                        }
                     }
-                })
+                )
 
         dialogflow_response = GoogleDialogflowResponse(
             fulfillmentText=universal_response.text,

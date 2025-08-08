@@ -60,7 +60,9 @@ class TestErrorRecoveryService:
         error = ValueError("Invalid date format")
         request = self.create_mock_request("гороскоп на 32 января")
 
-        error_type, severity = self.error_recovery.classify_error(error, request)
+        error_type, severity = self.error_recovery.classify_error(
+            error, request
+        )
 
         assert error_type == ErrorType.VALIDATION_ERROR
         assert severity in [ErrorSeverity.LOW, ErrorSeverity.MEDIUM]
@@ -70,7 +72,9 @@ class TestErrorRecoveryService:
         error = KeyError("birth_date")
         request = self.create_mock_request("составь натальную карту")
 
-        error_type, severity = self.error_recovery.classify_error(error, request)
+        error_type, severity = self.error_recovery.classify_error(
+            error, request
+        )
 
         assert error_type == ErrorType.MISSING_DATA
         assert severity in [ErrorSeverity.LOW, ErrorSeverity.MEDIUM]
@@ -80,7 +84,9 @@ class TestErrorRecoveryService:
         error = Exception("Swiss Ephemeris calculation failed")
         request = self.create_mock_request("мой гороскоп")
 
-        error_type, severity = self.error_recovery.classify_error(error, request)
+        error_type, severity = self.error_recovery.classify_error(
+            error, request
+        )
 
         assert error_type == ErrorType.CALCULATION_ERROR
         assert severity in [ErrorSeverity.MEDIUM, ErrorSeverity.HIGH]
@@ -90,7 +96,9 @@ class TestErrorRecoveryService:
         error = ConnectionError("Database connection failed")
         request = self.create_mock_request("сохрани мои данные")
 
-        error_type, severity = self.error_recovery.classify_error(error, request)
+        error_type, severity = self.error_recovery.classify_error(
+            error, request
+        )
 
         assert error_type == ErrorType.DATABASE_ERROR
         assert severity in [ErrorSeverity.HIGH, ErrorSeverity.CRITICAL]
@@ -126,7 +134,9 @@ class TestErrorRecoveryService:
         request = self.create_mock_request("гороскоп на вчера")
         mock_context = MagicMock()
 
-        with patch("app.services.error_recovery.ResponseFormatter") as mock_formatter:
+        with patch(
+            "app.services.error_recovery.ResponseFormatter"
+        ) as mock_formatter:
             mock_response = MagicMock()
             mock_formatter.return_value.format_clarification_response.return_value = (
                 mock_response
@@ -146,7 +156,9 @@ class TestErrorRecoveryService:
         request = self.create_mock_request("мой гороскоп")
         mock_context = MagicMock()
 
-        with patch("app.services.error_recovery.ResponseFormatter") as mock_formatter:
+        with patch(
+            "app.services.error_recovery.ResponseFormatter"
+        ) as mock_formatter:
             mock_response = MagicMock()
             mock_formatter.return_value.format_fallback_response.return_value = (
                 mock_response
@@ -185,7 +197,9 @@ class TestErrorRecoveryService:
 
         assert isinstance(suggestions, list)
         assert len(suggestions) > 0
-        assert any("дата рождения" in suggestion.lower() for suggestion in suggestions)
+        assert any(
+            "дата рождения" in suggestion.lower() for suggestion in suggestions
+        )
 
     def test_generate_error_suggestions_personalized(self):
         """Test generation of personalized error suggestions."""
@@ -213,7 +227,9 @@ class TestErrorRecoveryService:
         severity = ErrorSeverity.MEDIUM
 
         # Should not raise any exceptions
-        await self.error_recovery.log_error(error, request, error_type, severity)
+        await self.error_recovery.log_error(
+            error, request, error_type, severity
+        )
         assert True  # If we get here, logging worked
 
     def test_is_recoverable_error(self):
@@ -282,11 +298,15 @@ class TestErrorRecoveryService:
         error_type = ErrorType.VALIDATION_ERROR
 
         # Russian localization
-        message_ru = self.error_recovery.get_localized_error_message(error_type, "ru")
+        message_ru = self.error_recovery.get_localized_error_message(
+            error_type, "ru"
+        )
         assert isinstance(message_ru, str)
         assert len(message_ru) > 0
 
         # English fallback
-        message_en = self.error_recovery.get_localized_error_message(error_type, "en")
+        message_en = self.error_recovery.get_localized_error_message(
+            error_type, "en"
+        )
         assert isinstance(message_en, str)
         assert len(message_en) > 0

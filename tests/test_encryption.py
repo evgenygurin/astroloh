@@ -218,7 +218,9 @@ class TestEncryptionService:
         ) as mock_derive:
             mock_derive.return_value = b"derived_key_32_bytes_long_test"
 
-            result = self.encryption_service._derive_key_from_secret("test_password")
+            result = self.encryption_service._derive_key_from_secret(
+                "test_password"
+            )
 
             assert result == b"derived_key_32_bytes_long_test"
             mock_derive.assert_called_once_with("test_password")
@@ -361,7 +363,9 @@ class TestSecurityUtils:
 
     def test_hash_user_agent(self):
         """Test user agent hashing."""
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        user_agent = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        )
 
         hashed = SecurityUtils.hash_user_agent(user_agent)
 

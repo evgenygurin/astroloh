@@ -126,7 +126,9 @@ class TestGDPRComplianceService:
                 "_get_horoscope_history",
                 return_value=[],
             ):
-                export_data = await self.compliance_service.export_user_data(user_id)
+                export_data = await self.compliance_service.export_user_data(
+                    user_id
+                )
 
         assert export_data is not None
         assert "export_metadata" in export_data
@@ -143,7 +145,9 @@ class TestGDPRComplianceService:
         with patch.object(
             self.compliance_service, "get_user_data_summary", return_value=None
         ):
-            export_data = await self.compliance_service.export_user_data(user_id)
+            export_data = await self.compliance_service.export_user_data(
+                user_id
+            )
 
         assert export_data is None
 
@@ -157,8 +161,10 @@ class TestGDPRComplianceService:
             "verification_code_123"
         )
 
-        verification_code = await self.compliance_service.request_data_deletion(
-            user_id, reason
+        verification_code = (
+            await self.compliance_service.request_data_deletion(
+                user_id, reason
+            )
         )
 
         assert verification_code == "verification_code_123"
@@ -306,9 +312,13 @@ class TestGDPRComplianceService:
         """Test failed processing restriction."""
         user_id = uuid.uuid4()
 
-        self.mock_user_manager.set_data_consent.side_effect = Exception("Error")
+        self.mock_user_manager.set_data_consent.side_effect = Exception(
+            "Error"
+        )
 
-        result = await self.compliance_service.restrict_processing(user_id, True)
+        result = await self.compliance_service.restrict_processing(
+            user_id, True
+        )
 
         assert result is False
 
@@ -387,9 +397,13 @@ class TestGDPRComplianceService:
         assert report is not None
         assert "report_period" in report
         # Should use default 30-day period
-        start_date = datetime.fromisoformat(report["report_period"]["start_date"])
+        start_date = datetime.fromisoformat(
+            report["report_period"]["start_date"]
+        )
         end_date = datetime.fromisoformat(report["report_period"]["end_date"])
-        assert (end_date - start_date).days >= 29  # Account for timing differences
+        assert (
+            end_date - start_date
+        ).days >= 29  # Account for timing differences
 
     @pytest.mark.asyncio
     async def test_get_horoscope_history(self):
@@ -455,7 +469,9 @@ class TestGDPRComplianceService:
             "phone": "+1234567890",
         }
 
-        essential_data = DataMinimizationService.extract_essential_birth_data(full_data)
+        essential_data = DataMinimizationService.extract_essential_birth_data(
+            full_data
+        )
 
         assert "birth_date" in essential_data
         assert "birth_time" in essential_data

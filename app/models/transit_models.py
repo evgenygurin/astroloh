@@ -4,6 +4,7 @@
 
 from datetime import date
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -52,7 +53,9 @@ class ProgressionInterpretation(BaseModel):
     progressed_sun: ProgressedPlanet = Field(
         ..., description="Прогрессированное Солнце"
     )
-    progressed_moon: ProgressedPlanet = Field(..., description="Прогрессированная Луна")
+    progressed_moon: ProgressedPlanet = Field(
+        ..., description="Прогрессированная Луна"
+    )
     general_trends: List[str] = Field(
         default_factory=list, description="Общие тенденции"
     )
@@ -63,7 +66,9 @@ class ProgressionData(BaseModel):
 
     birth_date: str = Field(..., description="Дата рождения")
     progression_date: str = Field(..., description="Дата прогрессии")
-    days_progressed: int = Field(..., description="Количество прогрессированных дней")
+    days_progressed: int = Field(
+        ..., description="Количество прогрессированных дней"
+    )
     progressed_planets: Dict[str, Dict[str, Any]] = Field(
         default_factory=dict, description="Прогрессированные планеты"
     )
@@ -85,7 +90,9 @@ class SolarReturnInterpretation(BaseModel):
     key_areas: List[str] = Field(
         default_factory=list, description="Ключевые сферы жизни"
     )
-    challenges: List[str] = Field(default_factory=list, description="Вызовы года")
+    challenges: List[str] = Field(
+        default_factory=list, description="Вызовы года"
+    )
     opportunities: List[str] = Field(
         default_factory=list, description="Возможности года"
     )
@@ -131,7 +138,9 @@ class LunarReturnData(BaseModel):
     interpretation: LunarReturnInterpretation = Field(
         ..., description="Интерпретация лунара"
     )
-    monthly_themes: List[str] = Field(default_factory=list, description="Темы месяца")
+    monthly_themes: List[str] = Field(
+        default_factory=list, description="Темы месяца"
+    )
 
 
 class TransitRequest(BaseModel):
@@ -139,8 +148,12 @@ class TransitRequest(BaseModel):
 
     birth_date: date = Field(..., description="Дата рождения")
     birth_time: Optional[str] = Field(None, description="Время рождения")
-    birth_place: Optional[Dict[str, float]] = Field(None, description="Место рождения")
-    transit_date: Optional[date] = Field(None, description="Дата для расчета транзитов")
+    birth_place: Optional[Dict[str, float]] = Field(
+        None, description="Место рождения"
+    )
+    transit_date: Optional[date] = Field(
+        None, description="Дата для расчета транзитов"
+    )
 
 
 class ProgressionRequest(BaseModel):
@@ -148,7 +161,9 @@ class ProgressionRequest(BaseModel):
 
     birth_date: date = Field(..., description="Дата рождения")
     birth_time: Optional[str] = Field(None, description="Время рождения")
-    birth_place: Optional[Dict[str, float]] = Field(None, description="Место рождения")
+    birth_place: Optional[Dict[str, float]] = Field(
+        None, description="Место рождения"
+    )
     progression_date: Optional[date] = Field(
         None, description="Дата для расчета прогрессий"
     )
@@ -159,7 +174,9 @@ class SolarReturnRequest(BaseModel):
 
     birth_date: date = Field(..., description="Дата рождения")
     year: int = Field(..., description="Год соляра")
-    birth_place: Optional[Dict[str, float]] = Field(None, description="Место рождения")
+    birth_place: Optional[Dict[str, float]] = Field(
+        None, description="Место рождения"
+    )
 
 
 class LunarReturnRequest(BaseModel):
@@ -168,7 +185,9 @@ class LunarReturnRequest(BaseModel):
     birth_date: date = Field(..., description="Дата рождения")
     month: int = Field(..., ge=1, le=12, description="Месяц лунара")
     year: int = Field(..., description="Год лунара")
-    birth_place: Optional[Dict[str, float]] = Field(None, description="Место рождения")
+    birth_place: Optional[Dict[str, float]] = Field(
+        None, description="Место рождения"
+    )
 
 
 class TransitAnalysisResult(BaseModel):
@@ -178,15 +197,21 @@ class TransitAnalysisResult(BaseModel):
     natal_planets: Dict[str, Dict[str, Any]] = Field(
         default_factory=dict, description="Натальные планеты"
     )
-    recommendations: List[str] = Field(default_factory=list, description="Рекомендации")
+    recommendations: List[str] = Field(
+        default_factory=list, description="Рекомендации"
+    )
     energy_level: str = Field(..., description="Уровень энергии периода")
-    focus_areas: List[str] = Field(default_factory=list, description="Области фокуса")
+    focus_areas: List[str] = Field(
+        default_factory=list, description="Области фокуса"
+    )
 
 
 class ProgressionAnalysisResult(BaseModel):
     """Результат анализа прогрессий."""
 
-    progression_data: ProgressionData = Field(..., description="Данные прогрессий")
+    progression_data: ProgressionData = Field(
+        ..., description="Данные прогрессий"
+    )
     life_phase_analysis: str = Field(..., description="Анализ жизненной фазы")
     development_areas: List[str] = Field(
         default_factory=list, description="Области развития"

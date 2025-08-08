@@ -2,9 +2,10 @@
 Тесты для сервиса расчета транзитов.
 """
 
-import pytest
 from datetime import date, datetime
 from unittest.mock import patch
+
+import pytest
 
 from app.services.transit_calculator import TransitCalculator
 
@@ -19,10 +20,26 @@ class TestTransitCalculator:
         # Мок натальных планет для тестирования
         self.mock_natal_planets = {
             "Sun": {"longitude": 120.5, "sign": "Лев", "degree_in_sign": 0.5},
-            "Moon": {"longitude": 45.2, "sign": "Телец", "degree_in_sign": 15.2},
-            "Mercury": {"longitude": 95.8, "sign": "Рак", "degree_in_sign": 5.8},
-            "Venus": {"longitude": 200.1, "sign": "Весы", "degree_in_sign": 20.1},
-            "Mars": {"longitude": 310.7, "sign": "Водолей", "degree_in_sign": 10.7},
+            "Moon": {
+                "longitude": 45.2,
+                "sign": "Телец",
+                "degree_in_sign": 15.2,
+            },
+            "Mercury": {
+                "longitude": 95.8,
+                "sign": "Рак",
+                "degree_in_sign": 5.8,
+            },
+            "Venus": {
+                "longitude": 200.1,
+                "sign": "Весы",
+                "degree_in_sign": 20.1,
+            },
+            "Mars": {
+                "longitude": 310.7,
+                "sign": "Водолей",
+                "degree_in_sign": 10.7,
+            },
         }
 
     @pytest.mark.unit
@@ -41,9 +58,21 @@ class TestTransitCalculator:
         ) as mock_positions:
             # Мок текущих позиций планет
             mock_positions.return_value = {
-                "Sun": {"longitude": 125.0, "sign": "Лев", "degree_in_sign": 5.0},
-                "Jupiter": {"longitude": 120.0, "sign": "Лев", "degree_in_sign": 0.0},
-                "Saturn": {"longitude": 45.0, "sign": "Телец", "degree_in_sign": 15.0},
+                "Sun": {
+                    "longitude": 125.0,
+                    "sign": "Лев",
+                    "degree_in_sign": 5.0,
+                },
+                "Jupiter": {
+                    "longitude": 120.0,
+                    "sign": "Лев",
+                    "degree_in_sign": 0.0,
+                },
+                "Saturn": {
+                    "longitude": 45.0,
+                    "sign": "Телец",
+                    "degree_in_sign": 15.0,
+                },
             }
 
             result = self.transit_calc.calculate_current_transits(
@@ -95,27 +124,47 @@ class TestTransitCalculator:
         assert self.transit_calc._get_aspect_nature("Соединение") == "усиление"
         assert self.transit_calc._get_aspect_nature("Трин") == "поток"
         assert self.transit_calc._get_aspect_nature("Квадрат") == "напряжение"
-        assert self.transit_calc._get_aspect_nature("Оппозиция") == "противостояние"
-        assert self.transit_calc._get_aspect_nature("Неизвестный") == "нейтральный"
+        assert (
+            self.transit_calc._get_aspect_nature("Оппозиция")
+            == "противостояние"
+        )
+        assert (
+            self.transit_calc._get_aspect_nature("Неизвестный")
+            == "нейтральный"
+        )
 
     @pytest.mark.unit
     def test_calculate_aspect_strength(self):
         """Тест расчета силы аспекта."""
-        assert self.transit_calc._calculate_aspect_strength(0.5, 0) == "очень сильный"
-        assert self.transit_calc._calculate_aspect_strength(2.0, 90) == "сильный"
-        assert self.transit_calc._calculate_aspect_strength(4.0, 120) == "умеренный"
-        assert self.transit_calc._calculate_aspect_strength(7.0, 60) == "слабый"
+        assert (
+            self.transit_calc._calculate_aspect_strength(0.5, 0)
+            == "очень сильный"
+        )
+        assert (
+            self.transit_calc._calculate_aspect_strength(2.0, 90) == "сильный"
+        )
+        assert (
+            self.transit_calc._calculate_aspect_strength(4.0, 120)
+            == "умеренный"
+        )
+        assert (
+            self.transit_calc._calculate_aspect_strength(7.0, 60) == "слабый"
+        )
 
     @pytest.mark.unit
     def test_get_transit_influence(self):
         """Тест получения влияния транзита."""
         # Тест прямого сочетания
-        influence = self.transit_calc._get_transit_influence("Sun", "Sun", "Соединение")
+        influence = self.transit_calc._get_transit_influence(
+            "Sun", "Sun", "Соединение"
+        )
         assert isinstance(influence, str)
         assert len(influence) > 0
 
         # Тест общих влияний
-        influence = self.transit_calc._get_transit_influence("Jupiter", "Mars", "Трин")
+        influence = self.transit_calc._get_transit_influence(
+            "Jupiter", "Mars", "Трин"
+        )
         assert isinstance(influence, str)
         assert "Возможность:" in influence or "Расширение" in influence
 
@@ -162,9 +211,16 @@ class TestTransitCalculator:
             ) as mock_aspects,
         ):
             mock_positions.return_value = self.mock_natal_planets
-            mock_houses.return_value = {1: {"cusp_longitude": 0, "sign": "Овен"}}
+            mock_houses.return_value = {
+                1: {"cusp_longitude": 0, "sign": "Овен"}
+            }
             mock_aspects.return_value = [
-                {"aspect": "Трин", "orb": 3, "planet1": "Sun", "planet2": "Jupiter"}
+                {
+                    "aspect": "Трин",
+                    "orb": 3,
+                    "planet1": "Sun",
+                    "planet2": "Jupiter",
+                }
             ]
 
             result = self.transit_calc.calculate_solar_return(birth_date, year)
@@ -217,10 +273,14 @@ class TestTransitCalculator:
             patch.object(self.transit_calc, "_find_new_moon") as mock_new_moon,
         ):
             mock_positions.return_value = self.mock_natal_planets
-            mock_houses.return_value = {1: {"cusp_longitude": 0, "sign": "Рак"}}
+            mock_houses.return_value = {
+                1: {"cusp_longitude": 0, "sign": "Рак"}
+            }
             mock_new_moon.return_value = datetime(2024, 12, 15)
 
-            result = self.transit_calc.calculate_lunar_return(birth_date, month, year)
+            result = self.transit_calc.calculate_lunar_return(
+                birth_date, month, year
+            )
 
             assert "month" in result
             assert "year" in result
@@ -265,7 +325,11 @@ class TestTransitCalculator:
         # Используем реальные данные для более полного тестирования
         natal_planets = {
             "Sun": {"longitude": 100.0, "sign": "Рак", "degree_in_sign": 10.0},
-            "Moon": {"longitude": 200.0, "sign": "Весы", "degree_in_sign": 20.0},
+            "Moon": {
+                "longitude": 200.0,
+                "sign": "Весы",
+                "degree_in_sign": 20.0,
+            },
         }
 
         # Не мочим astro_calc для интеграционного теста
@@ -292,7 +356,9 @@ class TestTransitCalculator:
 
         # Выполняем несколько расчетов
         for _ in range(10):
-            self.transit_calc.calculate_current_transits(self.mock_natal_planets)
+            self.transit_calc.calculate_current_transits(
+                self.mock_natal_planets
+            )
 
         end_time = time.time()
         execution_time = end_time - start_time

@@ -2,8 +2,9 @@
 Tests for multi-platform integration functionality.
 """
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from app.models.platform_models import Platform, UniversalRequest, UniversalResponse
 from app.services.google_adapter import GoogleAssistantAdapter
@@ -75,7 +76,10 @@ class TestPlatformAdapters:
         assert universal_request.user_id == "789"
         assert universal_request.session_id == "789"
         assert universal_request.text == "Привет"
-        assert universal_request.user_context["telegram_user"]["first_name"] == "Test"
+        assert (
+            universal_request.user_context["telegram_user"]["first_name"]
+            == "Test"
+        )
 
     def test_google_adapter_validation(self):
         """Test Google Assistant adapter request validation."""
@@ -128,7 +132,9 @@ class TestPlatformAdapters:
             application=application,
         )
         request = YandexRequest(
-            command="привет", original_utterance="Привет", type="SimpleUtterance"
+            command="привет",
+            original_utterance="Привет",
+            type="SimpleUtterance",
         )
 
         yandex_request = YandexRequestModel(
@@ -175,11 +181,11 @@ class TestMultiPlatformHandler:
             "app.services.multi_platform_handler.dialog_handler"
         ) as mock_dialog_handler:
             from app.models.yandex_models import (
+                YandexApplication,
                 YandexButton,
                 YandexResponse,
                 YandexResponseModel,
                 YandexSession,
-                YandexApplication,
             )
 
             # Mock Yandex response
@@ -234,7 +240,10 @@ class TestMultiPlatformHandler:
             is_new_session=False,
             original_request={
                 "user": {"userId": "google123"},
-                "conversation": {"conversationId": "conv456", "type": "ACTIVE"},
+                "conversation": {
+                    "conversationId": "conv456",
+                    "type": "ACTIVE",
+                },
                 "inputs": [{"intent": "horoscope.advice"}],
             },
         )
@@ -247,11 +256,11 @@ class TestMultiPlatformHandler:
             "app.services.multi_platform_handler.dialog_handler"
         ) as mock_dialog_handler:
             from app.models.yandex_models import (
+                YandexApplication,
                 YandexButton,
                 YandexResponse,
                 YandexResponseModel,
                 YandexSession,
-                YandexApplication,
             )
 
             # Mock Yandex response
@@ -261,9 +270,12 @@ class TestMultiPlatformHandler:
                     tts="Астрологический совет дня: Сегодня звёзды советуют прислушаться к своей интуиции.",
                     buttons=[
                         YandexButton(
-                            title="Новый совет", payload={"action": "new_advice"}
+                            title="Новый совет",
+                            payload={"action": "new_advice"},
                         ),
-                        YandexButton(title="Гороскоп", payload={"action": "horoscope"}),
+                        YandexButton(
+                            title="Гороскоп", payload={"action": "horoscope"}
+                        ),
                     ],
                     end_session=False,
                 ),
@@ -307,7 +319,10 @@ class TestResponseConversion:
             text="Ваш гороскоп на сегодня: отличный день для новых начинаний! ⭐",
             buttons=[
                 {"title": "Завтра", "payload": {"period": "tomorrow"}},
-                {"title": "Совместимость", "payload": {"action": "compatibility"}},
+                {
+                    "title": "Совместимость",
+                    "payload": {"action": "compatibility"},
+                },
             ],
             end_session=False,
             platform_specific={"chat_id": "123456"},
@@ -320,7 +335,11 @@ class TestResponseConversion:
         assert "гороскоп" in telegram_response["send_message"]["text"]
         assert "reply_markup" in telegram_response["send_message"]
         assert (
-            len(telegram_response["send_message"]["reply_markup"]["inline_keyboard"])
+            len(
+                telegram_response["send_message"]["reply_markup"][
+                    "inline_keyboard"
+                ]
+            )
             == 2
         )
 
@@ -377,7 +396,13 @@ class TestResponseConversion:
         yandex_response = adapter.from_universal_response(universal_response)
 
         assert hasattr(yandex_response, "response")
-        assert yandex_response.response.text == "Добро пожаловать в мир астрологии!"
-        assert yandex_response.response.tts == "Добро пожаловать в мир астрологии!"
+        assert (
+            yandex_response.response.text
+            == "Добро пожаловать в мир астрологии!"
+        )
+        assert (
+            yandex_response.response.tts
+            == "Добро пожаловать в мир астрологии!"
+        )
         assert len(yandex_response.response.buttons) == 2
         assert not yandex_response.response.end_session

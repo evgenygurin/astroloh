@@ -14,7 +14,9 @@ class GoogleUser(BaseModel):
 
     user_id: str = Field(alias="userId")
     locale: Optional[str] = None
-    user_verification: Optional[str] = Field(default=None, alias="userVerification")
+    user_verification: Optional[str] = Field(
+        default=None, alias="userVerification"
+    )
 
 
 class GoogleDevice(BaseModel):
@@ -46,7 +48,9 @@ class GoogleConversation(BaseModel):
 
     conversation_id: str = Field(alias="conversationId")
     type: str
-    conversation_token: Optional[str] = Field(default=None, alias="conversationToken")
+    conversation_token: Optional[str] = Field(
+        default=None, alias="conversationToken"
+    )
 
 
 class GoogleRequest(BaseModel):
@@ -128,7 +132,9 @@ class GoogleDialogflowResponse(BaseModel):
 
     model_config = {"populate_by_name": True}
 
-    fulfillment_text: Optional[str] = Field(default=None, alias="fulfillmentText")
+    fulfillment_text: Optional[str] = Field(
+        default=None, alias="fulfillmentText"
+    )
     fulfillment_messages: Optional[List[Dict[str, Any]]] = Field(
         default=None, alias="fulfillmentMessages"
     )

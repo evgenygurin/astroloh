@@ -4,7 +4,7 @@ Integration tests for API endpoints.
 
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
@@ -35,7 +35,9 @@ class MockHelpers:
         return mock_user
 
     @staticmethod
-    def create_mock_database(mock_user: Optional[MagicMock] = None) -> MagicMock:
+    def create_mock_database(
+        mock_user: Optional[MagicMock] = None,
+    ) -> MagicMock:
         """Create a properly configured mock database."""
         db = MagicMock()
 
@@ -90,7 +92,9 @@ class MockHelpers:
                 "skill_id": kwargs.get("skill_id", "test_skill"),
                 "user_id": user_id,
                 "user": {"user_id": user_id},
-                "application": {"application_id": kwargs.get("app_id", "test_app")},
+                "application": {
+                    "application_id": kwargs.get("app_id", "test_app")
+                },
                 "new": is_new_session,
             },
             "request": {
@@ -145,7 +149,9 @@ class TestAPIIntegration:
 
     def _make_yandex_request(self, command: str, **kwargs: Any) -> Any:
         """Make a request to the Yandex webhook endpoint."""
-        request_data = self.mock_helpers.build_yandex_request(command, **kwargs)
+        request_data = self.mock_helpers.build_yandex_request(
+            command, **kwargs
+        )
 
         # Setup database mock with user if not explicitly disabled
         if kwargs.get("with_user", True):
@@ -186,18 +192,23 @@ class TestAPIIntegration:
 
     def test_yandex_webhook_horoscope_request(self):
         """Test Yandex webhook with horoscope request."""
-        response = self._make_yandex_request("мой гороскоп на сегодня", message_id=2)
+        response = self._make_yandex_request(
+            "мой гороскоп на сегодня", message_id=2
+        )
         self._assert_valid_yandex_response(response)
 
         data = response.json()
         text = data["response"]["text"].lower()
         assert any(
-            word in text for word in ["гороскоп", "прогноз", "звёзды", "астрологи"]
+            word in text
+            for word in ["гороскоп", "прогноз", "звёзды", "астрологи"]
         )
 
     def test_yandex_webhook_compatibility_request(self):
         """Test Yandex webhook with compatibility request."""
-        response = self._make_yandex_request("совместимость льва и весов", message_id=3)
+        response = self._make_yandex_request(
+            "совместимость льва и весов", message_id=3
+        )
         self._assert_valid_yandex_response(response)
 
         data = response.json()
@@ -215,7 +226,8 @@ class TestAPIIntegration:
         data = response.json()
         text = data["response"]["text"].lower()
         assert any(
-            word in text for word in ["помощь", "команды", "возможности", "умею"]
+            word in text
+            for word in ["помощь", "команды", "возможности", "умею"]
         )
 
     def test_yandex_webhook_empty_command(self):
@@ -276,7 +288,10 @@ class TestAPIIntegration:
         assert response.status_code in [400, 422]
 
     def _test_security_endpoint(
-        self, endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None
+        self,
+        endpoint: str,
+        method: str = "GET",
+        data: Optional[Dict[str, Any]] = None,
     ) -> Any:
         """Helper method for testing security endpoints."""
         self._setup_mock_database()
@@ -311,7 +326,9 @@ class TestAPIIntegration:
 
     def test_security_data_summary_endpoint(self):
         """Test security data summary endpoint."""
-        self._test_security_endpoint("/api/v1/security/user/test_user/data-summary")
+        self._test_security_endpoint(
+            "/api/v1/security/user/test_user/data-summary"
+        )
 
     def test_security_consent_endpoint(self):
         """Test security consent endpoint."""

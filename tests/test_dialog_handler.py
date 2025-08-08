@@ -143,7 +143,9 @@ class TestDialogHandler:
             )
 
             # Mock contextual response generation
-            mock_response = YandexResponse(text="Отличный день для новых начинаний!")
+            mock_response = YandexResponse(
+                text="Отличный день для новых начинаний!"
+            )
             self.dialog_handler._generate_contextual_response = AsyncMock(
                 return_value=mock_response
             )
@@ -204,7 +206,9 @@ class TestDialogHandler:
                 "strengths": ["понимание", "гармония"],
                 "challenges": ["разные темпераменты"],
             }
-            self.dialog_handler.astro_calculator.calculate_compatibility.return_value = mock_compatibility
+            self.dialog_handler.astro_calculator.calculate_compatibility.return_value = (
+                mock_compatibility
+            )
 
             # Mock response formatting
             mock_response = YandexResponse(text="Mock response")
@@ -234,8 +238,8 @@ class TestDialogHandler:
             error_recovery_manager=AsyncMock(),
         ):
             # Mock intent recognition to raise an error
-            self.dialog_handler.intent_recognizer.recognize_intent.side_effect = (
-                Exception("Test error")
+            self.dialog_handler.intent_recognizer.recognize_intent.side_effect = Exception(
+                "Test error"
             )
 
             # Mock error recovery
@@ -430,7 +434,9 @@ class TestDialogHandler:
         response = YandexResponse(text="test response")
 
         # Should not raise any exceptions
-        self.dialog_handler.log_interaction(request, response, "test_intent", 0.9)
+        self.dialog_handler.log_interaction(
+            request, response, "test_intent", 0.9
+        )
         assert True  # If we get here, logging worked
 
     def test_extract_user_context(self):

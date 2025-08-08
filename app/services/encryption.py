@@ -18,6 +18,7 @@ from app.core.config import settings
 
 class EncryptionError(Exception):
     """Exception raised when encryption/decryption operations fail."""
+
     pass
 
 
@@ -57,7 +58,7 @@ class EncryptionService:
             Производный ключ для шифрования
         """
         # Use configurable salt or generate from settings
-        salt_str = getattr(settings, 'ENCRYPTION_SALT', 'astroloh_salt_2024')
+        salt_str = getattr(settings, "ENCRYPTION_SALT", "astroloh_salt_2024")
         salt = salt_str.encode() if isinstance(salt_str, str) else salt_str
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -318,13 +319,19 @@ class DataProtectionManager:
         result = {}
 
         if encrypted_birth_date:
-            result["birth_date"] = self.encryption.decrypt(encrypted_birth_date)
+            result["birth_date"] = self.encryption.decrypt(
+                encrypted_birth_date
+            )
 
         if encrypted_birth_time:
-            result["birth_time"] = self.encryption.decrypt(encrypted_birth_time)
+            result["birth_time"] = self.encryption.decrypt(
+                encrypted_birth_time
+            )
 
         if encrypted_birth_location:
-            result["birth_location"] = self.encryption.decrypt(encrypted_birth_location)
+            result["birth_location"] = self.encryption.decrypt(
+                encrypted_birth_location
+            )
 
         return result
 
@@ -368,8 +375,6 @@ class DataProtectionManager:
         """
         expiry_date = created_at + timedelta(days=data_retention_days)
         return datetime.utcnow() > expiry_date
-
-
 
 
 # Глобальный экземпляр сервиса шифрования

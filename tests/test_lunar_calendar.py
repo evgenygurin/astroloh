@@ -74,7 +74,9 @@ class TestLunarCalendar:
         for phase in expected_phases:
             assert phase in self.lunar_calendar.lunar_phase_activities
 
-            phase_activities = self.lunar_calendar.lunar_phase_activities[phase]
+            phase_activities = self.lunar_calendar.lunar_phase_activities[
+                phase
+            ]
             for activity in expected_activities:
                 assert activity in phase_activities
                 assert isinstance(phase_activities[activity], str)
@@ -85,7 +87,9 @@ class TestLunarCalendar:
         year = 2023
         month = 6
 
-        lunar_month = self.lunar_calendar.get_monthly_lunar_calendar(year, month)
+        lunar_month = self.lunar_calendar.get_monthly_lunar_calendar(
+            year, month
+        )
 
         # Проверяем основную структуру
         assert "year" in lunar_month
@@ -125,7 +129,9 @@ class TestLunarCalendar:
         year = 2023
         month = 7
 
-        lunar_month = self.lunar_calendar.get_monthly_lunar_calendar(year, month)
+        lunar_month = self.lunar_calendar.get_monthly_lunar_calendar(
+            year, month
+        )
         key_dates = lunar_month["key_dates"]
 
         # Проверяем структуру ключевых дат
@@ -149,7 +155,9 @@ class TestLunarCalendar:
         year = 2023
         month = 12  # Зима
 
-        lunar_month = self.lunar_calendar.get_monthly_lunar_calendar(year, month)
+        lunar_month = self.lunar_calendar.get_monthly_lunar_calendar(
+            year, month
+        )
         advice = lunar_month["monthly_advice"]
 
         assert "general" in advice
@@ -303,9 +311,14 @@ class TestLunarCalendar:
             assert 1 <= lunar_day <= 30
 
             # Проверяем, что описание лунного дня соответствует дню
-            expected_description = self.lunar_calendar.lunar_day_descriptions[lunar_day]
+            expected_description = self.lunar_calendar.lunar_day_descriptions[
+                lunar_day
+            ]
             assert lunar_info["name"] == expected_description["name"]
-            assert lunar_info["description"] == expected_description["description"]
+            assert (
+                lunar_info["description"]
+                == expected_description["description"]
+            )
 
     def test_different_activity_types(self):
         """Тест различных типов деятельности."""

@@ -9,27 +9,27 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.database import (
-    User,
-    UserPreference,
-    UserInteraction,
-    Recommendation,
     ABTestGroup,
+    Recommendation,
+    User,
+    UserInteraction,
+    UserPreference,
+)
+from app.services.ml_analytics_service import ChurnPredictionModel, EngagementOptimizer
+from app.services.personalization_service import (
+    CommunicationStyleAdapter,
+    DynamicHoroscopeGenerator,
+    InterestProfilingSystem,
 )
 from app.services.recommendation_engine import (
+    ABTestManager,
     CollaborativeFiltering,
     ContentBasedFiltering,
     HybridRecommendationEngine,
+    MetricsCollector,
     TemporalPatternAnalyzer,
     UserClusteringManager,
-    ABTestManager,
-    MetricsCollector,
 )
-from app.services.personalization_service import (
-    DynamicHoroscopeGenerator,
-    InterestProfilingSystem,
-    CommunicationStyleAdapter,
-)
-from app.services.ml_analytics_service import ChurnPredictionModel, EngagementOptimizer
 
 
 @pytest.mark.unit
@@ -47,7 +47,9 @@ class TestCollaborativeFiltering:
         assert similar_users == []
 
     @pytest.mark.asyncio
-    async def test_find_similar_users_with_data(self, db_session: AsyncSession):
+    async def test_find_similar_users_with_data(
+        self, db_session: AsyncSession
+    ):
         """Test similar users search with sample data."""
         collaborative = CollaborativeFiltering(db_session)
 
@@ -79,13 +81,19 @@ class TestCollaborativeFiltering:
 
         # Create preferences
         prefs1 = UserPreference(
-            user_id=user1.id, communication_style="formal", complexity_level="advanced"
+            user_id=user1.id,
+            communication_style="formal",
+            complexity_level="advanced",
         )
         prefs2 = UserPreference(
-            user_id=user2.id, communication_style="formal", complexity_level="advanced"
+            user_id=user2.id,
+            communication_style="formal",
+            complexity_level="advanced",
         )
         prefs3 = UserPreference(
-            user_id=user3.id, communication_style="casual", complexity_level="beginner"
+            user_id=user3.id,
+            communication_style="casual",
+            complexity_level="beginner",
         )
 
         db_session.add_all([prefs1, prefs2, prefs3])
@@ -146,7 +154,9 @@ class TestContentBasedFiltering:
         content_filter = ContentBasedFiltering(db_session)
 
         user_id = uuid.uuid4()
-        recommendations = await content_filter.get_content_recommendations(user_id)
+        recommendations = await content_filter.get_content_recommendations(
+            user_id
+        )
 
         assert recommendations == []
 
@@ -157,7 +167,9 @@ class TestContentBasedFiltering:
         content_filter = ContentBasedFiltering(db_session)
 
         # Create test user
-        user = User(yandex_user_id="test_user", zodiac_sign="leo", data_consent=True)
+        user = User(
+            yandex_user_id="test_user", zodiac_sign="leo", data_consent=True
+        )
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -171,7 +183,9 @@ class TestContentBasedFiltering:
         db_session.add(prefs)
         await db_session.commit()
 
-        recommendations = await content_filter.get_content_recommendations(user.id)
+        recommendations = await content_filter.get_content_recommendations(
+            user.id
+        )
 
         # Should generate recommendations
         assert len(recommendations) > 0
@@ -189,7 +203,9 @@ class TestContentBasedFiltering:
 class TestHybridRecommendationEngine:
     """Tests for hybrid recommendation engine."""
 
-    async def test_generate_recommendations_empty_user(self, db_session: AsyncSession):
+    async def test_generate_recommendations_empty_user(
+        self, db_session: AsyncSession
+    ):
         """Test hybrid recommendations for non-existent user."""
         hybrid_engine = HybridRecommendationEngine(db_session)
 
@@ -198,12 +214,16 @@ class TestHybridRecommendationEngine:
 
         assert recommendations == []
 
-    async def test_generate_recommendations_with_user(self, db_session: AsyncSession):
+    async def test_generate_recommendations_with_user(
+        self, db_session: AsyncSession
+    ):
         """Test hybrid recommendations for existing user."""
         hybrid_engine = HybridRecommendationEngine(db_session)
 
         # Create test user with history
-        user = User(yandex_user_id="test_user", zodiac_sign="pisces", data_consent=True)
+        user = User(
+            yandex_user_id="test_user", zodiac_sign="pisces", data_consent=True
+        )
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -243,12 +263,16 @@ class TestHybridRecommendationEngine:
 class TestDynamicHoroscopeGenerator:
     """Tests for dynamic horoscope generation."""
 
-    async def test_generate_personalized_horoscope(self, db_session: AsyncSession):
+    async def test_generate_personalized_horoscope(
+        self, db_session: AsyncSession
+    ):
         """Test personalized horoscope generation."""
         generator = DynamicHoroscopeGenerator(db_session)
 
         # Create test user
-        user = User(yandex_user_id="test_user", zodiac_sign="gemini", data_consent=True)
+        user = User(
+            yandex_user_id="test_user", zodiac_sign="gemini", data_consent=True
+        )
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -264,7 +288,9 @@ class TestDynamicHoroscopeGenerator:
         db_session.add(interaction)
         await db_session.commit()
 
-        horoscope = await generator.generate_personalized_horoscope(user.id, "daily")
+        horoscope = await generator.generate_personalized_horoscope(
+            user.id, "daily"
+        )
 
         # Should return horoscope data
         assert horoscope is not None
@@ -317,7 +343,11 @@ class TestDynamicHoroscopeGenerator:
 
         # Should determine emotional state
         assert "emotional_state" in situation
-        assert situation["emotional_state"] in ["positive", "neutral", "negative"]
+        assert situation["emotional_state"] in [
+            "positive",
+            "neutral",
+            "negative",
+        ]
 
 
 @pytest.mark.unit
@@ -325,7 +355,9 @@ class TestInterestProfilingSystem:
     """Tests for interest profiling system."""
 
     @pytest.mark.asyncio
-    async def test_update_user_profile_no_interactions(self, db_session: AsyncSession):
+    async def test_update_user_profile_no_interactions(
+        self, db_session: AsyncSession
+    ):
         """Test profile update with no interactions."""
         profiler = InterestProfilingSystem(db_session)
 
@@ -390,7 +422,9 @@ class TestInterestProfilingSystem:
         )
         assert interest == "career"
 
-        interest = profiler._map_content_to_interest("daily", "Как дела с здоровьем?")
+        interest = profiler._map_content_to_interest(
+            "daily", "Как дела с здоровьем?"
+        )
         assert interest == "health"
 
 
@@ -399,7 +433,9 @@ class TestCommunicationStyleAdapter:
     """Tests for communication style adaptation."""
 
     @pytest.mark.asyncio
-    async def test_adapt_content_style_no_preferences(self, db_session: AsyncSession):
+    async def test_adapt_content_style_no_preferences(
+        self, db_session: AsyncSession
+    ):
         """Test style adaptation without user preferences."""
         adapter = CommunicationStyleAdapter(db_session)
 
@@ -412,7 +448,9 @@ class TestCommunicationStyleAdapter:
         assert adapted == content
 
     @pytest.mark.asyncio
-    async def test_adapt_content_style_with_preferences(self, db_session: AsyncSession):
+    async def test_adapt_content_style_with_preferences(
+        self, db_session: AsyncSession
+    ):
         """Test style adaptation with user preferences."""
         adapter = CommunicationStyleAdapter(db_session)
 
@@ -454,12 +492,15 @@ class TestCommunicationStyleAdapter:
         # Test friendly style
         friendly = adapter._apply_communication_style(original, "friendly")
         assert any(
-            prefix in friendly for prefix in ["Дорогой друг,", "Милый,", "Дорогой,"]
+            prefix in friendly
+            for prefix in ["Дорогой друг,", "Милый,", "Дорогой,"]
         )
 
         # Test mystical style
         mystical = adapter._apply_communication_style(original, "mystical")
-        assert any(text in mystical for text in ["звёзд", "космическ", "мудрец"])
+        assert any(
+            text in mystical for text in ["звёзд", "космическ", "мудрец"]
+        )
 
 
 @pytest.mark.asyncio
@@ -467,7 +508,9 @@ class TestCommunicationStyleAdapter:
 class TestChurnPredictionModel:
     """Tests for churn prediction model."""
 
-    async def test_predict_churn_risk_unknown_user(self, db_session: AsyncSession):
+    async def test_predict_churn_risk_unknown_user(
+        self, db_session: AsyncSession
+    ):
         """Test churn prediction for unknown user."""
         churn_model = ChurnPredictionModel(db_session)
 
@@ -477,7 +520,9 @@ class TestChurnPredictionModel:
         assert prediction["risk_level"] == "unknown"
         assert prediction["probability"] == 0
 
-    async def test_predict_churn_risk_active_user(self, db_session: AsyncSession):
+    async def test_predict_churn_risk_active_user(
+        self, db_session: AsyncSession
+    ):
         """Test churn prediction for active user."""
         churn_model = ChurnPredictionModel(db_session)
 
@@ -485,7 +530,8 @@ class TestChurnPredictionModel:
         user = User(
             yandex_user_id="active_user",
             data_consent=True,
-            last_accessed=datetime.utcnow() - timedelta(days=1),  # Active recently
+            last_accessed=datetime.utcnow()
+            - timedelta(days=1),  # Active recently
         )
         db_session.add(user)
         await db_session.commit()
@@ -520,7 +566,9 @@ class TestChurnPredictionModel:
         assert isinstance(prediction["risk_factors"], list)
         assert isinstance(prediction["recommendations"], list)
 
-    async def test_predict_churn_risk_inactive_user(self, db_session: AsyncSession):
+    async def test_predict_churn_risk_inactive_user(
+        self, db_session: AsyncSession
+    ):
         """Test churn prediction for inactive user."""
         churn_model = ChurnPredictionModel(db_session)
 
@@ -561,7 +609,9 @@ class TestChurnPredictionModel:
 class TestABTestManager:
     """Tests for A/B testing manager."""
 
-    async def test_assign_user_to_test_new_user(self, db_session: AsyncSession):
+    async def test_assign_user_to_test_new_user(
+        self, db_session: AsyncSession
+    ):
         """Test assigning new user to A/B test."""
         ab_manager = ABTestManager(db_session)
 
@@ -571,7 +621,9 @@ class TestABTestManager:
         await db_session.refresh(user)
 
         test_name = "recommendation_algorithm"
-        assigned_group = await ab_manager.assign_user_to_test(user.id, test_name)
+        assigned_group = await ab_manager.assign_user_to_test(
+            user.id, test_name
+        )
 
         # Should assign to one of the groups
         assert assigned_group in ["control", "variant_a", "variant_b"]
@@ -600,7 +652,9 @@ class TestABTestManager:
         await db_session.commit()
 
         # Should return existing assignment
-        assigned_group = await ab_manager.assign_user_to_test(user.id, test_name)
+        assigned_group = await ab_manager.assign_user_to_test(
+            user.id, test_name
+        )
         assert assigned_group == "variant_a"
 
 
@@ -665,7 +719,9 @@ class TestMetricsCollector:
 
         assert success is True
 
-    async def test_get_recommendation_metrics_no_data(self, db_session: AsyncSession):
+    async def test_get_recommendation_metrics_no_data(
+        self, db_session: AsyncSession
+    ):
         """Test getting metrics with no data."""
         metrics = MetricsCollector(db_session)
 
@@ -682,7 +738,9 @@ class TestMetricsCollector:
 class TestRecommendationSystemIntegration:
     """Integration tests for the complete recommendation system."""
 
-    async def test_full_recommendation_workflow(self, db_session: AsyncSession):
+    async def test_full_recommendation_workflow(
+        self, db_session: AsyncSession
+    ):
         """Test complete recommendation workflow from user creation to recommendations."""
 
         # Create user
@@ -743,7 +801,9 @@ class TestRecommendationSystemIntegration:
 
         # Test recommendation generation
         hybrid_engine = HybridRecommendationEngine(db_session)
-        recommendations = await hybrid_engine.generate_recommendations(user.id, 3)
+        recommendations = await hybrid_engine.generate_recommendations(
+            user.id, 3
+        )
         assert len(recommendations) > 0
 
         # Test personalized horoscope generation
@@ -760,7 +820,9 @@ class TestRecommendationSystemIntegration:
 
         # Test engagement optimization
         engagement_optimizer = EngagementOptimizer(db_session)
-        engagement_data = await engagement_optimizer.optimize_user_engagement(user.id)
+        engagement_data = await engagement_optimizer.optimize_user_engagement(
+            user.id
+        )
         assert "current_engagement" in engagement_data
 
         # Test A/B test assignment
@@ -768,7 +830,9 @@ class TestRecommendationSystemIntegration:
         test_group = await ab_manager.assign_user_to_test(user.id, "ui_layout")
         assert test_group in ["control", "variant_a", "variant_b"]
 
-    async def test_seasonal_recommendations_workflow(self, db_session: AsyncSession):
+    async def test_seasonal_recommendations_workflow(
+        self, db_session: AsyncSession
+    ):
         """Test seasonal recommendations workflow."""
 
         # Create user
@@ -783,10 +847,17 @@ class TestRecommendationSystemIntegration:
 
         # Test seasonal analysis
         temporal_analyzer = TemporalPatternAnalyzer(db_session)
-        seasonal_data = await temporal_analyzer.get_seasonal_recommendations(user.id)
+        seasonal_data = await temporal_analyzer.get_seasonal_recommendations(
+            user.id
+        )
 
         assert "season" in seasonal_data
-        assert seasonal_data["season"] in ["spring", "summer", "autumn", "winter"]
+        assert seasonal_data["season"] in [
+            "spring",
+            "summer",
+            "autumn",
+            "winter",
+        ]
         assert "features" in seasonal_data
         assert "recommendations" in seasonal_data
         assert isinstance(seasonal_data["recommendations"], list)
@@ -845,7 +916,9 @@ class TestRecommendationPerformance:
 
         # Generate recommendations for all users
         for user in users:
-            recommendations = await hybrid_engine.generate_recommendations(user.id, 5)
+            recommendations = await hybrid_engine.generate_recommendations(
+                user.id, 5
+            )
             assert len(recommendations) >= 0  # Allow empty results
 
         end_time = time.time()
@@ -868,10 +941,14 @@ class TestRecommendationSecurity:
 
         # Create two users
         user1 = User(
-            yandex_user_id="security_user_1", zodiac_sign="cancer", data_consent=True
+            yandex_user_id="security_user_1",
+            zodiac_sign="cancer",
+            data_consent=True,
         )
         user2 = User(
-            yandex_user_id="security_user_2", zodiac_sign="virgo", data_consent=True
+            yandex_user_id="security_user_2",
+            zodiac_sign="virgo",
+            data_consent=True,
         )
 
         db_session.add_all([user1, user2])
@@ -891,7 +968,9 @@ class TestRecommendationSecurity:
 
         # Generate recommendations for user2
         hybrid_engine = HybridRecommendationEngine(db_session)
-        user2_recommendations = await hybrid_engine.generate_recommendations(user2.id)
+        user2_recommendations = await hybrid_engine.generate_recommendations(
+            user2.id
+        )
 
         # Ensure user2's recommendations don't contain user1's private data
         for rec in user2_recommendations:

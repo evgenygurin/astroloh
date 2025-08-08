@@ -2,9 +2,10 @@
 Tests for main FastAPI application.
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, AsyncMock
 
 from app.main import app
 
@@ -69,7 +70,9 @@ class TestMainApp:
         with patch("app.main.settings") as mock_settings:
             with patch("app.main.init_database") as mock_init_db:
                 mock_settings.DATABASE_URL = "postgresql://test"
-                mock_init_db.side_effect = Exception("Database connection failed")
+                mock_init_db.side_effect = Exception(
+                    "Database connection failed"
+                )
 
                 # Should not raise exception, just log the error
                 from app.main import startup_event

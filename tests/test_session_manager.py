@@ -42,7 +42,9 @@ class TestSessionManager:
         self.session_manager.update_user_context(self.test_session, context)
 
         # Получаем обновленный контекст
-        retrieved_context = self.session_manager.get_user_context(self.test_session)
+        retrieved_context = self.session_manager.get_user_context(
+            self.test_session
+        )
         assert retrieved_context.intent == YandexIntent.HOROSCOPE
         assert retrieved_context.awaiting_data == "birth_date"
         assert retrieved_context.conversation_step == 1
@@ -55,7 +57,9 @@ class TestSessionManager:
             self.test_session, context, "birth_date", YandexIntent.HOROSCOPE
         )
 
-        updated_context = self.session_manager.get_user_context(self.test_session)
+        updated_context = self.session_manager.get_user_context(
+            self.test_session
+        )
         assert updated_context.awaiting_data == "birth_date"
         assert updated_context.intent == YandexIntent.HOROSCOPE
         assert updated_context.conversation_step == 1
@@ -71,7 +75,9 @@ class TestSessionManager:
         self.session_manager.update_user_context(self.test_session, context)
         self.session_manager.clear_awaiting_data(self.test_session, context)
 
-        updated_context = self.session_manager.get_user_context(self.test_session)
+        updated_context = self.session_manager.get_user_context(
+            self.test_session
+        )
         assert updated_context.awaiting_data is None
         assert updated_context.conversation_step == 2
 
@@ -118,7 +124,9 @@ class TestSessionManager:
         self.session_manager.update_user_context(self.test_session, context)
 
         # Имитируем устаревшую сессию, изменив время последней активности
-        session_key = f"{self.test_session.user_id}:{self.test_session.session_id}"
+        session_key = (
+            f"{self.test_session.user_id}:{self.test_session.session_id}"
+        )
         old_time = (datetime.utcnow() - timedelta(hours=2)).isoformat()
         self.session_manager._sessions[session_key]["last_activity"] = old_time
 

@@ -2,11 +2,12 @@
 Tests for Yandex Dialogs API endpoints.
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from fastapi.testclient import TestClient
-from unittest.mock import patch, AsyncMock, MagicMock
 
 from app.main import app
-from app.models.yandex_models import YandexSession, YandexResponseModel, YandexResponse
+from app.models.yandex_models import YandexResponse, YandexResponseModel, YandexSession
 
 
 class TestYandexDialogsAPI:
@@ -35,8 +36,8 @@ class TestYandexDialogsAPI:
     def test_yandex_health_endpoint_error(self):
         """Test Yandex dialogs health check when service fails."""
         with patch("app.api.yandex_dialogs.dialog_handler") as mock_handler:
-            mock_handler.session_manager.get_active_sessions_count.side_effect = (
-                Exception("Service error")
+            mock_handler.session_manager.get_active_sessions_count.side_effect = Exception(
+                "Service error"
             )
 
             response = self.client.get("/api/v1/yandex/health")
@@ -60,8 +61,8 @@ class TestYandexDialogsAPI:
     def test_cleanup_sessions_endpoint_error(self):
         """Test cleanup sessions endpoint when cleanup fails."""
         with patch("app.api.yandex_dialogs.dialog_handler") as mock_handler:
-            mock_handler.session_manager.cleanup_expired_sessions.side_effect = (
-                Exception("Cleanup failed")
+            mock_handler.session_manager.cleanup_expired_sessions.side_effect = Exception(
+                "Cleanup failed"
             )
 
             response = self.client.post("/api/v1/yandex/cleanup-sessions")
@@ -122,7 +123,9 @@ class TestYandexDialogsAPI:
             "version": "1.0",
         }
 
-        response = self.client.post("/api/v1/yandex/webhook", json=request_data)
+        response = self.client.post(
+            "/api/v1/yandex/webhook", json=request_data
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -151,7 +154,9 @@ class TestYandexDialogsAPI:
             side_effect=Exception("Processing error")
         )
 
-        with patch("app.api.yandex_dialogs.error_handler") as mock_error_handler:
+        with patch(
+            "app.api.yandex_dialogs.error_handler"
+        ) as mock_error_handler:
             mock_error_response = YandexResponse(
                 text="Извините, произошла ошибка. Попробуйте еще раз.",
                 end_session=False,
@@ -174,14 +179,20 @@ class TestYandexDialogsAPI:
                 "request": {
                     "command": "привет",
                     "original_utterance": "Привет",
-                    "nlu": {"tokens": ["привет"], "entities": [], "intents": {}},
+                    "nlu": {
+                        "tokens": ["привет"],
+                        "entities": [],
+                        "intents": {},
+                    },
                     "markup": {"dangerous_context": False},
                     "type": "SimpleUtterance",
                 },
                 "version": "1.0",
             }
 
-            response = self.client.post("/api/v1/yandex/webhook", json=request_data)
+            response = self.client.post(
+                "/api/v1/yandex/webhook", json=request_data
+            )
 
             assert response.status_code == 200
             data = response.json()

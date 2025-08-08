@@ -71,7 +71,9 @@ class PlatformAdapter(ABC):
         pass
 
     @abstractmethod
-    def from_universal_response(self, universal_response: UniversalResponse) -> Any:
+    def from_universal_response(
+        self, universal_response: UniversalResponse
+    ) -> Any:
         """Convert universal response to platform-specific format."""
         pass
 

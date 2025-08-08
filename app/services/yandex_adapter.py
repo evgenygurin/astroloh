@@ -120,12 +120,16 @@ class YandexAdapter(PlatformAdapter):
             version = "1.0"
 
             if universal_response.platform_specific:
-                session_data = universal_response.platform_specific.get("session")
-                version = universal_response.platform_specific.get("version", "1.0")
+                session_data = universal_response.platform_specific.get(
+                    "session"
+                )
+                version = universal_response.platform_specific.get(
+                    "version", "1.0"
+                )
 
             if not session_data:
                 # Create minimal session data
-                from app.models.yandex_models import YandexSession, YandexApplication
+                from app.models.yandex_models import YandexApplication, YandexSession
 
                 session_data = YandexSession(
                     session_id="unknown",

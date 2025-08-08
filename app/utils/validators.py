@@ -20,11 +20,20 @@ class DateValidator:
 
         # Обрабатываем месяцы на русском языке
         month_map = {
-            "января": 1, "февраля": 2, "марта": 3, "апреля": 4,
-            "мая": 5, "июня": 6, "июля": 7, "августа": 8,
-            "сентября": 9, "октября": 10, "ноября": 11, "декабря": 12
+            "января": 1,
+            "февраля": 2,
+            "марта": 3,
+            "апреля": 4,
+            "мая": 5,
+            "июня": 6,
+            "июля": 7,
+            "августа": 8,
+            "сентября": 9,
+            "октября": 10,
+            "ноября": 11,
+            "декабря": 12,
         }
-        
+
         # Проверяем формат "DD месяца YYYY" или "DD месяца"
         month_pattern = r"(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?"
         month_match = re.match(month_pattern, date_str)
@@ -32,10 +41,10 @@ class DateValidator:
             day = int(month_match.group(1))
             month_name = month_match.group(2)
             year_group = month_match.group(3)
-            
+
             month = month_map[month_name]
             year = int(year_group) if year_group else date.today().year
-            
+
             try:
                 return date(year, month, day)
             except ValueError:
@@ -88,7 +97,9 @@ class DateValidator:
         # Проверяем разумные границы (не старше 150 лет)
         min_date = date(today.year - 150, today.month, today.day)
         if birth_date < min_date:
-            raise ValidationSkillError("Дата рождения слишком давняя", "birth_date")
+            raise ValidationSkillError(
+                "Дата рождения слишком давняя", "birth_date"
+            )
 
         return True
 
@@ -217,7 +228,7 @@ class PasswordValidator:
     def validate_password_strength(password: str) -> Tuple[bool, str]:
         """
         Проверяет силу пароля.
-        
+
         Требования:
         - Минимум 8 символов
         - Минимум одна заглавная буква
@@ -227,49 +238,62 @@ class PasswordValidator:
         """
         if len(password) < 8:
             return False, "Password must be at least 8 characters long"
-        
+
         if not re.search(r"[A-Z]", password):
             return False, "Password must contain at least one uppercase letter"
-        
+
         if not re.search(r"[a-z]", password):
             return False, "Password must contain at least one lowercase letter"
-        
+
         if not re.search(r"\d", password):
             return False, "Password must contain at least one digit"
-        
+
         if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-            return False, "Password must contain at least one special character"
-        
+            return (
+                False,
+                "Password must contain at least one special character",
+            )
+
         # Проверка на распространенные слабые пароли
         weak_passwords = [
-            "password", "123456", "123456789", "qwerty", "abc123",
-            "password123", "admin", "letmein", "welcome", "monkey"
+            "password",
+            "123456",
+            "123456789",
+            "qwerty",
+            "abc123",
+            "password123",
+            "admin",
+            "letmein",
+            "welcome",
+            "monkey",
         ]
-        
+
         if password.lower() in weak_passwords:
             return False, "Password is too common and easily guessable"
-        
+
         return True, "Password meets security requirements"
 
     @staticmethod
     def validate_password(password: str) -> str:
         """
         Валидирует пароль и возвращает ошибку если не соответствует требованиям.
-        
+
         Args:
             password: Пароль для проверки
-            
+
         Returns:
             str: Пароль если валидный
-            
+
         Raises:
             ValidationSkillError: Если пароль не соответствует требованиям
         """
-        is_valid, message = PasswordValidator.validate_password_strength(password)
-        
+        is_valid, message = PasswordValidator.validate_password_strength(
+            password
+        )
+
         if not is_valid:
             raise ValidationSkillError(message, "password")
-            
+
         return password
 
 
@@ -289,10 +313,14 @@ class YandexRequestValidator:
 
         # Проверяем подполя
         if "command" not in request_data["request"]:
-            raise ValidationSkillError("Отсутствует команда в запросе", "command")
+            raise ValidationSkillError(
+                "Отсутствует команда в запросе", "command"
+            )
 
         if "session_id" not in request_data["session"]:
-            raise ValidationSkillError("Отсутствует идентификатор сессии", "session_id")
+            raise ValidationSkillError(
+                "Отсутствует идентификатор сессии", "session_id"
+            )
 
         return True
 
