@@ -20,9 +20,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements.txt pyproject.toml ./
 
 # Install Python dependencies with optimizations
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir gunicorn[gthread]==21.2.0
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel &&     pip install --no-cache-dir -r requirements.txt &&     pip install --no-cache-dir gunicorn[gthread]==21.2.0 &&     pip install --no-cache-dir pyswisseph
 
 # Production stage
 FROM python:3.12-slim AS production
