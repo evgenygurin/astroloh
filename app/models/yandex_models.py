@@ -29,6 +29,18 @@ class YandexIntent(str, Enum):
     SOLAR_RETURN = "solar_return"
     LUNAR_RETURN = "lunar_return"
     ADVICE = "advice"
+    
+    # Enhanced AI Consultation Intents
+    AI_NATAL_INTERPRETATION = "ai_natal_interpretation"
+    AI_CAREER_CONSULTATION = "ai_career_consultation" 
+    AI_LOVE_CONSULTATION = "ai_love_consultation"
+    AI_HEALTH_CONSULTATION = "ai_health_consultation"
+    AI_FINANCIAL_CONSULTATION = "ai_financial_consultation"
+    AI_SPIRITUAL_CONSULTATION = "ai_spiritual_consultation"
+    AI_ENHANCED_COMPATIBILITY = "ai_enhanced_compatibility"
+    AI_TRANSIT_FORECAST = "ai_transit_forecast"
+    AI_SERVICE_STATUS = "ai_service_status"
+    
     HELP = "help"
     EXIT = "exit"
     UNKNOWN = "unknown"
