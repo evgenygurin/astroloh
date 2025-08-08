@@ -529,11 +529,15 @@ class ResponseFormatter:
         )
 
         overall_score = compatibility_report.get("overall_score", 50)
-        compatibility_type = compatibility_report.get("compatibility_type", "romantic")
+        compatibility_type = compatibility_report.get(
+            "compatibility_type", "romantic"
+        )
         strengths = compatibility_report.get("strengths", [])
         challenges = compatibility_report.get("challenges", [])
         advice = compatibility_report.get("advice", [])
-        relationship_themes = compatibility_report.get("relationship_themes", [])
+        relationship_themes = compatibility_report.get(
+            "relationship_themes", []
+        )
 
         # Визуальные элементы
         stars = "⭐" * min(5, max(1, round(overall_score / 20)))
@@ -552,7 +556,9 @@ class ResponseFormatter:
 
         # Формируем основной текст
         text = f"🔮 Синастрия: {user_name} и {partner_name}\n\n"
-        text += f"{hearts} Общая совместимость: {overall_score:.1f}/100 {stars}\n"
+        text += (
+            f"{hearts} Общая совместимость: {overall_score:.1f}/100 {stars}\n"
+        )
         text += f"📊 Оценка: {summary}\n\n"
 
         # Темы отношений
@@ -591,7 +597,8 @@ class ResponseFormatter:
                 title="Детали", payload={"action": "synastry_details"}
             ),
             YandexButton(
-                title="Композитная карта", payload={"action": "composite_chart"}
+                title="Композитная карта",
+                payload={"action": "composite_chart"},
             ),
             YandexButton(
                 title="Новый анализ", payload={"action": "new_synastry"}
@@ -995,7 +1002,9 @@ class ResponseFormatter:
                 button_objects.append(
                     YandexButton(
                         title=button_text,
-                        payload={"action": button_text.lower().replace(" ", "_")},
+                        payload={
+                            "action": button_text.lower().replace(" ", "_")
+                        },
                     )
                 )
 
@@ -1006,9 +1015,14 @@ class ResponseFormatter:
             end_session=False,
         )
 
-    def format_zodiac_request_response(self, custom_message: Optional[str] = None) -> YandexResponse:
+    def format_zodiac_request_response(
+        self, custom_message: Optional[str] = None
+    ) -> YandexResponse:
         """Форматирует запрос знака зодиака для тестов."""
-        text = custom_message or "Назовите ваш знак зодиака для составления гороскопа."
+        text = (
+            custom_message
+            or "Назовите ваш знак зодиака для составления гороскопа."
+        )
 
         return YandexResponse(
             text=text,

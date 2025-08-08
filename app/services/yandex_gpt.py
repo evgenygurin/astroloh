@@ -370,16 +370,16 @@ class YandexGPTClient:
         self,
         chart_data: Dict[str, Any],
         arabic_parts: Dict[str, Any],
-        focus_area: Optional[str] = None
+        focus_area: Optional[str] = None,
     ) -> Optional[str]:
         """
         Генерирует интерпретацию натальной карты на основе Kerykeion данных.
-        
+
         Args:
             chart_data: Данные натальной карты от Kerykeion
             arabic_parts: Арабские части
             focus_area: Область фокусировки
-            
+
         Returns:
             AI интерпретация натальной карты
         """
@@ -397,72 +397,86 @@ class YandexGPTClient:
 
         # Extract key elements from chart data
         planets = chart_data.get("planets", {})
-        houses = chart_data.get("houses", {})
+        chart_data.get("houses", {})
         angles = chart_data.get("angles", {})
         aspects = chart_data.get("aspects", [])
         dominant_planets = chart_data.get("dominant_planets", [])
         chart_shape = chart_data.get("chart_shape", {})
-        
+
         prompt_parts = ["Интерпретируй натальную карту со следующими данными:"]
-        
+
         # Add planetary positions
         sun = planets.get("sun", {})
         moon = planets.get("moon", {})
         if sun.get("sign") and moon.get("sign"):
-            prompt_parts.extend([
-                f"Солнце в {sun['sign']} в {sun.get('house', '?')} доме",
-                f"Луна в {moon['sign']} в {moon.get('house', '?')} доме"
-            ])
-        
+            prompt_parts.extend(
+                [
+                    f"Солнце в {sun['sign']} в {sun.get('house', '?')} доме",
+                    f"Луна в {moon['sign']} в {moon.get('house', '?')} доме",
+                ]
+            )
+
         # Add ascendant
         ascendant = angles.get("ascendant", {})
         if ascendant.get("sign"):
             prompt_parts.append(f"Асцендент в {ascendant['sign']}")
-        
+
         # Add dominant planets
         if dominant_planets:
-            prompt_parts.append(f"Доминирующие планеты: {', '.join(dominant_planets[:3])}")
-        
+            prompt_parts.append(
+                f"Доминирующие планеты: {', '.join(dominant_planets[:3])}"
+            )
+
         # Add chart shape
         if chart_shape.get("shape"):
             prompt_parts.append(f"Форма карты: {chart_shape['shape']}")
-        
+
         # Add strongest aspects
-        major_aspects = [asp for asp in aspects[:3] if asp.get("strength") in ["Very Strong", "Strong"]]
+        major_aspects = [
+            asp
+            for asp in aspects[:3]
+            if asp.get("strength") in ["Very Strong", "Strong"]
+        ]
         if major_aspects:
             prompt_parts.append("Ключевые аспекты:")
             for asp in major_aspects:
-                prompt_parts.append(f"- {asp['planet1']} {asp['aspect']} {asp['planet2']}")
-        
+                prompt_parts.append(
+                    f"- {asp['planet1']} {asp['aspect']} {asp['planet2']}"
+                )
+
         # Add Arabic parts if available
         if arabic_parts:
             parts_info = []
             for part_key, part_data in list(arabic_parts.items())[:2]:
                 if isinstance(part_data, dict) and part_data.get("name"):
-                    parts_info.append(f"- {part_data['name']} в {part_data.get('sign', 'неизвестно')}")
-            
+                    parts_info.append(
+                        f"- {part_data['name']} в {part_data.get('sign', 'неизвестно')}"
+                    )
+
             if parts_info:
                 prompt_parts.extend(["", "Арабские части:"] + parts_info)
-        
+
         if focus_area:
             prompt_parts.append(f"\nОсобое внимание области: {focus_area}")
-        
-        prompt_parts.extend([
-            "",
-            "Создай целостную характеристику включающую:",
-            "- Основные черты характера",
-            "- Таланты и способности",
-            "- Жизненные задачи",
-            "- Практические рекомендации"
-        ])
-        
+
+        prompt_parts.extend(
+            [
+                "",
+                "Создай целостную характеристику включающую:",
+                "- Основные черты характера",
+                "- Таланты и способности",
+                "- Жизненные задачи",
+                "- Практические рекомендации",
+            ]
+        )
+
         prompt = "\n".join(prompt_parts)
-        
+
         return await self.generate_text(
             prompt=prompt,
             system_prompt=system_prompt,
             temperature=0.7,
-            max_tokens=800
+            max_tokens=800,
         )
 
     async def generate_synastry_analysis(
@@ -471,18 +485,18 @@ class YandexGPTClient:
         person2_chart: Dict[str, Any],
         synastry_data: Dict[str, Any],
         relationship_type: str,
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """
         Генерирует анализ синастрии на основе астрологических данных.
-        
+
         Args:
             person1_chart: Натальная карта первого человека
             person2_chart: Натальная карта второго человека
             synastry_data: Данные синастрии
             relationship_type: Тип отношений
             context: Дополнительный контекст
-            
+
         Returns:
             AI анализ синастрии
         """
@@ -503,54 +517,68 @@ class YandexGPTClient:
         person1_moon = person1_chart.get("planets", {}).get("moon", {})
         person2_sun = person2_chart.get("planets", {}).get("sun", {})
         person2_moon = person2_chart.get("planets", {}).get("moon", {})
-        
+
         prompt_parts = [
             f"Проанализируй синастрию для {relationship_type} отношений:",
             "",
             f"Партнер 1: Солнце в {person1_sun.get('sign', '?')}, Луна в {person1_moon.get('sign', '?')}",
-            f"Партнер 2: Солнце в {person2_sun.get('sign', '?')}, Луна в {person2_moon.get('sign', '?')}"
+            f"Партнер 2: Солнце в {person2_sun.get('sign', '?')}, Луна в {person2_moon.get('sign', '?')}",
         ]
-        
+
         # Add overall compatibility score
         overall_score = synastry_data.get("overall_score", 50)
         prompt_parts.append(f"Общая совместимость: {overall_score}%")
-        
+
         # Add significant connections
         sun_moon_connections = synastry_data.get("sun_moon_connections", [])
         if sun_moon_connections:
-            prompt_parts.extend([
-                "",
-                "Связи светил:",
-                *[f"- {conn['connection']}: {conn['aspect']}" for conn in sun_moon_connections[:3]]
-            ])
-        
-        venus_mars_connections = synastry_data.get("venus_mars_connections", [])
+            prompt_parts.extend(
+                [
+                    "",
+                    "Связи светил:",
+                    *[
+                        f"- {conn['connection']}: {conn['aspect']}"
+                        for conn in sun_moon_connections[:3]
+                    ],
+                ]
+            )
+
+        venus_mars_connections = synastry_data.get(
+            "venus_mars_connections", []
+        )
         if venus_mars_connections:
-            prompt_parts.extend([
-                "",
-                "Романтические связи:",
-                *[f"- {conn['connection']}: {conn['aspect']}" for conn in venus_mars_connections[:3]]
-            ])
-        
+            prompt_parts.extend(
+                [
+                    "",
+                    "Романтические связи:",
+                    *[
+                        f"- {conn['connection']}: {conn['aspect']}"
+                        for conn in venus_mars_connections[:3]
+                    ],
+                ]
+            )
+
         if context and context.get("challenges"):
             prompt_parts.append(f"\nТекущие вызовы: {context['challenges']}")
-        
-        prompt_parts.extend([
-            "",
-            "Включи в анализ:",
-            "- Общую оценку совместимости",
-            "- Сильные стороны союза",
-            "- Потенциальные сложности",
-            "- Практические советы для гармонии"
-        ])
-        
+
+        prompt_parts.extend(
+            [
+                "",
+                "Включи в анализ:",
+                "- Общую оценку совместимости",
+                "- Сильные стороны союза",
+                "- Потенциальные сложности",
+                "- Практические советы для гармонии",
+            ]
+        )
+
         prompt = "\n".join(prompt_parts)
-        
+
         return await self.generate_text(
             prompt=prompt,
             system_prompt=system_prompt,
             temperature=0.6,
-            max_tokens=700
+            max_tokens=700,
         )
 
     async def generate_transit_forecast(
@@ -559,18 +587,18 @@ class YandexGPTClient:
         current_transits: Dict[str, Any],
         period_forecast: Dict[str, Any],
         important_transits: Dict[str, Any],
-        focus_area: Optional[str] = None
+        focus_area: Optional[str] = None,
     ) -> Optional[str]:
         """
         Генерирует прогноз на основе транзитов.
-        
+
         Args:
             natal_data: Натальная карта
             current_transits: Текущие транзиты
             period_forecast: Прогноз на период
             important_transits: Важные транзиты
             focus_area: Область фокусировки
-            
+
         Returns:
             AI прогноз на основе транзитов
         """
@@ -587,59 +615,75 @@ class YandexGPTClient:
 Используй профессиональную транзитную терминологию доступно."""
 
         prompt_parts = ["Создай прогноз на основе текущих транзитов:"]
-        
+
         # Add current transits
         if not current_transits.get("error"):
             transits_list = current_transits.get("transits", [])[:3]
             if transits_list:
-                prompt_parts.extend([
-                    "",
-                    "Текущие транзиты:",
-                    *[f"- {transit.get('transiting_planet', '?')} {transit.get('aspect', '?')} натальная {transit.get('natal_planet', '?')}" 
-                      for transit in transits_list]
-                ])
-        
+                prompt_parts.extend(
+                    [
+                        "",
+                        "Текущие транзиты:",
+                        *[
+                            f"- {transit.get('transiting_planet', '?')} {transit.get('aspect', '?')} натальная {transit.get('natal_planet', '?')}"
+                            for transit in transits_list
+                        ],
+                    ]
+                )
+
         # Add upcoming events
         if period_forecast.get("daily_forecasts"):
-            upcoming_events = period_forecast.get("upcoming_key_transits", [])[:2]
+            upcoming_events = period_forecast.get("upcoming_key_transits", [])[
+                :2
+            ]
             if upcoming_events:
-                prompt_parts.extend([
-                    "",
-                    "Предстоящие ключевые события:",
-                    *[f"- {event.get('date', '?')}: {event.get('description', '?')}" 
-                      for event in upcoming_events]
-                ])
-        
+                prompt_parts.extend(
+                    [
+                        "",
+                        "Предстоящие ключевые события:",
+                        *[
+                            f"- {event.get('date', '?')}: {event.get('description', '?')}"
+                            for event in upcoming_events
+                        ],
+                    ]
+                )
+
         # Add important long-term transits
         if not important_transits.get("error"):
             major_transits = important_transits.get("major_transits", [])[:2]
             if major_transits:
-                prompt_parts.extend([
-                    "",
-                    "Важные долгосрочные влияния:",
-                    *[f"- {transit.get('planet', '?')}: {transit.get('description', '?')}" 
-                      for transit in major_transits]
-                ])
-        
+                prompt_parts.extend(
+                    [
+                        "",
+                        "Важные долгосрочные влияния:",
+                        *[
+                            f"- {transit.get('planet', '?')}: {transit.get('description', '?')}"
+                            for transit in major_transits
+                        ],
+                    ]
+                )
+
         if focus_area:
             prompt_parts.append(f"\nОсобое внимание области: {focus_area}")
-        
-        prompt_parts.extend([
-            "",
-            "Создай прогноз включающий:",
-            "- Общую энергетику периода",
-            "- Ключевые возможности и вызовы",
-            "- Рекомендации по планированию",
-            "- Оптимальное время для решений"
-        ])
-        
+
+        prompt_parts.extend(
+            [
+                "",
+                "Создай прогноз включающий:",
+                "- Общую энергетику периода",
+                "- Ключевые возможности и вызовы",
+                "- Рекомендации по планированию",
+                "- Оптимальное время для решений",
+            ]
+        )
+
         prompt = "\n".join(prompt_parts)
-        
+
         return await self.generate_text(
             prompt=prompt,
             system_prompt=system_prompt,
             temperature=0.7,
-            max_tokens=800
+            max_tokens=800,
         )
 
     async def generate_specialized_consultation(
@@ -647,51 +691,51 @@ class YandexGPTClient:
         zodiac_sign: str,
         consultation_type: str,
         context: Dict[str, Any],
-        natal_data: Optional[Dict[str, Any]] = None
+        natal_data: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """
         Генерирует специализированную консультацию.
-        
+
         Args:
             zodiac_sign: Знак зодиака
             consultation_type: Тип консультации
             context: Контекст консультации
             natal_data: Данные натальной карты (опционально)
-            
+
         Returns:
             Специализированная консультация
         """
         consultation_configs = {
             "career_guidance": {
                 "system": "Ты — астролог-консультант по карьере, помогающий найти профессиональное призвание.",
-                "focus": "карьерные возможности, профессиональные таланты, призвание"
+                "focus": "карьерные возможности, профессиональные таланты, призвание",
             },
             "love_analysis": {
                 "system": "Ты — эксперт по астрологии любви и отношений.",
-                "focus": "любовные перспективы, привлечение партнера, гармония в отношениях"
+                "focus": "любовные перспективы, привлечение партнера, гармония в отношениях",
             },
             "health_advice": {
                 "system": "Ты — астро-консультант по здоровью и жизненной энергии.",
-                "focus": "здоровье, жизненная энергия, профилактика, восстановление"
+                "focus": "здоровье, жизненная энергия, профилактика, восстановление",
             },
             "financial_guidance": {
                 "system": "Ты — астролог-консультант по финансовым вопросам.",
-                "focus": "финансовые возможности, денежные потоки, инвестиции"
+                "focus": "финансовые возможности, денежные потоки, инвестиции",
             },
             "spiritual_guidance": {
                 "system": "Ты — духовный астролог, помогающий в личностном росте.",
-                "focus": "духовное развитие, жизненные уроки, кармические задачи"
-            }
+                "focus": "духовное развитие, жизненные уроки, кармические задачи",
+            },
         }
-        
+
         config = consultation_configs.get(
-            consultation_type, 
+            consultation_type,
             {
                 "system": "Ты — профессиональный астролог-консультант.",
-                "focus": "общие жизненные вопросы"
-            }
+                "focus": "общие жизненные вопросы",
+            },
         )
-        
+
         system_prompt = f"""{config['system']}
 Давай практические советы на основе астрологических принципов.
 
@@ -704,41 +748,47 @@ class YandexGPTClient:
 
         prompt_parts = [
             f"Дай астрологический совет для {zodiac_sign}",
-            f"по теме: {config['focus']}"
+            f"по теме: {config['focus']}",
         ]
-        
+
         # Add natal chart context if available
         if natal_data and not natal_data.get("error"):
             sun = natal_data.get("planets", {}).get("sun", {})
             moon = natal_data.get("planets", {}).get("moon", {})
             if sun.get("sign") and moon.get("sign"):
-                prompt_parts.append(f"Натальная карта: Солнце в {sun['sign']}, Луна в {moon['sign']}")
-        
+                prompt_parts.append(
+                    f"Натальная карта: Солнце в {sun['sign']}, Луна в {moon['sign']}"
+                )
+
         # Add user context
         user_context = context.get("user_context", {})
         if user_context.get("mood"):
             prompt_parts.append(f"Настроение: {user_context['mood']}")
         if user_context.get("challenges"):
-            prompt_parts.append(f"Текущие вызовы: {user_context['challenges']}")
+            prompt_parts.append(
+                f"Текущие вызовы: {user_context['challenges']}"
+            )
         if user_context.get("focus_area"):
             prompt_parts.append(f"Фокус: {user_context['focus_area']}")
-        
-        prompt_parts.extend([
-            "",
-            "Совет должен содержать:",
-            "- Астрологическое обоснование",
-            "- Конкретные действия",
-            "- Оптимальное время",
-            "- Поддерживающие слова"
-        ])
-        
+
+        prompt_parts.extend(
+            [
+                "",
+                "Совет должен содержать:",
+                "- Астрологическое обоснование",
+                "- Конкретные действия",
+                "- Оптимальное время",
+                "- Поддерживающие слова",
+            ]
+        )
+
         prompt = "\n".join(prompt_parts)
-        
+
         return await self.generate_text(
             prompt=prompt,
             system_prompt=system_prompt,
             temperature=0.8,
-            max_tokens=500
+            max_tokens=500,
         )
 
     async def is_available(self) -> bool:

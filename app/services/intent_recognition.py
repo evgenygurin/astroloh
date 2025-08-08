@@ -829,7 +829,7 @@ class IntentRecognizer:
         """Извлекает имена партнеров из текста для синастрии."""
         logger.debug(f"PARTNER_NAME_EXTRACTION_START: text='{text[:50]}'")
         partner_names = []
-        
+
         # Паттерны для распознавания имен в контексте синастрии
         name_patterns = [
             r"с\s+([А-ЯЁ][а-яё]+)(?:\s|$)",  # "с Марией"
@@ -846,24 +846,36 @@ class IntentRecognizer:
             r"([А-ЯЁ][а-яё]+)\s+родил[аос]я",  # "Анна родилась"
             r"имя\s+([А-ЯЁ][а-яё]+)",  # "имя Михаил"
         ]
-        
+
         for pattern in name_patterns:
             matches = re.finditer(pattern, text, re.IGNORECASE)
             for match in matches:
                 name = match.group(1).strip().title()
                 # Фильтруем слишком короткие имена и служебные слова
                 if len(name) >= 3 and name.lower() not in [
-                    'для', 'при', 'мне', 'нем', 'ней', 'тем', 'той', 'том', 'все', 'что', 'как'
+                    "для",
+                    "при",
+                    "мне",
+                    "нем",
+                    "ней",
+                    "тем",
+                    "той",
+                    "том",
+                    "все",
+                    "что",
+                    "как",
                 ]:
                     partner_names.append(name)
-                    logger.debug(f"PARTNER_NAME_MATCH: found_name='{name}', pattern='{pattern}'")
-        
+                    logger.debug(
+                        f"PARTNER_NAME_MATCH: found_name='{name}', pattern='{pattern}'"
+                    )
+
         # Убираем дубликаты, сохраняя порядок
         unique_names = []
         for name in partner_names:
             if name not in unique_names:
                 unique_names.append(name)
-        
+
         logger.debug(f"PARTNER_NAME_EXTRACTION_RESULT: names={unique_names}")
         return unique_names
 

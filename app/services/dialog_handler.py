@@ -20,7 +20,6 @@ from app.services.ai_horoscope_service import ai_horoscope_service
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.compatibility_analyzer import CompatibilityAnalyzer, CompatibilityType
 from app.services.conversation_manager import ConversationManager
-from app.services.synastry_service import SynastryService, PartnerData
 from app.services.dialog_flow_manager import DialogFlowManager, DialogState
 from app.services.horoscope_generator import HoroscopeGenerator, HoroscopePeriod
 from app.services.intent_recognition import IntentRecognizer
@@ -28,6 +27,7 @@ from app.services.lunar_calendar import LunarCalendar
 from app.services.natal_chart import NatalChartCalculator
 from app.services.response_formatter import ResponseFormatter
 from app.services.session_manager import SessionManager
+from app.services.synastry_service import PartnerData, SynastryService
 from app.services.transit_calculator import TransitCalculator
 from app.utils.error_handler import ErrorHandler, handle_skill_errors
 from app.utils.validators import (
@@ -56,10 +56,12 @@ class DialogHandler:
 
         # AI-powered сервисы
         self.ai_horoscope_service = ai_horoscope_service
-        
+
         # Synastry and advanced compatibility services
         self.synastry_service = SynastryService(self.astro_calculator)
-        self.compatibility_analyzer = CompatibilityAnalyzer(self.synastry_service)
+        self.compatibility_analyzer = CompatibilityAnalyzer(
+            self.synastry_service
+        )
 
         # Расширенная функциональность Stage 5
         self.dialog_flow_manager = DialogFlowManager()
@@ -677,9 +679,7 @@ class DialogHandler:
             )
 
         elif intent == YandexIntent.SYNASTRY:
-            return await self._handle_synastry(
-                entities, user_context, session
-            )
+            return await self._handle_synastry(entities, user_context, session)
 
         elif intent == YandexIntent.NATAL_CHART:
             return await self._handle_natal_chart(
@@ -743,7 +743,9 @@ class DialogHandler:
             )
 
         elif intent == YandexIntent.AI_ENHANCED_COMPATIBILITY:
-            partner_name = entities.get("partner_name", entities.get("person_name"))
+            partner_name = entities.get(
+                "partner_name", entities.get("person_name")
+            )
             return await self._handle_ai_enhanced_compatibility(
                 user_context, session, partner_name
             )
@@ -760,19 +762,29 @@ class DialogHandler:
 
         # NEW RUSSIAN LOCALIZATION HANDLERS - Issue #68
         elif intent == YandexIntent.SIGN_DESCRIPTION:
-            return await self._handle_sign_description(entities, user_context, session)
-            
+            return await self._handle_sign_description(
+                entities, user_context, session
+            )
+
         elif intent == YandexIntent.PLANET_IN_SIGN:
-            return await self._handle_planet_in_sign(entities, user_context, session)
-            
+            return await self._handle_planet_in_sign(
+                entities, user_context, session
+            )
+
         elif intent == YandexIntent.HOUSE_CHARACTERISTICS:
-            return await self._handle_house_characteristics(entities, user_context, session)
-            
+            return await self._handle_house_characteristics(
+                entities, user_context, session
+            )
+
         elif intent == YandexIntent.ENHANCED_COMPATIBILITY:
-            return await self._handle_enhanced_compatibility_analysis(entities, user_context, session)
-            
+            return await self._handle_enhanced_compatibility_analysis(
+                entities, user_context, session
+            )
+
         elif intent == YandexIntent.RETROGRADE_INFLUENCE:
-            return await self._handle_retrograde_influence(entities, user_context, session)
+            return await self._handle_retrograde_influence(
+                entities, user_context, session
+            )
 
         elif intent == YandexIntent.HELP:
             return await self._handle_help(user_context, session)
@@ -1652,8 +1664,10 @@ class DialogHandler:
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает расширенные транзиты с Kerykeion интеграцией."""
-        logger.info("INTENT_ENHANCED_TRANSITS_START: Processing enhanced transits request")
-        
+        logger.info(
+            "INTENT_ENHANCED_TRANSITS_START: Processing enhanced transits request"
+        )
+
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
             self.session_manager.set_awaiting_data(
@@ -1663,34 +1677,47 @@ class DialogHandler:
 
         try:
             from datetime import date
-            
+
             birth_date = date.fromisoformat(user_context.birth_date)
             logger.info(f"INTENT_ENHANCED_TRANSITS_DATE: {birth_date}")
-            
+
             # Создаем расширенные данные натальной карты для транзитов
-            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
-            
-            # Получаем расширенные транзиты
-            enhanced_transits = self.transit_calculator.get_enhanced_current_transits(
-                natal_chart_data,
-                include_minor_aspects=True
+            natal_chart_data = await self._create_enhanced_natal_chart_data(
+                user_context
             )
-            
-            logger.info("INTENT_ENHANCED_TRANSITS_SUCCESS: Enhanced transits calculated")
-            
-            return self.response_formatter.format_enhanced_transits_response(enhanced_transits)
-            
+
+            # Получаем расширенные транзиты
+            enhanced_transits = (
+                self.transit_calculator.get_enhanced_current_transits(
+                    natal_chart_data, include_minor_aspects=True
+                )
+            )
+
+            logger.info(
+                "INTENT_ENHANCED_TRANSITS_SUCCESS: Enhanced transits calculated"
+            )
+
+            return self.response_formatter.format_enhanced_transits_response(
+                enhanced_transits
+            )
+
         except Exception as e:
-            logger.error(f"INTENT_ENHANCED_TRANSITS_ERROR: {str(e)}", exc_info=True)
+            logger.error(
+                f"INTENT_ENHANCED_TRANSITS_ERROR: {str(e)}", exc_info=True
+            )
             # Fallback к обычным транзитам
             return await self._handle_transits(entities, user_context, session)
 
     async def _handle_period_forecast(
-        self, entities: Dict[str, Any], user_context: UserContext, session, days: int = 7
+        self,
+        entities: Dict[str, Any],
+        user_context: UserContext,
+        session,
+        days: int = 7,
     ) -> Any:
         """Обрабатывает прогноз на период."""
         logger.info(f"INTENT_PERIOD_FORECAST_START: {days} days forecast")
-        
+
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
             self.session_manager.set_awaiting_data(
@@ -1700,20 +1727,27 @@ class DialogHandler:
 
         try:
             # Создаем данные натальной карты
-            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
-            
+            natal_chart_data = await self._create_enhanced_natal_chart_data(
+                user_context
+            )
+
             # Получаем прогноз на период
             period_forecast = self.transit_calculator.get_period_forecast(
-                natal_chart_data, 
-                days
+                natal_chart_data, days
             )
-            
-            logger.info(f"INTENT_PERIOD_FORECAST_SUCCESS: {days} days calculated")
-            
-            return self.response_formatter.format_period_forecast_response(period_forecast, days)
-            
+
+            logger.info(
+                f"INTENT_PERIOD_FORECAST_SUCCESS: {days} days calculated"
+            )
+
+            return self.response_formatter.format_period_forecast_response(
+                period_forecast, days
+            )
+
         except Exception as e:
-            logger.error(f"INTENT_PERIOD_FORECAST_ERROR: {str(e)}", exc_info=True)
+            logger.error(
+                f"INTENT_PERIOD_FORECAST_ERROR: {str(e)}", exc_info=True
+            )
             return self.response_formatter.format_error_response("forecast")
 
     async def _handle_weekly_forecast(
@@ -1721,14 +1755,16 @@ class DialogHandler:
     ) -> Any:
         """Обрабатывает недельный прогноз."""
         logger.info("INTENT_WEEKLY_FORECAST_START")
-        return await self._handle_period_forecast(entities, user_context, session, days=7)
+        return await self._handle_period_forecast(
+            entities, user_context, session, days=7
+        )
 
     async def _handle_important_transits(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает важные транзиты."""
         logger.info("INTENT_IMPORTANT_TRANSITS_START")
-        
+
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
             self.session_manager.set_awaiting_data(
@@ -1738,21 +1774,27 @@ class DialogHandler:
 
         try:
             # Создаем данные натальной карты
-            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
-            
-            # Получаем важные транзиты (90 дней вперед, 30 назад)
-            important_transits = self.transit_calculator.get_important_transits(
-                natal_chart_data,
-                lookback_days=30,
-                lookahead_days=90
+            natal_chart_data = await self._create_enhanced_natal_chart_data(
+                user_context
             )
-            
+
+            # Получаем важные транзиты (90 дней вперед, 30 назад)
+            important_transits = (
+                self.transit_calculator.get_important_transits(
+                    natal_chart_data, lookback_days=30, lookahead_days=90
+                )
+            )
+
             logger.info("INTENT_IMPORTANT_TRANSITS_SUCCESS")
-            
-            return self.response_formatter.format_important_transits_response(important_transits)
-            
+
+            return self.response_formatter.format_important_transits_response(
+                important_transits
+            )
+
         except Exception as e:
-            logger.error(f"INTENT_IMPORTANT_TRANSITS_ERROR: {str(e)}", exc_info=True)
+            logger.error(
+                f"INTENT_IMPORTANT_TRANSITS_ERROR: {str(e)}", exc_info=True
+            )
             return self.response_formatter.format_error_response("transits")
 
     async def _handle_comprehensive_analysis(
@@ -1760,7 +1802,7 @@ class DialogHandler:
     ) -> Any:
         """Обрабатывает комплексный астрологический анализ."""
         logger.info("INTENT_COMPREHENSIVE_ANALYSIS_START")
-        
+
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
             self.session_manager.set_awaiting_data(
@@ -1770,20 +1812,29 @@ class DialogHandler:
 
         try:
             # Создаем данные натальной карты
-            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
-            
-            # Получаем комплексный анализ (30 дней)
-            comprehensive_analysis = self.transit_calculator.get_comprehensive_transit_analysis(
-                natal_chart_data,
-                analysis_period_days=30
+            natal_chart_data = await self._create_enhanced_natal_chart_data(
+                user_context
             )
-            
+
+            # Получаем комплексный анализ (30 дней)
+            comprehensive_analysis = (
+                self.transit_calculator.get_comprehensive_transit_analysis(
+                    natal_chart_data, analysis_period_days=30
+                )
+            )
+
             logger.info("INTENT_COMPREHENSIVE_ANALYSIS_SUCCESS")
-            
-            return self.response_formatter.format_comprehensive_analysis_response(comprehensive_analysis)
-            
+
+            return (
+                self.response_formatter.format_comprehensive_analysis_response(
+                    comprehensive_analysis
+                )
+            )
+
         except Exception as e:
-            logger.error(f"INTENT_COMPREHENSIVE_ANALYSIS_ERROR: {str(e)}", exc_info=True)
+            logger.error(
+                f"INTENT_COMPREHENSIVE_ANALYSIS_ERROR: {str(e)}", exc_info=True
+            )
             return self.response_formatter.format_error_response("analysis")
 
     async def _handle_enhanced_horoscope_with_transits(
@@ -1791,7 +1842,7 @@ class DialogHandler:
     ) -> Any:
         """Обрабатывает улучшенный гороскоп с транзитами."""
         logger.info("INTENT_ENHANCED_HOROSCOPE_TRANSITS_START")
-        
+
         # Получаем знак зодиака
         zodiac_sign = entities.get("zodiac_sign")
         if not zodiac_sign:
@@ -1799,56 +1850,74 @@ class DialogHandler:
             if user_context.birth_date:
                 try:
                     from datetime import date
+
                     birth_date = date.fromisoformat(user_context.birth_date)
                     zodiac_sign = self.astro_calc.get_zodiac_sign(birth_date)
                 except Exception:
                     pass
-        
+
         if not zodiac_sign:
             return self.response_formatter.format_zodiac_request_response()
 
         try:
             from app.models.yandex_models import YandexZodiacSign
             from app.services.horoscope_generator import HoroscopePeriod
-            
+
             # Преобразуем знак зодиака
             try:
                 sign_enum = YandexZodiacSign(zodiac_sign.lower())
             except ValueError:
-                logger.warning(f"INTENT_ENHANCED_HOROSCOPE_TRANSITS_INVALID_SIGN: {zodiac_sign}")
+                logger.warning(
+                    f"INTENT_ENHANCED_HOROSCOPE_TRANSITS_INVALID_SIGN: {zodiac_sign}"
+                )
                 return self.response_formatter.format_error_response("zodiac")
-            
+
             # Создаем данные натальной карты если доступны
             natal_chart_data = None
             if user_context.birth_date:
                 try:
-                    natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
+                    natal_chart_data = (
+                        await self._create_enhanced_natal_chart_data(
+                            user_context
+                        )
+                    )
                 except Exception as e:
-                    logger.warning(f"INTENT_ENHANCED_HOROSCOPE_TRANSITS_NATAL_ERROR: {e}")
-            
+                    logger.warning(
+                        f"INTENT_ENHANCED_HOROSCOPE_TRANSITS_NATAL_ERROR: {e}"
+                    )
+
             # Генерируем улучшенный гороскоп с транзитами
-            enhanced_horoscope = self.horoscope_generator.generate_enhanced_horoscope(
-                sign=sign_enum,
-                period=HoroscopePeriod.DAILY,
-                natal_chart_data=natal_chart_data,
-                include_transits=True
+            enhanced_horoscope = (
+                self.horoscope_generator.generate_enhanced_horoscope(
+                    sign=sign_enum,
+                    period=HoroscopePeriod.DAILY,
+                    natal_chart_data=natal_chart_data,
+                    include_transits=True,
+                )
             )
-            
+
             logger.info("INTENT_ENHANCED_HOROSCOPE_TRANSITS_SUCCESS")
-            
-            return self.response_formatter.format_enhanced_horoscope_response(enhanced_horoscope)
-            
+
+            return self.response_formatter.format_enhanced_horoscope_response(
+                enhanced_horoscope
+            )
+
         except Exception as e:
-            logger.error(f"INTENT_ENHANCED_HOROSCOPE_TRANSITS_ERROR: {str(e)}", exc_info=True)
+            logger.error(
+                f"INTENT_ENHANCED_HOROSCOPE_TRANSITS_ERROR: {str(e)}",
+                exc_info=True,
+            )
             # Fallback к обычному гороскопу
-            return await self._handle_horoscope(entities, user_context, session)
+            return await self._handle_horoscope(
+                entities, user_context, session
+            )
 
     async def _handle_timing_question(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает вопросы о времени для действий ("когда лучше")."""
         logger.info("INTENT_TIMING_QUESTION_START")
-        
+
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
             self.session_manager.set_awaiting_data(
@@ -1858,33 +1927,42 @@ class DialogHandler:
 
         try:
             # Создаем данные натальной карты
-            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
-            
+            natal_chart_data = await self._create_enhanced_natal_chart_data(
+                user_context
+            )
+
             # Получаем прогноз на ближайшую неделю для тайминга
             period_forecast = self.transit_calculator.get_period_forecast(
-                natal_chart_data, 
-                days=7
+                natal_chart_data, days=7
             )
-            
+
             # Анализируем лучшее время для действий
-            timing_advice = self._extract_timing_advice_from_forecast(period_forecast, entities)
-            
+            timing_advice = self._extract_timing_advice_from_forecast(
+                period_forecast, entities
+            )
+
             logger.info("INTENT_TIMING_QUESTION_SUCCESS")
-            
-            return self.response_formatter.format_timing_advice_response(timing_advice)
-            
+
+            return self.response_formatter.format_timing_advice_response(
+                timing_advice
+            )
+
         except Exception as e:
-            logger.error(f"INTENT_TIMING_QUESTION_ERROR: {str(e)}", exc_info=True)
+            logger.error(
+                f"INTENT_TIMING_QUESTION_ERROR: {str(e)}", exc_info=True
+            )
             return self.response_formatter.format_error_response("timing")
 
     # Helper methods for enhanced functionality
 
-    async def _create_enhanced_natal_chart_data(self, user_context: UserContext) -> Dict[str, Any]:
+    async def _create_enhanced_natal_chart_data(
+        self, user_context: UserContext
+    ) -> Dict[str, Any]:
         """Создает расширенные данные натальной карты для транзитов."""
         from datetime import date, datetime, time
-        
+
         birth_date = date.fromisoformat(user_context.birth_date)
-        
+
         # Используем время из контекста или полдень по умолчанию
         birth_time = time(12, 0)  # По умолчанию полдень
         if user_context.birth_time:
@@ -1892,26 +1970,25 @@ class DialogHandler:
                 birth_time = time.fromisoformat(user_context.birth_time)
             except Exception:
                 pass
-        
+
         birth_datetime = datetime.combine(birth_date, birth_time)
-        
+
         # Координаты (по умолчанию Москва)
-        coordinates = {
-            "latitude": 55.7558, 
-            "longitude": 37.6176
-        }
+        coordinates = {"latitude": 55.7558, "longitude": 37.6176}
         if user_context.birth_place:
             coordinates.update(user_context.birth_place)
-        
+
         # Рассчитываем расширенную натальную карту
-        enhanced_natal_chart = self.natal_chart_calculator.calculate_enhanced_natal_chart(
-            name=user_context.user_id or "User",
-            birth_date=birth_date,
-            birth_time=birth_time,
-            birth_place=coordinates,
-            timezone_str="Europe/Moscow"
+        enhanced_natal_chart = (
+            self.natal_chart_calculator.calculate_enhanced_natal_chart(
+                name=user_context.user_id or "User",
+                birth_date=birth_date,
+                birth_time=birth_time,
+                birth_place=coordinates,
+                timezone_str="Europe/Moscow",
+            )
         )
-        
+
         # Добавляем необходимые поля для транзитного анализа
         chart_data = {
             "birth_datetime": birth_datetime.isoformat(),
@@ -1920,65 +1997,71 @@ class DialogHandler:
             "houses": enhanced_natal_chart.get("houses", {}),
             "aspects": enhanced_natal_chart.get("aspects", []),
         }
-        
+
         return chart_data
 
     def _extract_timing_advice_from_forecast(
-        self, 
-        period_forecast: Dict[str, Any], 
-        entities: Dict[str, Any]
+        self, period_forecast: Dict[str, Any], entities: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Извлекает советы по таймингу из прогноза."""
-        
+
         daily_forecasts = period_forecast.get("daily_forecasts", [])
         important_dates = period_forecast.get("important_dates", [])
-        
+
         # Анализируем, что спрашивает пользователь
         action_type = self._determine_action_type(entities)
-        
+
         best_days = []
         avoid_days = []
-        
+
         for day_data in daily_forecasts:
             energy_level = day_data.get("energy_level", "умеренная")
             recommendations = day_data.get("recommendations", [])
-            
+
             # Определяем подходящие дни на основе энергии и рекомендаций
             if energy_level in ["высокая", "повышенная"]:
                 if action_type in ["новые_дела", "активность", "общее"]:
-                    best_days.append({
-                        "date": day_data.get("date", ""),
-                        "reason": f"Высокая энергия ({energy_level})",
-                        "advice": "; ".join(recommendations[:2])
-                    })
+                    best_days.append(
+                        {
+                            "date": day_data.get("date", ""),
+                            "reason": f"Высокая энергия ({energy_level})",
+                            "advice": "; ".join(recommendations[:2]),
+                        }
+                    )
             elif energy_level in ["низкая", "пониженная"]:
-                avoid_days.append({
-                    "date": day_data.get("date", ""),
-                    "reason": f"Низкая энергия ({energy_level})",
-                    "advice": "Лучше отложить активные дела"
-                })
-        
+                avoid_days.append(
+                    {
+                        "date": day_data.get("date", ""),
+                        "reason": f"Низкая энергия ({energy_level})",
+                        "advice": "Лучше отложить активные дела",
+                    }
+                )
+
         # Добавляем важные даты
         for date_info in important_dates[:2]:
-            best_days.append({
-                "date": date_info.get("date", ""),
-                "reason": "Важное астрологическое влияние",
-                "advice": date_info.get("significance", "")
-            })
-        
+            best_days.append(
+                {
+                    "date": date_info.get("date", ""),
+                    "reason": "Важное астрологическое влияние",
+                    "advice": date_info.get("significance", ""),
+                }
+            )
+
         return {
             "action_type": action_type,
             "best_days": best_days[:3],  # Топ-3 дня
             "avoid_days": avoid_days[:2],  # Топ-2 дня избегания
-            "general_advice": period_forecast.get("general_advice", "Следуйте интуиции и естественным ритмам"),
-            "period": period_forecast.get("period", "7 дней")
+            "general_advice": period_forecast.get(
+                "general_advice", "Следуйте интуиции и естественным ритмам"
+            ),
+            "period": period_forecast.get("period", "7 дней"),
         }
 
     def _determine_action_type(self, entities: Dict[str, Any]) -> str:
         """Определяет тип действия из сущностей запроса."""
         # Анализируем сущности для определения типа действия
         # Возможные типы: новые_дела, отношения, работа, здоровье, общее
-        
+
         return "общее"  # По умолчанию
 
     async def _handle_synastry(
@@ -1986,11 +2069,11 @@ class DialogHandler:
     ) -> Any:
         """Обрабатывает запрос синастрии и анализа отношений."""
         logger.info("INTENT_SYNASTRY_START: Processing synastry request")
-        
+
         partner_names = entities.get("partner_names", [])
         zodiac_signs = entities.get("zodiac_signs", [])
         dates = entities.get("dates", [])
-        
+
         logger.info(
             f"INTENT_SYNASTRY_ENTITIES: partner_names={partner_names}, "
             f"zodiac_signs=[{', '.join(sign.value for sign in zodiac_signs)}], "
@@ -2009,7 +2092,9 @@ class DialogHandler:
         # Если есть имя партнера, но нет данных о партнере
         if partner_names and not user_context.partner_name:
             user_context.partner_name = partner_names[0]
-            logger.info(f"INTENT_SYNASTRY_PARTNER_NAME_SET: {user_context.partner_name}")
+            logger.info(
+                f"INTENT_SYNASTRY_PARTNER_NAME_SET: {user_context.partner_name}"
+            )
 
         # Проверяем наличие имени партнера
         if not user_context.partner_name:
@@ -2018,7 +2103,7 @@ class DialogHandler:
             )
             return self.response_formatter.format_text_response(
                 "Как зовут вашего партнера? Мне нужно имя для более персонального анализа отношений.",
-                buttons=["Отмена"]
+                buttons=["Отмена"],
             )
 
         # Проверяем наличие знака партнера
@@ -2026,52 +2111,69 @@ class DialogHandler:
             # Если в сообщении есть знак зодиака, используем его как знак партнера
             if zodiac_signs:
                 user_context.partner_sign = zodiac_signs[0]
-                logger.info(f"INTENT_SYNASTRY_PARTNER_SIGN_SET: {user_context.partner_sign.value}")
+                logger.info(
+                    f"INTENT_SYNASTRY_PARTNER_SIGN_SET: {user_context.partner_sign.value}"
+                )
             else:
                 self.session_manager.set_awaiting_data(
-                    session, user_context, "partner_zodiac_sign", YandexIntent.SYNASTRY
+                    session,
+                    user_context,
+                    "partner_zodiac_sign",
+                    YandexIntent.SYNASTRY,
                 )
                 return self.response_formatter.format_text_response(
                     f"Какой знак зодиака у {user_context.partner_name}?",
-                    buttons=["Не знаю", "Отмена"]
+                    buttons=["Не знаю", "Отмена"],
                 )
 
         # Опционально: дата рождения партнера для более точной синастрии
         if not user_context.partner_birth_date and dates:
             user_context.partner_birth_date = dates[0]
-            logger.info(f"INTENT_SYNASTRY_PARTNER_BIRTH_DATE_SET: {user_context.partner_birth_date}")
+            logger.info(
+                f"INTENT_SYNASTRY_PARTNER_BIRTH_DATE_SET: {user_context.partner_birth_date}"
+            )
 
         # Все необходимые данные собраны, выполняем синастрию
         try:
             from datetime import datetime
-            
+
             # Создаем объекты партнеров
             person1 = PartnerData(
                 name="Вы",
-                birth_date=datetime.fromisoformat(user_context.birth_date) if user_context.birth_date else datetime.now(),
-                birth_time=datetime.fromisoformat(user_context.birth_time) if user_context.birth_time else None,
+                birth_date=datetime.fromisoformat(user_context.birth_date)
+                if user_context.birth_date
+                else datetime.now(),
+                birth_time=datetime.fromisoformat(user_context.birth_time)
+                if user_context.birth_time
+                else None,
                 birth_place=user_context.birth_place,
                 zodiac_sign=user_context.zodiac_sign,
             )
-            
+
             person2 = PartnerData(
                 name=user_context.partner_name,
-                birth_date=datetime.fromisoformat(user_context.partner_birth_date) if user_context.partner_birth_date else datetime.now(),
+                birth_date=datetime.fromisoformat(
+                    user_context.partner_birth_date
+                )
+                if user_context.partner_birth_date
+                else datetime.now(),
                 birth_time=None,  # Пока не собираем время партнера
                 birth_place=None,  # Пока не собираем место партнера
                 zodiac_sign=user_context.partner_sign,
             )
-            
+
             logger.info(
                 f"INTENT_SYNASTRY_CALCULATION_START: Analyzing {person1.name} ({person1.zodiac_sign.value}) "
                 f"and {person2.name} ({person2.zodiac_sign.value})"
             )
 
             # Выполняем полный анализ совместимости
-            compatibility_report = await self.compatibility_analyzer.analyze_full_compatibility(
-                person1, person2, CompatibilityType.ROMANTIC
+            compatibility_report = (
+                await self.compatibility_analyzer.analyze_full_compatibility(
+                    person1, person2, CompatibilityType.ROMANTIC
+                )
             )
-            
+
             logger.info(
                 f"INTENT_SYNASTRY_SUCCESS: Generated compatibility report with {compatibility_report['overall_score']}% compatibility"
             )
@@ -2083,27 +2185,31 @@ class DialogHandler:
             return self.response_formatter.format_synastry_response(
                 user_name="Вы",
                 partner_name=user_context.partner_name,
-                compatibility_report=compatibility_report
+                compatibility_report=compatibility_report,
             )
 
         except Exception as e:
             logger.error(f"INTENT_SYNASTRY_ERROR: {str(e)}", exc_info=True)
-            
+
             # Fallback к простой совместимости по знакам
             if user_context.zodiac_sign and user_context.partner_sign:
-                compatibility = self.astro_calculator.calculate_compatibility_score(
-                    user_context.zodiac_sign, user_context.partner_sign
+                compatibility = (
+                    self.astro_calculator.calculate_compatibility_score(
+                        user_context.zodiac_sign, user_context.partner_sign
+                    )
                 )
-                
-                logger.info("INTENT_SYNASTRY_FALLBACK: Using basic zodiac compatibility")
-                
+
+                logger.info(
+                    "INTENT_SYNASTRY_FALLBACK: Using basic zodiac compatibility"
+                )
+
                 return self.response_formatter.format_compatibility_response(
                     user_context.zodiac_sign,
                     user_context.partner_sign,
                     compatibility,
-                    partner_name=user_context.partner_name
+                    partner_name=user_context.partner_name,
                 )
-            
+
             return self.response_formatter.format_error_response("synastry")
 
     async def _handle_ai_natal_chart_interpretation(
@@ -2111,66 +2217,82 @@ class DialogHandler:
     ) -> Any:
         """
         Обрабатывает запрос интерпретации натальной карты с помощью AI.
-        
+
         Args:
             user_context: Контекст пользователя
             session: Сессия
             focus_area: Область фокусировки (карьера, любовь, здоровье)
-            
+
         Returns:
             Ответ с AI интерпретацией натальной карты
         """
-        logger.info(f"AI_NATAL_INTERPRETATION_REQUEST_START: focus={focus_area}")
-        
+        logger.info(
+            f"AI_NATAL_INTERPRETATION_REQUEST_START: focus={focus_area}"
+        )
+
         try:
             # Проверяем наличие полных данных рождения
-            if not all([
-                user_context.birth_date,
-                user_context.birth_time, 
-                user_context.birth_place
-            ]):
-                logger.info("AI_NATAL_INTERPRETATION_INSUFFICIENT_DATA: Requesting birth data")
-                
+            if not all(
+                [
+                    user_context.birth_date,
+                    user_context.birth_time,
+                    user_context.birth_place,
+                ]
+            ):
+                logger.info(
+                    "AI_NATAL_INTERPRETATION_INSUFFICIENT_DATA: Requesting birth data"
+                )
+
                 # Устанавливаем состояние ожидания данных
                 user_context.awaiting_data = "birth_data_for_ai_natal"
                 user_context.consultation_focus = focus_area
                 self.session_manager.update_user_context(session, user_context)
-                
+
                 return self.response_formatter.format_text_response(
                     text="Для создания детальной интерпретации натальной карты мне нужны ваши точные данные рождения. Пожалуйста, укажите дату, время и место рождения.",
-                    buttons=["Отмена"]
+                    buttons=["Отмена"],
                 )
-            
+
             # Генерируем AI интерпретацию
             interpretation = await self.ai_horoscope_service.generate_natal_chart_interpretation(
                 name=user_context.name or "Пользователь",
                 birth_date=user_context.birth_date,
                 birth_time=user_context.birth_time,
                 birth_place={
-                    "latitude": user_context.birth_place.get("latitude", 55.7558),
-                    "longitude": user_context.birth_place.get("longitude", 37.6176)
+                    "latitude": user_context.birth_place.get(
+                        "latitude", 55.7558
+                    ),
+                    "longitude": user_context.birth_place.get(
+                        "longitude", 37.6176
+                    ),
                 },
                 timezone_str="Europe/Moscow",
-                focus_area=focus_area
+                focus_area=focus_area,
             )
-            
+
             if interpretation.get("ai_interpretation"):
-                logger.info("AI_NATAL_INTERPRETATION_SUCCESS: Generated AI interpretation")
-                
+                logger.info(
+                    "AI_NATAL_INTERPRETATION_SUCCESS: Generated AI interpretation"
+                )
+
                 response_text = interpretation["ai_interpretation"]
-                
+
                 # Добавляем информацию об источнике данных
                 if interpretation.get("data_source") == "kerykeion_enhanced":
                     response_text += "\n\nЭта интерпретация основана на профессиональных астрологических расчетах."
-                
+
                 return self.response_formatter.format_text_response(
                     text=response_text,
-                    buttons=["Ещё вопрос", "Карьера", "Любовь", "Здоровье"]
+                    buttons=["Ещё вопрос", "Карьера", "Любовь", "Здоровье"],
                 )
             else:
-                logger.warning("AI_NATAL_INTERPRETATION_NO_RESULT: No interpretation generated")
-                return self.response_formatter.format_error_response("natal_ai")
-                
+                logger.warning(
+                    "AI_NATAL_INTERPRETATION_NO_RESULT: No interpretation generated"
+                )
+                return self.response_formatter.format_error_response(
+                    "natal_ai"
+                )
+
         except Exception as e:
             logger.error(f"AI_NATAL_INTERPRETATION_ERROR: {e}")
             return self.response_formatter.format_error_response("natal_ai")
@@ -2180,220 +2302,293 @@ class DialogHandler:
     ) -> Any:
         """
         Обрабатывает специализированную AI консультацию.
-        
+
         Args:
             user_context: Контекст пользователя
             session: Сессия
             consultation_type: Тип консультации (карьера, любовь, здоровье, финансы, духовность)
-            
+
         Returns:
             Ответ с специализированной консультацией
         """
-        logger.info(f"AI_SPECIALIZED_CONSULTATION_START: type={consultation_type}")
-        
+        logger.info(
+            f"AI_SPECIALIZED_CONSULTATION_START: type={consultation_type}"
+        )
+
         try:
             if not user_context.zodiac_sign:
-                logger.info("AI_SPECIALIZED_CONSULTATION_NO_SIGN: Requesting zodiac sign")
-                
-                user_context.awaiting_data = f"zodiac_for_ai_{consultation_type}"
+                logger.info(
+                    "AI_SPECIALIZED_CONSULTATION_NO_SIGN: Requesting zodiac sign"
+                )
+
+                user_context.awaiting_data = (
+                    f"zodiac_for_ai_{consultation_type}"
+                )
                 self.session_manager.update_user_context(session, user_context)
-                
+
                 return self.response_formatter.format_text_response(
                     text=f"Чтобы дать точную консультацию по теме '{consultation_type}', мне нужно знать ваш знак зодиака. Какой у вас знак?",
-                    buttons=["Овен", "Телец", "Близнецы", "Рак", "Лев"]
+                    buttons=["Овен", "Телец", "Близнецы", "Рак", "Лев"],
                 )
-            
+
             # Подготавливаем данные рождения (если есть)
             birth_data = None
-            if all([user_context.birth_date, user_context.birth_time, user_context.birth_place]):
+            if all(
+                [
+                    user_context.birth_date,
+                    user_context.birth_time,
+                    user_context.birth_place,
+                ]
+            ):
                 birth_data = {
                     "name": user_context.name or "Пользователь",
                     "birth_date": user_context.birth_date,
                     "birth_time": user_context.birth_time,
                     "birth_place": user_context.birth_place,
-                    "timezone": "Europe/Moscow"
+                    "timezone": "Europe/Moscow",
                 }
-            
+
             # Генерируем специализированную консультацию
             consultation = await self.ai_horoscope_service.generate_specialized_consultation(
                 zodiac_sign=user_context.zodiac_sign,
                 consultation_type=consultation_type,
                 user_context={
                     "mood": getattr(user_context, "mood", None),
-                    "challenges": getattr(user_context, "current_challenges", None),
-                    "focus_area": consultation_type
+                    "challenges": getattr(
+                        user_context, "current_challenges", None
+                    ),
+                    "focus_area": consultation_type,
                 },
-                birth_data=birth_data
+                birth_data=birth_data,
             )
-            
+
             if consultation.get("advice"):
-                logger.info(f"AI_SPECIALIZED_CONSULTATION_SUCCESS: {consultation_type}")
-                
+                logger.info(
+                    f"AI_SPECIALIZED_CONSULTATION_SUCCESS: {consultation_type}"
+                )
+
                 response_text = consultation["advice"]
-                
+
                 # Добавляем контекстную информацию
                 if consultation.get("data_source") == "personalized_ai":
                     if birth_data:
                         response_text += "\n\nСовет основан на анализе вашей натальной карты."
                     else:
                         response_text += f"\n\nСовет для знака {user_context.zodiac_sign.value}."
-                
+
                 # Подходящие кнопки для каждого типа консультации
                 buttons = {
                     "карьера": ["Финансы", "Развитие", "Ещё совет"],
-                    "любовь": ["Совместимость", "Отношения", "Ещё совет"], 
+                    "любовь": ["Совместимость", "Отношения", "Ещё совет"],
                     "здоровье": ["Энергия", "Профилактика", "Ещё совет"],
                     "финансы": ["Карьера", "Инвестиции", "Ещё совет"],
-                    "духовность": ["Развитие", "Медитация", "Ещё совет"]
+                    "духовность": ["Развитие", "Медитация", "Ещё совет"],
                 }
-                
-                response_buttons = buttons.get(consultation_type, ["Ещё совет", "Другая тема"])
-                
+
+                response_buttons = buttons.get(
+                    consultation_type, ["Ещё совет", "Другая тема"]
+                )
+
                 return self.response_formatter.format_text_response(
-                    text=response_text,
-                    buttons=response_buttons
+                    text=response_text, buttons=response_buttons
                 )
             else:
-                logger.warning(f"AI_SPECIALIZED_CONSULTATION_NO_RESULT: {consultation_type}")
-                return self.response_formatter.format_error_response("consultation")
-                
+                logger.warning(
+                    f"AI_SPECIALIZED_CONSULTATION_NO_RESULT: {consultation_type}"
+                )
+                return self.response_formatter.format_error_response(
+                    "consultation"
+                )
+
         except Exception as e:
             logger.error(f"AI_SPECIALIZED_CONSULTATION_ERROR: {e}")
-            return self.response_formatter.format_error_response("consultation")
+            return self.response_formatter.format_error_response(
+                "consultation"
+            )
 
     async def _handle_ai_enhanced_compatibility(
         self, user_context: UserContext, session, partner_name: str = None
     ) -> Any:
         """
         Обрабатывает улучшенный анализ совместимости с AI.
-        
+
         Args:
             user_context: Контекст пользователя
             session: Сессия
             partner_name: Имя партнера
-            
+
         Returns:
             Ответ с улучшенным анализом совместимости
         """
         logger.info(f"AI_ENHANCED_COMPATIBILITY_START: partner={partner_name}")
-        
+
         try:
             # Проверяем наличие данных пользователя
             if not user_context.zodiac_sign:
-                logger.info("AI_ENHANCED_COMPATIBILITY_NO_USER_SIGN: Requesting user sign")
-                
+                logger.info(
+                    "AI_ENHANCED_COMPATIBILITY_NO_USER_SIGN: Requesting user sign"
+                )
+
                 user_context.awaiting_data = "zodiac_for_ai_compatibility"
                 if partner_name:
                     user_context.partner_name = partner_name
                 self.session_manager.update_user_context(session, user_context)
-                
+
                 return self.response_formatter.format_text_response(
                     text="Для анализа совместимости мне нужен ваш знак зодиака. Какой у вас знак?",
-                    buttons=["Овен", "Телец", "Близнецы", "Рак", "Лев"]
+                    buttons=["Овен", "Телец", "Близнецы", "Рак", "Лев"],
                 )
-            
+
             # Проверяем наличие данных партнера
             if not user_context.partner_sign:
-                logger.info("AI_ENHANCED_COMPATIBILITY_NO_PARTNER_SIGN: Requesting partner sign")
-                
-                user_context.awaiting_data = "partner_sign_for_ai_compatibility"
+                logger.info(
+                    "AI_ENHANCED_COMPATIBILITY_NO_PARTNER_SIGN: Requesting partner sign"
+                )
+
+                user_context.awaiting_data = (
+                    "partner_sign_for_ai_compatibility"
+                )
                 if partner_name:
                     user_context.partner_name = partner_name
                 self.session_manager.update_user_context(session, user_context)
-                
-                partner_text = f"партнера {partner_name}" if partner_name else "партнера"
+
+                partner_text = (
+                    f"партнера {partner_name}" if partner_name else "партнера"
+                )
                 return self.response_formatter.format_text_response(
                     text=f"Теперь мне нужен знак зодиака {partner_text}. Какой у него знак?",
-                    buttons=["Овен", "Телец", "Близнецы", "Рак", "Лев"]
+                    buttons=["Овен", "Телец", "Близнецы", "Рак", "Лев"],
                 )
-            
+
             # Подготавливаем данные для анализа
             person1_data = {
                 "name": user_context.name or "Вы",
-                "zodiac_sign": user_context.zodiac_sign.value
+                "zodiac_sign": user_context.zodiac_sign.value,
             }
-            
+
             person2_data = {
-                "name": user_context.partner_name or partner_name or "Партнер", 
-                "zodiac_sign": user_context.partner_sign.value
+                "name": user_context.partner_name or partner_name or "Партнер",
+                "zodiac_sign": user_context.partner_sign.value,
             }
-            
+
             # Добавляем данные рождения если есть
-            if all([user_context.birth_date, user_context.birth_time, user_context.birth_place]):
-                person1_data.update({
-                    "birth_date": user_context.birth_date.isoformat(),
-                    "birth_datetime": user_context.birth_time.isoformat(),
-                    "birth_place": user_context.birth_place
-                })
-            
+            if all(
+                [
+                    user_context.birth_date,
+                    user_context.birth_time,
+                    user_context.birth_place,
+                ]
+            ):
+                person1_data.update(
+                    {
+                        "birth_date": user_context.birth_date.isoformat(),
+                        "birth_datetime": user_context.birth_time.isoformat(),
+                        "birth_place": user_context.birth_place,
+                    }
+                )
+
             # Генерируем улучшенный анализ совместимости
             compatibility = await self.ai_horoscope_service.generate_enhanced_compatibility_analysis(
                 person1_data=person1_data,
                 person2_data=person2_data,
                 relationship_type="романтические",
                 context={
-                    "relationship_stage": getattr(user_context, "relationship_stage", "знакомство"),
-                    "challenges": getattr(user_context, "relationship_challenges", None)
-                }
+                    "relationship_stage": getattr(
+                        user_context, "relationship_stage", "знакомство"
+                    ),
+                    "challenges": getattr(
+                        user_context, "relationship_challenges", None
+                    ),
+                },
             )
-            
+
             if compatibility.get("ai_analysis"):
-                logger.info("AI_ENHANCED_COMPATIBILITY_SUCCESS: Generated enhanced analysis")
-                
+                logger.info(
+                    "AI_ENHANCED_COMPATIBILITY_SUCCESS: Generated enhanced analysis"
+                )
+
                 response_text = compatibility["ai_analysis"]
-                
+
                 # Добавляем оценку совместимости если есть
-                if compatibility.get("chart_data", {}).get("synastry_analysis", {}).get("overall_score"):
-                    score = compatibility["chart_data"]["synastry_analysis"]["overall_score"]
-                    response_text = f"Совместимость: {score}%\n\n{response_text}"
-                
+                if (
+                    compatibility.get("chart_data", {})
+                    .get("synastry_analysis", {})
+                    .get("overall_score")
+                ):
+                    score = compatibility["chart_data"]["synastry_analysis"][
+                        "overall_score"
+                    ]
+                    response_text = (
+                        f"Совместимость: {score}%\n\n{response_text}"
+                    )
+
                 # Очищаем данные партнера для следующего запроса
                 user_context.partner_name = None
                 user_context.partner_sign = None
                 self.session_manager.update_user_context(session, user_context)
-                
+
                 return self.response_formatter.format_text_response(
                     text=response_text,
-                    buttons=["Другой партнер", "Советы для отношений", "Ещё вопрос"]
+                    buttons=[
+                        "Другой партнер",
+                        "Советы для отношений",
+                        "Ещё вопрос",
+                    ],
                 )
             else:
-                logger.warning("AI_ENHANCED_COMPATIBILITY_NO_RESULT: No analysis generated")
-                return self.response_formatter.format_error_response("compatibility")
-                
+                logger.warning(
+                    "AI_ENHANCED_COMPATIBILITY_NO_RESULT: No analysis generated"
+                )
+                return self.response_formatter.format_error_response(
+                    "compatibility"
+                )
+
         except Exception as e:
             logger.error(f"AI_ENHANCED_COMPATIBILITY_ERROR: {e}")
-            return self.response_formatter.format_error_response("compatibility")
+            return self.response_formatter.format_error_response(
+                "compatibility"
+            )
 
     async def _handle_ai_transit_forecast(
-        self, user_context: UserContext, session, period_days: int = 30, focus_area: str = None
+        self,
+        user_context: UserContext,
+        session,
+        period_days: int = 30,
+        focus_area: str = None,
     ) -> Any:
         """
         Обрабатывает AI прогноз на основе транзитов.
-        
+
         Args:
             user_context: Контекст пользователя
             session: Сессия
             period_days: Период прогноза в днях
             focus_area: Область фокусировки
-            
+
         Returns:
             Ответ с прогнозом на основе транзитов
         """
-        logger.info(f"AI_TRANSIT_FORECAST_START: period={period_days}, focus={focus_area}")
-        
+        logger.info(
+            f"AI_TRANSIT_FORECAST_START: period={period_days}, focus={focus_area}"
+        )
+
         try:
             if not user_context.zodiac_sign:
-                logger.info("AI_TRANSIT_FORECAST_NO_SIGN: Requesting zodiac sign")
-                
-                user_context.awaiting_data = f"zodiac_for_ai_transit_{period_days}"
+                logger.info(
+                    "AI_TRANSIT_FORECAST_NO_SIGN: Requesting zodiac sign"
+                )
+
+                user_context.awaiting_data = (
+                    f"zodiac_for_ai_transit_{period_days}"
+                )
                 user_context.consultation_focus = focus_area
                 self.session_manager.update_user_context(session, user_context)
-                
+
                 return self.response_formatter.format_text_response(
                     text=f"Для создания прогноза на {period_days} дней мне нужен ваш знак зодиака. Какой у вас знак?",
-                    buttons=["Овен", "Телец", "Близнецы", "Рак", "Лев"]
+                    buttons=["Овен", "Телец", "Близнецы", "Рак", "Лев"],
                 )
-            
+
             # Генерируем прогноз на основе транзитов
             forecast = await self.ai_horoscope_service.generate_transit_forecast_analysis(
                 zodiac_sign=user_context.zodiac_sign,
@@ -2401,68 +2596,84 @@ class DialogHandler:
                 birth_time=user_context.birth_time,
                 birth_place=user_context.birth_place,
                 forecast_period=period_days,
-                focus_area=focus_area
+                focus_area=focus_area,
             )
-            
+
             if forecast.get("ai_forecast"):
-                logger.info(f"AI_TRANSIT_FORECAST_SUCCESS: Generated {period_days}-day forecast")
-                
+                logger.info(
+                    f"AI_TRANSIT_FORECAST_SUCCESS: Generated {period_days}-day forecast"
+                )
+
                 response_text = forecast["ai_forecast"]
-                
+
                 # Добавляем информацию о периоде
                 period_text = {
                     7: "на неделю",
-                    30: "на месяц", 
-                    90: "на квартал"
+                    30: "на месяц",
+                    90: "на квартал",
                 }.get(period_days, f"на {period_days} дней")
-                
+
                 response_text = f"Прогноз {period_text}:\n\n{response_text}"
-                
+
                 # Подходящие кнопки
-                buttons = ["Другой период", "Фокус на карьере", "Фокус на любви"]
+                buttons = [
+                    "Другой период",
+                    "Фокус на карьере",
+                    "Фокус на любви",
+                ]
                 if period_days != 7:
                     buttons.insert(0, "На неделю")
                 if period_days != 30:
                     buttons.insert(1, "На месяц")
-                
+
                 return self.response_formatter.format_text_response(
                     text=response_text,
-                    buttons=buttons[:5]  # Ограничиваем до 5 кнопок для Alice
+                    buttons=buttons[:5],  # Ограничиваем до 5 кнопок для Alice
                 )
             else:
-                logger.warning("AI_TRANSIT_FORECAST_NO_RESULT: No forecast generated")
-                return self.response_formatter.format_error_response("transit_forecast")
-                
+                logger.warning(
+                    "AI_TRANSIT_FORECAST_NO_RESULT: No forecast generated"
+                )
+                return self.response_formatter.format_error_response(
+                    "transit_forecast"
+                )
+
         except Exception as e:
             logger.error(f"AI_TRANSIT_FORECAST_ERROR: {e}")
-            return self.response_formatter.format_error_response("transit_forecast")
+            return self.response_formatter.format_error_response(
+                "transit_forecast"
+            )
 
     async def _handle_ai_service_status(
         self, user_context: UserContext, session
     ) -> Any:
         """
         Обрабатывает запрос статуса AI сервисов.
-        
+
         Returns:
             Ответ со статусом доступных AI сервисов
         """
         logger.info("AI_SERVICE_STATUS_REQUEST")
-        
+
         try:
-            status = await self.ai_horoscope_service.get_enhanced_service_status()
-            
+            status = (
+                await self.ai_horoscope_service.get_enhanced_service_status()
+            )
+
             # Формируем понятный ответ для пользователя
             features = []
-            
+
             if status.get("yandex_gpt_available"):
                 features.append("✅ ИИ-генерация текста")
             else:
                 features.append("❌ ИИ-генерация недоступна")
-            
+
             if status.get("astro_ai_service_available"):
                 enhanced = status.get("enhanced_features", {})
-                kerykeion_available = enhanced.get("feature_availability", {}).get("kerykeion_service", False)
-                
+                kerykeion_available = enhanced.get(
+                    "feature_availability", {}
+                ).get("kerykeion_service", False)
+
                 if kerykeion_available:
                     features.append("✅ Профессиональные расчеты")
                     features.append("✅ Детальные интерпретации")
@@ -2471,24 +2682,34 @@ class DialogHandler:
                     features.append("⚠️ Базовые расчеты")
             else:
                 features.append("❌ Расширенные функции недоступны")
-            
-            response_text = "Статус астро-ИИ сервисов:\n\n" + "\n".join(features)
-            
-            if status.get("yandex_gpt_available") and status.get("astro_ai_service_available"):
+
+            response_text = "Статус астро-ИИ сервисов:\n\n" + "\n".join(
+                features
+            )
+
+            if status.get("yandex_gpt_available") and status.get(
+                "astro_ai_service_available"
+            ):
                 response_text += "\n\nВсе функции работают! Попробуйте интерпретацию натальной карты или специализированные консультации."
-                buttons = ["Натальная карта", "Карьера", "Любовь", "Совместимость"]
+                buttons = [
+                    "Натальная карта",
+                    "Карьера",
+                    "Любовь",
+                    "Совместимость",
+                ]
             else:
                 response_text += "\n\nНекоторые функции могут быть ограничены."
                 buttons = ["Обычный гороскоп", "Совместимость знаков"]
-            
+
             return self.response_formatter.format_text_response(
-                text=response_text,
-                buttons=buttons
+                text=response_text, buttons=buttons
             )
-            
+
         except Exception as e:
             logger.error(f"AI_SERVICE_STATUS_ERROR: {e}")
-            return self.response_formatter.format_error_response("service_status")
+            return self.response_formatter.format_error_response(
+                "service_status"
+            )
 
     # NEW RUSSIAN LOCALIZATION HANDLERS - Issue #68
     async def _handle_sign_description(
@@ -2496,16 +2717,16 @@ class DialogHandler:
     ) -> Any:
         """Обрабатывает запрос описания знака зодиака."""
         logger.info("RUSSIAN_LOCALIZATION_SIGN_DESCRIPTION_START")
-        
+
         try:
             # Импорт адаптера русификации
             from app.services.russian_astrology_adapter import russian_adapter
-            
+
             # Получаем знак пользователя из контекста или запрашиваем
             user_sign = user_context.zodiac_sign
             if not user_sign and entities.get("zodiac_sign"):
                 user_sign = entities["zodiac_sign"]
-            
+
             if not user_sign:
                 response_text = (
                     "Чтобы рассказать о вашем знаке зодиака, мне нужно его знать. "
@@ -2515,27 +2736,39 @@ class DialogHandler:
                 return self.response_formatter.format_text_response(
                     text=response_text, buttons=buttons
                 )
-            
+
             # Получаем детальное описание знака
-            sign_description = russian_adapter.get_russian_sign_description(user_sign)
-            
+            sign_description = russian_adapter.get_russian_sign_description(
+                user_sign
+            )
+
             if "error" in sign_description:
-                logger.warning(f"SIGN_DESCRIPTION_ERROR: {sign_description['error']}")
-                response_text = f"Извините, не могу найти информацию о знаке '{user_sign}'"
-                return self.response_formatter.format_text_response(text=response_text)
-            
+                logger.warning(
+                    f"SIGN_DESCRIPTION_ERROR: {sign_description['error']}"
+                )
+                response_text = (
+                    f"Извините, не могу найти информацию о знаке '{user_sign}'"
+                )
+                return self.response_formatter.format_text_response(
+                    text=response_text
+                )
+
             sign_name = sign_description["name"]
-            
+
             # Формируем детальное описание
             response_text = f"Ваш знак зодиака - {sign_name}.\n\n"
-            
+
             # Получаем дополнительную информацию о знаке
-            if russian_adapter.subject and hasattr(russian_adapter.subject, 'sun'):
-                sun_info = russian_adapter.get_russian_planet_description("Sun")
+            if russian_adapter.subject and hasattr(
+                russian_adapter.subject, "sun"
+            ):
+                sun_info = russian_adapter.get_russian_planet_description(
+                    "Sun"
+                )
                 if "keywords" in sun_info:
                     keywords = ", ".join(sun_info["keywords"][:5])
                     response_text += f"Ключевые качества: {keywords}.\n\n"
-                
+
                 if "description" in sun_info:
                     response_text += f"{sun_info['description']}\n\n"
             else:
@@ -2552,66 +2785,90 @@ class DialogHandler:
                     "стрелец": "Оптимистичные, свободолюбивые философы",
                     "козерог": "Целеустремленные, дисциплинированные строители",
                     "водолей": "Независимые, инновационные гуманисты",
-                    "рыбы": "Мечтательные, интуитивные эмпаты"
+                    "рыбы": "Мечтательные, интуитивные эмпаты",
                 }
-                
-                trait = sign_traits.get(user_sign.lower(), "Уникальные личности")
+
+                trait = sign_traits.get(
+                    user_sign.lower(), "Уникальные личности"
+                )
                 response_text += f"{trait}."
-            
+
             # Форматируем для голосового вывода
             voice_text = russian_adapter.format_for_voice(response_text)
-            
-            buttons = ["Мой гороскоп", "Натальная карта", "Совместимость", "Планеты"]
-            
+
+            buttons = [
+                "Мой гороскоп",
+                "Натальная карта",
+                "Совместимость",
+                "Планеты",
+            ]
+
             logger.info("RUSSIAN_LOCALIZATION_SIGN_DESCRIPTION_SUCCESS")
             return self.response_formatter.format_text_response(
                 text=voice_text, buttons=buttons
             )
-            
+
         except Exception as e:
             logger.error(f"SIGN_DESCRIPTION_HANDLER_ERROR: {e}")
-            return self.response_formatter.format_error_response("sign_description")
+            return self.response_formatter.format_error_response(
+                "sign_description"
+            )
 
     async def _handle_planet_in_sign(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос о планете в знаке."""
         logger.info("RUSSIAN_LOCALIZATION_PLANET_IN_SIGN_START")
-        
+
         try:
             from app.services.russian_astrology_adapter import russian_adapter
-            
+
             # Извлекаем планету и знак из запроса
             request_text = entities.get("original_text", "").lower()
-            
+
             # Простая логика извлечения планеты и знака
             planet_matches = {
-                "солнце": "Sun", "луна": "Moon", "меркурий": "Mercury",
-                "венера": "Venus", "марс": "Mars", "юпитер": "Jupiter",
-                "сатурн": "Saturn", "уран": "Uranus", "нептун": "Neptune", 
-                "плутон": "Pluto", "хирон": "Chiron"
+                "солнце": "Sun",
+                "луна": "Moon",
+                "меркурий": "Mercury",
+                "венера": "Venus",
+                "марс": "Mars",
+                "юпитер": "Jupiter",
+                "сатурн": "Saturn",
+                "уран": "Uranus",
+                "нептун": "Neptune",
+                "плутон": "Pluto",
+                "хирон": "Chiron",
             }
-            
+
             sign_matches = {
-                "овне": "Aries", "тельце": "Taurus", "близнецах": "Gemini",
-                "раке": "Cancer", "льве": "Leo", "деве": "Virgo",
-                "весах": "Libra", "скорпионе": "Scorpio", "стрельце": "Sagittarius",
-                "козероге": "Capricorn", "водолее": "Aquarius", "рыбах": "Pisces"
+                "овне": "Aries",
+                "тельце": "Taurus",
+                "близнецах": "Gemini",
+                "раке": "Cancer",
+                "льве": "Leo",
+                "деве": "Virgo",
+                "весах": "Libra",
+                "скорпионе": "Scorpio",
+                "стрельце": "Sagittarius",
+                "козероге": "Capricorn",
+                "водолее": "Aquarius",
+                "рыбах": "Pisces",
             }
-            
+
             found_planet = None
             found_sign = None
-            
+
             for ru_planet, en_planet in planet_matches.items():
                 if ru_planet in request_text:
                     found_planet = en_planet
                     break
-            
+
             for ru_sign, en_sign in sign_matches.items():
                 if ru_sign in request_text:
                     found_sign = en_sign
                     break
-            
+
             if not found_planet or not found_sign:
                 response_text = (
                     "Спросите, например: 'Что означает Солнце в Овне?' или "
@@ -2621,85 +2878,126 @@ class DialogHandler:
                 return self.response_formatter.format_text_response(
                     text=response_text, buttons=buttons
                 )
-            
+
             # Получаем описания планеты и знака
-            planet_desc = russian_adapter.get_russian_planet_description(found_planet)
-            sign_desc = russian_adapter.get_russian_sign_description(found_sign)
-            
+            planet_desc = russian_adapter.get_russian_planet_description(
+                found_planet
+            )
+            sign_desc = russian_adapter.get_russian_sign_description(
+                found_sign
+            )
+
             if "error" in planet_desc or "error" in sign_desc:
-                response_text = "Извините, не могу найти информацию об этой комбинации."
-                return self.response_formatter.format_text_response(text=response_text)
-            
+                response_text = (
+                    "Извините, не могу найти информацию об этой комбинации."
+                )
+                return self.response_formatter.format_text_response(
+                    text=response_text
+                )
+
             planet_name = planet_desc["name"]
             sign_name = sign_desc["name"]
-            
+
             # Формируем ответ
             response_text = f"{planet_name} в знаке {sign_name}:\n\n"
-            
+
             # Базовые интерпретации комбинаций
             planet_keywords = planet_desc.get("keywords", [])
             planet_description = planet_desc.get("description", "")
-            
+
             if planet_keywords:
                 keywords_text = ", ".join(planet_keywords[:3])
-                response_text += f"Эта комбинация влияет на: {keywords_text}.\n\n"
-            
+                response_text += (
+                    f"Эта комбинация влияет на: {keywords_text}.\n\n"
+                )
+
             if planet_description:
                 response_text += f"{planet_description} проявляется в стиле знака {sign_name}.\n\n"
-            
+
             # Простые интерпретации для популярных комбинаций
             interpretations = {
-                ("Sun", "Aries"): "Сильные лидерские качества, инициативность, пионерский дух.",
-                ("Sun", "Leo"): "Творческая натура, великодушие, естественная харизма.",
-                ("Moon", "Cancer"): "Глубокая эмоциональность, забота о семье, интуитивность.",
-                ("Venus", "Libra"): "Тонкий эстетический вкус, дипломатичность в отношениях.",
-                ("Mars", "Scorpio"): "Интенсивная энергия, решительность, способность к трансформации."
+                (
+                    "Sun",
+                    "Aries",
+                ): "Сильные лидерские качества, инициативность, пионерский дух.",
+                (
+                    "Sun",
+                    "Leo",
+                ): "Творческая натура, великодушие, естественная харизма.",
+                (
+                    "Moon",
+                    "Cancer",
+                ): "Глубокая эмоциональность, забота о семье, интуитивность.",
+                (
+                    "Venus",
+                    "Libra",
+                ): "Тонкий эстетический вкус, дипломатичность в отношениях.",
+                (
+                    "Mars",
+                    "Scorpio",
+                ): "Интенсивная энергия, решительность, способность к трансформации.",
             }
-            
+
             interpretation = interpretations.get((found_planet, found_sign))
             if interpretation:
                 response_text += f"Особенности: {interpretation}"
             else:
                 response_text += "Это уникальное сочетание создает особый характер проявления энергии."
-            
+
             # Форматируем для голоса
             voice_text = russian_adapter.format_for_voice(response_text)
-            
-            buttons = ["Мой гороскоп", "Натальная карта", "Другая планета", "Совместимость"]
-            
+
+            buttons = [
+                "Мой гороскоп",
+                "Натальная карта",
+                "Другая планета",
+                "Совместимость",
+            ]
+
             logger.info("RUSSIAN_LOCALIZATION_PLANET_IN_SIGN_SUCCESS")
             return self.response_formatter.format_text_response(
                 text=voice_text, buttons=buttons
             )
-            
+
         except Exception as e:
             logger.error(f"PLANET_IN_SIGN_HANDLER_ERROR: {e}")
-            return self.response_formatter.format_error_response("planet_in_sign")
+            return self.response_formatter.format_error_response(
+                "planet_in_sign"
+            )
 
     async def _handle_house_characteristics(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос о характеристиках домов гороскопа."""
         logger.info("RUSSIAN_LOCALIZATION_HOUSE_CHARACTERISTICS_START")
-        
+
         try:
             from app.services.russian_astrology_adapter import russian_adapter
-            
+
             request_text = entities.get("original_text", "").lower()
-            
+
             # Извлекаем номер дома из запроса
             house_numbers = {
-                "первом": 1, "втором": 2, "третьем": 3, "четвертом": 4,
-                "пятом": 5, "шестом": 6, "седьмом": 7, "восьмом": 8,
-                "девятом": 9, "десятом": 10, "одиннадцатом": 11, "двенадцатом": 12
+                "первом": 1,
+                "втором": 2,
+                "третьем": 3,
+                "четвертом": 4,
+                "пятом": 5,
+                "шестом": 6,
+                "седьмом": 7,
+                "восьмом": 8,
+                "девятом": 9,
+                "десятом": 10,
+                "одиннадцатом": 11,
+                "двенадцатом": 12,
             }
-            
+
             found_house = None
             for house_word, house_num in house_numbers.items():
                 if house_word in request_text:
                     found_house = house_num
                     break
-            
+
             # Если дом не найден, предлагаем выбор
             if not found_house:
                 response_text = (
@@ -2711,22 +3009,30 @@ class DialogHandler:
                 return self.response_formatter.format_text_response(
                     text=response_text, buttons=buttons
                 )
-            
+
             # Получаем описание дома
-            house_desc = russian_adapter.get_russian_house_description(found_house)
-            
+            house_desc = russian_adapter.get_russian_house_description(
+                found_house
+            )
+
             if "error" in house_desc:
-                response_text = f"Извините, не могу найти информацию о {found_house} доме."
-                return self.response_formatter.format_text_response(text=response_text)
-            
+                response_text = (
+                    f"Извините, не могу найти информацию о {found_house} доме."
+                )
+                return self.response_formatter.format_text_response(
+                    text=response_text
+                )
+
             # Формируем детальный ответ
-            response_text = f"{house_desc['roman']} ({house_desc['name']}):\n\n"
+            response_text = (
+                f"{house_desc['roman']} ({house_desc['name']}):\n\n"
+            )
             response_text += f"{house_desc['description']}\n\n"
-            
+
             if house_desc.get("keywords"):
                 keywords = ", ".join(house_desc["keywords"][:5])
                 response_text += f"Ключевые темы: {keywords}.\n\n"
-            
+
             # Дополнительная информация о важных домах
             house_details = {
                 1: "Определяет вашу личность и первое впечатление на окружающих.",
@@ -2734,54 +3040,69 @@ class DialogHandler:
                 7: "Раскрывает ваш подход к партнерству и браку.",
                 10: "Указывает на карьерные цели и общественное признание.",
             }
-            
+
             if found_house in house_details:
                 response_text += house_details[found_house]
-            
+
             # Форматируем для голоса
             voice_text = russian_adapter.format_for_voice(response_text)
-            
-            buttons = ["Мой гороскоп", "Натальная карта", "Другой дом", "Планеты в домах"]
-            
+
+            buttons = [
+                "Мой гороскоп",
+                "Натальная карта",
+                "Другой дом",
+                "Планеты в домах",
+            ]
+
             logger.info("RUSSIAN_LOCALIZATION_HOUSE_CHARACTERISTICS_SUCCESS")
             return self.response_formatter.format_text_response(
                 text=voice_text, buttons=buttons
             )
-            
+
         except Exception as e:
             logger.error(f"HOUSE_CHARACTERISTICS_HANDLER_ERROR: {e}")
-            return self.response_formatter.format_error_response("house_characteristics")
+            return self.response_formatter.format_error_response(
+                "house_characteristics"
+            )
 
     async def _handle_enhanced_compatibility_analysis(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает расширенный анализ совместимости с русскими терминами."""
         logger.info("RUSSIAN_LOCALIZATION_ENHANCED_COMPATIBILITY_START")
-        
+
         try:
             from app.services.russian_astrology_adapter import russian_adapter
-            
+
             # Извлекаем знаки из запроса
             request_text = entities.get("original_text", "").lower()
-            
+
             sign_matches = {
-                "овен": "aries", "телец": "taurus", "близнецы": "gemini",
-                "рак": "cancer", "лев": "leo", "дева": "virgo",
-                "весы": "libra", "скорпион": "scorpio", "стрелец": "sagittarius",
-                "козерог": "capricorn", "водолей": "aquarius", "рыбы": "pisces"
+                "овен": "aries",
+                "телец": "taurus",
+                "близнецы": "gemini",
+                "рак": "cancer",
+                "лев": "leo",
+                "дева": "virgo",
+                "весы": "libra",
+                "скорпион": "scorpio",
+                "стрелец": "sagittarius",
+                "козерог": "capricorn",
+                "водолей": "aquarius",
+                "рыбы": "pisces",
             }
-            
+
             found_signs = []
             for ru_sign, en_sign in sign_matches.items():
                 if ru_sign in request_text:
                     found_signs.append(en_sign)
-            
+
             # Если знаки не найдены, используем знак пользователя
             user_sign = user_context.zodiac_sign
             if len(found_signs) < 2 and user_sign:
                 if user_sign.lower() not in [s.lower() for s in found_signs]:
                     found_signs.append(user_sign.lower())
-            
+
             if len(found_signs) < 2:
                 response_text = (
                     "Для анализа совместимости мне нужны два знака зодиака. "
@@ -2792,96 +3113,121 @@ class DialogHandler:
                 return self.response_formatter.format_text_response(
                     text=response_text, buttons=buttons
                 )
-            
+
             sign1, sign2 = found_signs[:2]
-            
+
             # Получаем русские названия знаков
-            sign1_ru = russian_adapter.get_russian_sign_description(sign1)["name"]
-            sign2_ru = russian_adapter.get_russian_sign_description(sign2)["name"]
-            
+            sign1_ru = russian_adapter.get_russian_sign_description(sign1)[
+                "name"
+            ]
+            sign2_ru = russian_adapter.get_russian_sign_description(sign2)[
+                "name"
+            ]
+
             # Используем существующий анализатор совместимости
-            compatibility_result = await self.compatibility_analyzer.analyze_compatibility(
-                sign1, sign2, CompatibilityType.ROMANTIC
+            compatibility_result = (
+                await self.compatibility_analyzer.analyze_compatibility(
+                    sign1, sign2, CompatibilityType.ROMANTIC
+                )
             )
-            
+
             if "error" in compatibility_result:
                 response_text = "Извините, не могу проанализировать совместимость этих знаков."
-                return self.response_formatter.format_text_response(text=response_text)
-            
+                return self.response_formatter.format_text_response(
+                    text=response_text
+                )
+
             # Формируем расширенный ответ на русском
             percentage = compatibility_result.get("percentage", 0)
             category = compatibility_result.get("category", "")
-            
+
             # Переводим категории на русский
             category_translations = {
-                "excellent": "отличная", "very_good": "очень хорошая", 
-                "good": "хорошая", "moderate": "умеренная", 
-                "challenging": "сложная", "difficult": "трудная"
+                "excellent": "отличная",
+                "very_good": "очень хорошая",
+                "good": "хорошая",
+                "moderate": "умеренная",
+                "challenging": "сложная",
+                "difficult": "трудная",
             }
             category_ru = category_translations.get(category, category)
-            
+
             response_text = f"Совместимость {sign1_ru} и {sign2_ru}:\n\n"
             response_text += f"Общий показатель: {percentage}% ({category_ru} совместимость)\n\n"
-            
+
             # Детальный анализ
             strengths = compatibility_result.get("strengths", [])
             challenges = compatibility_result.get("challenges", [])
             advice = compatibility_result.get("advice", [])
-            
+
             if strengths:
                 response_text += "Сильные стороны:\n"
                 for strength in strengths[:2]:  # Ограничиваем для голоса
                     response_text += f"• {strength}\n"
                 response_text += "\n"
-            
+
             if challenges and len(challenges) > 0:
                 response_text += f"Вызовы: {challenges[0]}\n\n"
-            
+
             if advice and len(advice) > 0:
                 response_text += f"Рекомендация: {advice[0]}"
-            
+
             # Форматируем для голоса
             voice_text = russian_adapter.format_for_voice(response_text)
-            
+
             # Ограничиваем длину для Alice
             if len(voice_text) > 800:
-                voice_text = voice_text[:750] + "... Подробности в натальной карте."
-            
-            buttons = ["Синастрия", "Мой гороскоп", "Другая пара", "Натальная карта"]
-            
+                voice_text = (
+                    voice_text[:750] + "... Подробности в натальной карте."
+                )
+
+            buttons = [
+                "Синастрия",
+                "Мой гороскоп",
+                "Другая пара",
+                "Натальная карта",
+            ]
+
             logger.info("RUSSIAN_LOCALIZATION_ENHANCED_COMPATIBILITY_SUCCESS")
             return self.response_formatter.format_text_response(
                 text=voice_text, buttons=buttons
             )
-            
+
         except Exception as e:
             logger.error(f"ENHANCED_COMPATIBILITY_HANDLER_ERROR: {e}")
-            return self.response_formatter.format_error_response("enhanced_compatibility")
+            return self.response_formatter.format_error_response(
+                "enhanced_compatibility"
+            )
 
     async def _handle_retrograde_influence(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос о влиянии ретроградных планет."""
         logger.info("RUSSIAN_LOCALIZATION_RETROGRADE_INFLUENCE_START")
-        
+
         try:
             from app.services.russian_astrology_adapter import russian_adapter
-            
+
             request_text = entities.get("original_text", "").lower()
-            
+
             # Извлекаем планету из запроса
             planet_matches = {
-                "меркурий": "Mercury", "венера": "Venus", "марс": "Mars",
-                "юпитер": "Jupiter", "сатурн": "Saturn", "уран": "Uranus",
-                "нептун": "Neptune", "плутон": "Pluto"
+                "меркурий": "Mercury",
+                "венера": "Venus",
+                "марс": "Mars",
+                "юпитер": "Jupiter",
+                "сатурн": "Saturn",
+                "уран": "Uranus",
+                "нептун": "Neptune",
+                "плутон": "Pluto",
             }
-            
+
             found_planet = None
             for ru_planet, en_planet in planet_matches.items():
                 if ru_planet in request_text:
                     found_planet = en_planet
                     break
-            
+
             if not found_planet:
                 # Общая информация о ретроградах
                 response_text = (
@@ -2893,15 +3239,22 @@ class DialogHandler:
                     "• Марс: снижение энергии, задержки в делах\n\n"
                     "Спросите про конкретную планету для подробностей."
                 )
-                buttons = ["Меркурий ретро", "Венера ретро", "Марс ретро", "Мой гороскоп"]
+                buttons = [
+                    "Меркурий ретро",
+                    "Венера ретро",
+                    "Марс ретро",
+                    "Мой гороскоп",
+                ]
                 return self.response_formatter.format_text_response(
                     text=response_text, buttons=buttons
                 )
-            
+
             # Получаем описание планеты
-            planet_desc = russian_adapter.get_russian_planet_description(found_planet)
+            planet_desc = russian_adapter.get_russian_planet_description(
+                found_planet
+            )
             planet_name = planet_desc["name"]
-            
+
             # Специфические описания ретроградов
             retrograde_descriptions = {
                 "Mercury": (
@@ -2941,25 +3294,34 @@ class DialogHandler:
                     "• Работа с ограничениями и дисциплиной\n"
                     "• Уроки прошлого становятся актуальными\n"
                     "• Время внутренней дисциплины"
-                )
+                ),
             }
-            
-            response_text = retrograde_descriptions.get(found_planet, 
-                f"Ретроградный {planet_name} требует пересмотра связанных с ним сфер жизни.")
-            
+
+            response_text = retrograde_descriptions.get(
+                found_planet,
+                f"Ретроградный {planet_name} требует пересмотра связанных с ним сфер жизни.",
+            )
+
             # Форматируем для голоса
             voice_text = russian_adapter.format_for_voice(response_text)
-            
-            buttons = ["Мой гороскоп", "Транзиты", "Другая планета", "Натальная карта"]
-            
+
+            buttons = [
+                "Мой гороскоп",
+                "Транзиты",
+                "Другая планета",
+                "Натальная карта",
+            ]
+
             logger.info("RUSSIAN_LOCALIZATION_RETROGRADE_INFLUENCE_SUCCESS")
             return self.response_formatter.format_text_response(
                 text=voice_text, buttons=buttons
             )
-            
+
         except Exception as e:
             logger.error(f"RETROGRADE_INFLUENCE_HANDLER_ERROR: {e}")
-            return self.response_formatter.format_error_response("retrograde_influence")
+            return self.response_formatter.format_error_response(
+                "retrograde_influence"
+            )
 
 
 # Глобальный экземпляр обработчика диалогов

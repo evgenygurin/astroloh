@@ -29,10 +29,10 @@ class YandexIntent(str, Enum):
     SOLAR_RETURN = "solar_return"
     LUNAR_RETURN = "lunar_return"
     ADVICE = "advice"
-    
+
     # Enhanced AI Consultation Intents
     AI_NATAL_INTERPRETATION = "ai_natal_interpretation"
-    AI_CAREER_CONSULTATION = "ai_career_consultation" 
+    AI_CAREER_CONSULTATION = "ai_career_consultation"
     AI_LOVE_CONSULTATION = "ai_love_consultation"
     AI_HEALTH_CONSULTATION = "ai_health_consultation"
     AI_FINANCIAL_CONSULTATION = "ai_financial_consultation"
@@ -40,14 +40,14 @@ class YandexIntent(str, Enum):
     AI_ENHANCED_COMPATIBILITY = "ai_enhanced_compatibility"
     AI_TRANSIT_FORECAST = "ai_transit_forecast"
     AI_SERVICE_STATUS = "ai_service_status"
-    
+
     # New Russian Localization Intents - Issue #68
     SIGN_DESCRIPTION = "sign_description"
     PLANET_IN_SIGN = "planet_in_sign"
     HOUSE_CHARACTERISTICS = "house_characteristics"
     ENHANCED_COMPATIBILITY = "enhanced_compatibility"
     RETROGRADE_INFLUENCE = "retrograde_influence"
-    
+
     HELP = "help"
     EXIT = "exit"
     UNKNOWN = "unknown"

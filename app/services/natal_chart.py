@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 import pytz
 
 from app.services.astrology_calculator import AstrologyCalculator
-from app.services.kerykeion_service import KerykeionService, HouseSystem, ZodiacType
+from app.services.kerykeion_service import HouseSystem, KerykeionService, ZodiacType
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,9 @@ class NatalChartCalculator:
     def __init__(self):
         self.astro_calc = AstrologyCalculator()
         self.kerykeion_service = KerykeionService()
-        logger.info(f"NATAL_CHART_CALCULATOR_INIT: Kerykeion available = {self.kerykeion_service.is_available()}")
+        logger.info(
+            f"NATAL_CHART_CALCULATOR_INIT: Kerykeion available = {self.kerykeion_service.is_available()}"
+        )
 
         # Интерпретации планет в знаках
         self.planet_sign_interpretations = {
@@ -844,7 +846,7 @@ class NatalChartCalculator:
                 changes.append(f"Прогрессированный {planet} в {sign}")
 
         return changes[:3]  # Ограничиваем тремя основными изменениями
-    
+
     def calculate_enhanced_natal_chart(
         self,
         name: str,
@@ -860,7 +862,7 @@ class NatalChartCalculator:
     ) -> Dict[str, Any]:
         """
         Вычисляет расширенную натальную карту с полным функционалом Kerykeion.
-        
+
         Args:
             name: Имя владельца карты
             birth_date: Дата рождения
@@ -872,35 +874,39 @@ class NatalChartCalculator:
             include_arabic_parts: Включить арабские части
             include_fixed_stars: Включить фиксированные звезды
             generate_svg: Генерировать SVG карту
-        
+
         Returns:
             Полные данные натальной карты
         """
         logger.info(f"NATAL_CHART_ENHANCED_START: {name}")
-        
+
         # Создаем datetime объект
         if birth_time is None:
             birth_time = time(12, 0)  # Полдень по умолчанию
-        
+
         birth_datetime = datetime.combine(birth_date, birth_time)
-        
+
         # Координаты места рождения (по умолчанию Москва)
         if birth_place is None:
             birth_place = {"latitude": 55.7558, "longitude": 37.6176}
-        
+
         # Конвертируем строковые параметры в enums
         try:
             house_sys_enum = HouseSystem(house_system)
         except ValueError:
-            logger.warning(f"NATAL_CHART_ENHANCED: Unknown house system {house_system}, using Placidus")
+            logger.warning(
+                f"NATAL_CHART_ENHANCED: Unknown house system {house_system}, using Placidus"
+            )
             house_sys_enum = HouseSystem.PLACIDUS
-        
+
         try:
             zodiac_enum = ZodiacType(zodiac_type)
         except ValueError:
-            logger.warning(f"NATAL_CHART_ENHANCED: Unknown zodiac type {zodiac_type}, using Tropical")
+            logger.warning(
+                f"NATAL_CHART_ENHANCED: Unknown zodiac type {zodiac_type}, using Tropical"
+            )
             zodiac_enum = ZodiacType.TROPICAL
-        
+
         result = {
             "basic_info": {
                 "name": name,
@@ -914,11 +920,13 @@ class NatalChartCalculator:
             "calculation_backend": "fallback",
             "enhanced_features_available": False,
         }
-        
+
         # Попробуем использовать Kerykeion если доступен
         if self.kerykeion_service.is_available():
-            logger.info("NATAL_CHART_ENHANCED: Using Kerykeion for advanced calculation")
-            
+            logger.info(
+                "NATAL_CHART_ENHANCED: Using Kerykeion for advanced calculation"
+            )
+
             kerykeion_data = self.kerykeion_service.get_full_natal_chart_data(
                 name=name,
                 birth_datetime=birth_datetime,
@@ -928,73 +936,117 @@ class NatalChartCalculator:
                 house_system=house_sys_enum,
                 zodiac_type=zodiac_enum,
             )
-            
+
             if "error" not in kerykeion_data:
-                result.update({
-                    "calculation_backend": "kerykeion",
-                    "enhanced_features_available": True,
-                    "planets": kerykeion_data.get("planets", {}),
-                    "houses": kerykeion_data.get("houses", {}),
-                    "angles": kerykeion_data.get("angles", {}),
-                    "aspects": kerykeion_data.get("aspects", []),
-                    "chart_shape": kerykeion_data.get("chart_shape", {}),
-                    "element_distribution": kerykeion_data.get("element_distribution", {}),
-                    "quality_distribution": kerykeion_data.get("quality_distribution", {}),
-                    "dominant_planets": kerykeion_data.get("dominant_planets", []),
-                })
-                
+                result.update(
+                    {
+                        "calculation_backend": "kerykeion",
+                        "enhanced_features_available": True,
+                        "planets": kerykeion_data.get("planets", {}),
+                        "houses": kerykeion_data.get("houses", {}),
+                        "angles": kerykeion_data.get("angles", {}),
+                        "aspects": kerykeion_data.get("aspects", []),
+                        "chart_shape": kerykeion_data.get("chart_shape", {}),
+                        "element_distribution": kerykeion_data.get(
+                            "element_distribution", {}
+                        ),
+                        "quality_distribution": kerykeion_data.get(
+                            "quality_distribution", {}
+                        ),
+                        "dominant_planets": kerykeion_data.get(
+                            "dominant_planets", []
+                        ),
+                    }
+                )
+
                 # Добавляем арабские части если запрошены
                 if include_arabic_parts:
                     # Создаем subject для арабских частей
-                    subject = self.kerykeion_service.create_astrological_subject(
-                        name, birth_datetime, birth_place["latitude"],
-                        birth_place["longitude"], timezone_str, house_sys_enum, zodiac_enum
+                    subject = (
+                        self.kerykeion_service.create_astrological_subject(
+                            name,
+                            birth_datetime,
+                            birth_place["latitude"],
+                            birth_place["longitude"],
+                            timezone_str,
+                            house_sys_enum,
+                            zodiac_enum,
+                        )
                     )
                     if subject:
-                        result["arabic_parts"] = self.kerykeion_service.calculate_arabic_parts_extended(subject)
-                
+                        result[
+                            "arabic_parts"
+                        ] = self.kerykeion_service.calculate_arabic_parts_extended(
+                            subject
+                        )
+
                 # Генерируем SVG если запрошено
                 if generate_svg:
                     svg_chart = self.kerykeion_service.generate_chart_svg(
-                        name, birth_datetime, birth_place["latitude"],
-                        birth_place["longitude"], timezone_str, house_sys_enum
+                        name,
+                        birth_datetime,
+                        birth_place["latitude"],
+                        birth_place["longitude"],
+                        timezone_str,
+                        house_sys_enum,
                     )
                     if svg_chart:
                         result["svg_chart"] = svg_chart
-                
+
                 # Добавляем расширенную интерпретацию
-                result["enhanced_interpretation"] = self._create_enhanced_interpretation(result)
-                
-                logger.info("NATAL_CHART_ENHANCED_SUCCESS: Kerykeion calculation completed")
+                result[
+                    "enhanced_interpretation"
+                ] = self._create_enhanced_interpretation(result)
+
+                logger.info(
+                    "NATAL_CHART_ENHANCED_SUCCESS: Kerykeion calculation completed"
+                )
             else:
-                logger.warning(f"NATAL_CHART_ENHANCED: Kerykeion failed - {kerykeion_data['error']}")
+                logger.warning(
+                    f"NATAL_CHART_ENHANCED: Kerykeion failed - {kerykeion_data['error']}"
+                )
                 # Fallback to basic calculation
-                result.update(self._calculate_fallback_chart(
-                    birth_date, birth_time, birth_place, timezone_str
-                ))
+                result.update(
+                    self._calculate_fallback_chart(
+                        birth_date, birth_time, birth_place, timezone_str
+                    )
+                )
         else:
-            logger.info("NATAL_CHART_ENHANCED: Kerykeion not available, using fallback")
+            logger.info(
+                "NATAL_CHART_ENHANCED: Kerykeion not available, using fallback"
+            )
             # Используем базовый калькулятор
-            result.update(self._calculate_fallback_chart(
-                birth_date, birth_time, birth_place, timezone_str
-            ))
-        
+            result.update(
+                self._calculate_fallback_chart(
+                    birth_date, birth_time, birth_place, timezone_str
+                )
+            )
+
         # Добавляем фиксированные звезды если запрошены (используем базовый калькулятор)
         if include_fixed_stars:
             result["fixed_stars"] = self.astro_calc.calculate_fixed_stars(
-                birth_datetime, birth_place["latitude"], birth_place["longitude"]
+                birth_datetime,
+                birth_place["latitude"],
+                birth_place["longitude"],
             )
-        
-        logger.info(f"NATAL_CHART_ENHANCED_COMPLETE: {name} - backend: {result['calculation_backend']}")
+
+        logger.info(
+            f"NATAL_CHART_ENHANCED_COMPLETE: {name} - backend: {result['calculation_backend']}"
+        )
         return result
-    
+
     def _calculate_fallback_chart(
-        self, birth_date: date, birth_time: Optional[time], 
-        birth_place: Dict[str, float], timezone_str: str
+        self,
+        birth_date: date,
+        birth_time: Optional[time],
+        birth_place: Dict[str, float],
+        timezone_str: str,
     ) -> Dict[str, Any]:
         """Fallback calculation using the basic astrology calculator"""
-        basic_chart = self.calculate_natal_chart(birth_date, birth_time, birth_place, timezone_str)
-        
+        basic_chart = self.calculate_natal_chart(
+            birth_date, birth_time, birth_place, timezone_str
+        )
+
         return {
             "planets": basic_chart.get("planets", {}),
             "houses": basic_chart.get("houses", {}),
@@ -1004,8 +1056,10 @@ class NatalChartCalculator:
             "dominant_elements": basic_chart.get("dominant_elements", {}),
             "chart_shape": basic_chart.get("chart_shape", {}),
         }
-    
-    def _create_enhanced_interpretation(self, chart_data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _create_enhanced_interpretation(
+        self, chart_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Создает расширенную интерпретацию на основе Kerykeion данных"""
         interpretation = {
             "personality_analysis": {},
@@ -1018,45 +1072,57 @@ class NatalChartCalculator:
             "health_indications": {},
             "timing_cycles": {},
         }
-        
-        planets = chart_data.get("planets", {})
+
+        chart_data.get("planets", {})
         aspects = chart_data.get("aspects", [])
         dominant_planets = chart_data.get("dominant_planets", [])
-        
+
         # Анализ доминирующих планет
         if dominant_planets:
             interpretation["personality_analysis"]["dominant_influences"] = []
             for planet in dominant_planets[:3]:  # Топ 3 планеты
                 planet_meaning = self._get_planet_psychological_meaning(planet)
-                interpretation["personality_analysis"]["dominant_influences"].append({
-                    "planet": planet,
-                    "influence": planet_meaning,
-                })
-        
+                interpretation["personality_analysis"][
+                    "dominant_influences"
+                ].append(
+                    {
+                        "planet": planet,
+                        "influence": planet_meaning,
+                    }
+                )
+
         # Анализ жизненных тем на основе сильных аспектов
-        strong_aspects = [asp for asp in aspects if asp.get("strength") in ["Very Strong", "Strong"]]
+        strong_aspects = [
+            asp
+            for asp in aspects
+            if asp.get("strength") in ["Very Strong", "Strong"]
+        ]
         life_themes = []
-        
+
         for aspect in strong_aspects[:5]:  # Топ 5 аспектов
             theme = self._interpret_aspect_life_theme(aspect)
             if theme:
                 life_themes.append(theme)
-        
+
         interpretation["life_themes"] = life_themes
-        
+
         # Карьерное руководство на основе MC и 10 дома
         angles = chart_data.get("angles", {})
         if "midheaven" in angles:
             mc_sign = angles["midheaven"].get("sign")
             if mc_sign:
-                interpretation["career_guidance"] = self._get_career_guidance_by_mc(mc_sign)
-        
+                interpretation[
+                    "career_guidance"
+                ] = self._get_career_guidance_by_mc(mc_sign)
+
         # Духовный путь на основе распределения элементов
         element_dist = chart_data.get("element_distribution", {})
-        interpretation["spiritual_path"] = self._analyze_spiritual_path(element_dist)
-        
+        interpretation["spiritual_path"] = self._analyze_spiritual_path(
+            element_dist
+        )
+
         return interpretation
-    
+
     def _get_planet_psychological_meaning(self, planet: str) -> str:
         """Получает психологическое значение планеты"""
         meanings = {
@@ -1064,7 +1130,7 @@ class NatalChartCalculator:
             "Moon": "Эмоциональная природа, подсознание, потребности и инстинкты",
             "Mercury": "Мышление, коммуникация, обучение и адаптивность",
             "Venus": "Ценности, отношения, красота и гармония",
-            "Mars": "Энергия, действие, желания и способность к инициативе", 
+            "Mars": "Энергия, действие, желания и способность к инициативе",
             "Jupiter": "Рост, мудрость, оптимизм и поиск смысла",
             "Saturn": "Дисциплина, ответственность, ограничения и структура",
             "Uranus": "Инновации, независимость, оригинальность и революционность",
@@ -1072,13 +1138,15 @@ class NatalChartCalculator:
             "Pluto": "Трансформация, власть, глубинная психология и возрождение",
         }
         return meanings.get(planet, f"Влияние планеты {planet}")
-    
-    def _interpret_aspect_life_theme(self, aspect: Dict[str, Any]) -> Optional[str]:
+
+    def _interpret_aspect_life_theme(
+        self, aspect: Dict[str, Any]
+    ) -> Optional[str]:
         """Интерпретирует аспект как жизненную тему"""
         planet1 = aspect.get("planet1", "").lower()
         planet2 = aspect.get("planet2", "").lower()
         aspect_type = aspect.get("aspect", "")
-        
+
         # Ключевые аспекты и их жизненные темы
         key_combinations = {
             ("sun", "moon"): {
@@ -1089,7 +1157,7 @@ class NatalChartCalculator:
             },
             ("sun", "saturn"): {
                 "Conjunction": "Серьезность и ответственность в жизни",
-                "Square": "Преодоление ограничений и авторитета", 
+                "Square": "Преодоление ограничений и авторитета",
                 "Trine": "Дисциплинированная самореализация",
             },
             ("moon", "pluto"): {
@@ -1103,25 +1171,39 @@ class NatalChartCalculator:
                 "Trine": "Естественная привлекательность",
             },
         }
-        
-        combination = (planet1, planet2) if (planet1, planet2) in key_combinations else (planet2, planet1)
-        
+
+        combination = (
+            (planet1, planet2)
+            if (planet1, planet2) in key_combinations
+            else (planet2, planet1)
+        )
+
         if combination in key_combinations:
             theme_dict = key_combinations[combination]
             return theme_dict.get(aspect_type)
-        
+
         return None
-    
+
     def _get_career_guidance_by_mc(self, mc_sign: str) -> Dict[str, Any]:
         """Дает карьерные рекомендации по знаку MC"""
         career_guidance = {
             "Овен": {
-                "fields": ["лидерство", "спорт", "военное дело", "предпринимательство"],
+                "fields": [
+                    "лидерство",
+                    "спорт",
+                    "военное дело",
+                    "предпринимательство",
+                ],
                 "style": "Динамичный, инициативный, конкурентный",
                 "advice": "Стремитесь к позициям лидера, не бойтесь рисков",
             },
             "Телец": {
-                "fields": ["финансы", "искусство", "недвижимость", "кулинария"],
+                "fields": [
+                    "финансы",
+                    "искусство",
+                    "недвижимость",
+                    "кулинария",
+                ],
                 "style": "Стабильный, практичный, надежный",
                 "advice": "Развивайте практические навыки, стройте долгосрочную карьеру",
             },
@@ -1132,50 +1214,81 @@ class NatalChartCalculator:
             },
             # Добавьте остальные знаки аналогично...
         }
-        
-        return career_guidance.get(mc_sign, {
-            "fields": ["разнообразные области"],
-            "style": "Индивидуальный подход",
-            "advice": "Следуйте своим уникальным талантам",
-        })
-    
-    def _analyze_spiritual_path(self, element_distribution: Dict[str, int]) -> Dict[str, Any]:
+
+        return career_guidance.get(
+            mc_sign,
+            {
+                "fields": ["разнообразные области"],
+                "style": "Индивидуальный подход",
+                "advice": "Следуйте своим уникальным талантам",
+            },
+        )
+
+    def _analyze_spiritual_path(
+        self, element_distribution: Dict[str, int]
+    ) -> Dict[str, Any]:
         """Анализирует духовный путь по распределению элементов"""
         total_planets = sum(element_distribution.values()) or 1
-        
+
         # Определяем доминирующий элемент
-        dominant_element = max(element_distribution, key=element_distribution.get)
-        dominant_percentage = (element_distribution[dominant_element] / total_planets) * 100
-        
+        dominant_element = max(
+            element_distribution, key=element_distribution.get
+        )
+        dominant_percentage = (
+            element_distribution[dominant_element] / total_planets
+        ) * 100
+
         spiritual_paths = {
             "Fire": {
                 "path": "Путь действия и вдохновения",
-                "practices": ["динамическая медитация", "спорт как духовная практика", "творческое самовыражение"],
+                "practices": [
+                    "динамическая медитация",
+                    "спорт как духовная практика",
+                    "творческое самовыражение",
+                ],
                 "qualities": ["энтузиазм", "лидерство", "воодушевление"],
             },
             "Earth": {
                 "path": "Путь практической мудрости",
-                "practices": ["работа с телом", "садоводство", "рукоделие", "служение"],
+                "practices": [
+                    "работа с телом",
+                    "садоводство",
+                    "рукоделие",
+                    "служение",
+                ],
                 "qualities": ["терпение", "заземленность", "практичность"],
             },
             "Air": {
                 "path": "Путь знания и общения",
-                "practices": ["изучение философии", "преподавание", "письменность"],
-                "qualities": ["любознательность", "объективность", "социальность"],
+                "practices": [
+                    "изучение философии",
+                    "преподавание",
+                    "письменность",
+                ],
+                "qualities": [
+                    "любознательность",
+                    "объективность",
+                    "социальность",
+                ],
             },
             "Water": {
                 "path": "Путь интуиции и сострадания",
-                "practices": ["медитация", "целительство", "искусство", "помощь людям"],
+                "practices": [
+                    "медитация",
+                    "целительство",
+                    "искусство",
+                    "помощь людям",
+                ],
                 "qualities": ["эмпатия", "интуиция", "глубина чувств"],
             },
         }
-        
+
         path_info = spiritual_paths.get(dominant_element, {})
         path_info["dominant_percentage"] = round(dominant_percentage, 1)
         path_info["element_balance"] = element_distribution
-        
+
         return path_info
-    
+
     def calculate_compatibility_enhanced(
         self,
         person1_chart: Dict[str, Any],
@@ -1183,79 +1296,115 @@ class NatalChartCalculator:
     ) -> Dict[str, Any]:
         """Расширенная совместимость с использованием Kerykeion данных"""
         if not self.kerykeion_service.is_available():
-            logger.warning("COMPATIBILITY_ENHANCED: Kerykeion not available, using basic compatibility")
+            logger.warning(
+                "COMPATIBILITY_ENHANCED: Kerykeion not available, using basic compatibility"
+            )
             # Fallback to basic compatibility calculation
             return {"error": "Enhanced compatibility requires Kerykeion"}
-        
+
         logger.info("COMPATIBILITY_ENHANCED_START")
-        
-        compatibility = self.kerykeion_service.calculate_compatibility_detailed(
-            person1_chart, person2_chart
+
+        compatibility = (
+            self.kerykeion_service.calculate_compatibility_detailed(
+                person1_chart, person2_chart
+            )
         )
-        
+
         if "error" not in compatibility:
             # Добавляем дополнительную интерпретацию
-            compatibility["relationship_advice"] = self._generate_relationship_advice(compatibility)
-            compatibility["growth_areas"] = self._identify_growth_areas(compatibility)
-            compatibility["strength_areas"] = self._identify_strength_areas(compatibility)
-            
+            compatibility[
+                "relationship_advice"
+            ] = self._generate_relationship_advice(compatibility)
+            compatibility["growth_areas"] = self._identify_growth_areas(
+                compatibility
+            )
+            compatibility["strength_areas"] = self._identify_strength_areas(
+                compatibility
+            )
+
             logger.info("COMPATIBILITY_ENHANCED_SUCCESS")
-        
+
         return compatibility
-    
-    def _generate_relationship_advice(self, compatibility: Dict[str, Any]) -> List[str]:
+
+    def _generate_relationship_advice(
+        self, compatibility: Dict[str, Any]
+    ) -> List[str]:
         """Генерирует советы для отношений на основе совместимости"""
         advice = []
         overall_score = compatibility.get("overall_score", 50)
-        
+
         if overall_score >= 80:
-            advice.append("У вас очень высокая совместимость! Цените эту гармонию.")
-            advice.append("Поддерживайте открытое общение и взаимное уважение.")
+            advice.append(
+                "У вас очень высокая совместимость! Цените эту гармонию."
+            )
+            advice.append(
+                "Поддерживайте открытое общение и взаимное уважение."
+            )
         elif overall_score >= 60:
             advice.append("Ваша совместимость хорошая, но требует работы.")
             advice.append("Фокусируйтесь на сильных сторонах отношений.")
         else:
-            advice.append("Отношения требуют значительных усилий с обеих сторон.")
+            advice.append(
+                "Отношения требуют значительных усилий с обеих сторон."
+            )
             advice.append("Работайте над пониманием различий друг друга.")
-        
+
         # Добавляем советы на основе Sun-Moon связей
         sun_moon_connections = compatibility.get("sun_moon_connections", [])
         for connection in sun_moon_connections[:2]:  # Топ 2
             if connection.get("harmony_score", 0) < 0:
-                advice.append(f"Работайте над балансом в области {connection['connection']}")
-        
+                advice.append(
+                    f"Работайте над балансом в области {connection['connection']}"
+                )
+
         return advice[:5]  # Максимум 5 советов
-    
-    def _identify_growth_areas(self, compatibility: Dict[str, Any]) -> List[str]:
+
+    def _identify_growth_areas(
+        self, compatibility: Dict[str, Any]
+    ) -> List[str]:
         """Определяет области для роста в отношениях"""
         growth_areas = []
-        
+
         # Анализируем проблемные аспекты
         sun_moon_connections = compatibility.get("sun_moon_connections", [])
         for connection in sun_moon_connections:
             if connection.get("harmony_score", 0) < 0:
-                growth_areas.append(f"Развитие понимания в {connection['connection']}")
-        
-        venus_mars_connections = compatibility.get("venus_mars_connections", [])
+                growth_areas.append(
+                    f"Развитие понимания в {connection['connection']}"
+                )
+
+        venus_mars_connections = compatibility.get(
+            "venus_mars_connections", []
+        )
         for connection in venus_mars_connections:
             if connection.get("passion_score", 0) < 3:
-                growth_areas.append(f"Углубление близости через {connection['connection']}")
-        
+                growth_areas.append(
+                    f"Углубление близости через {connection['connection']}"
+                )
+
         return growth_areas[:3]  # Максимум 3 области
-    
-    def _identify_strength_areas(self, compatibility: Dict[str, Any]) -> List[str]:
+
+    def _identify_strength_areas(
+        self, compatibility: Dict[str, Any]
+    ) -> List[str]:
         """Определяет сильные стороны отношений"""
         strengths = []
-        
+
         # Анализируем позитивные аспекты
         sun_moon_connections = compatibility.get("sun_moon_connections", [])
         for connection in sun_moon_connections:
             if connection.get("harmony_score", 0) > 5:
-                strengths.append(f"Естественная гармония в {connection['connection']}")
-        
-        venus_mars_connections = compatibility.get("venus_mars_connections", [])
+                strengths.append(
+                    f"Естественная гармония в {connection['connection']}"
+                )
+
+        venus_mars_connections = compatibility.get(
+            "venus_mars_connections", []
+        )
         for connection in venus_mars_connections:
             if connection.get("passion_score", 0) > 6:
-                strengths.append(f"Сильное притяжение через {connection['connection']}")
-        
+                strengths.append(
+                    f"Сильное притяжение через {connection['connection']}"
+                )
+
         return strengths[:3]  # Максимум 3 силы

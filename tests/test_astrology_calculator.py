@@ -395,7 +395,7 @@ class TestAstrologyCalculator:
             astrology_calculator.KERYKEION_AVAILABLE = False
             astrology_calculator.SWISSEPH_AVAILABLE = False
             astrology_calculator.SKYFIELD_AVAILABLE = False
-            
+
             calc = AstrologyCalculator()
 
             birth_date = datetime(1990, 6, 15, 12, 0)
