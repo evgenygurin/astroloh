@@ -1,0 +1,566 @@
+"""
+Comprehensive unit tests for EnhancedTransitService.
+Tests transit calculations, period forecasts, async functionality, and caching.
+"""
+
+import pytest
+import asyncio
+from datetime import datetime, date, timedelta
+from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from typing import Any, Dict, List
+
+from app.services.enhanced_transit_service import (
+    TransitService, 
+    KERYKEION_TRANSITS_AVAILABLE
+)
+from app.models.transit_models import TransitAspect, TransitData, TransitRequest, TransitAnalysisResult
+
+
+@pytest.mark.unit
+class TestEnhancedTransitServiceInit:
+    """Test EnhancedTransitService initialization and availability"""
+    
+    @pytest.fixture
+    def service(self):
+        """Create TransitService instance"""
+        return TransitService()
+    
+    def test_service_initialization(self, service):
+        """Test service initialization with correct components"""
+        assert hasattr(service, 'kerykeion_service')
+        assert hasattr(service, 'astrology_calculator')
+        
+    def test_is_enhanced_features_available(self, service):
+        """Test detection of enhanced features availability"""
+        availability = service.is_enhanced_features_available()
+        
+        assert isinstance(availability, dict)
+        assert 'kerykeion_transits' in availability
+        assert 'kerykeion_progressions' in availability
+        assert 'professional_ephemeris' in availability
+        
+        # Values should be boolean
+        for key, value in availability.items():
+            assert isinstance(value, bool)
+    
+    def test_get_transit_service_capabilities(self, service):
+        """Test getting service capabilities"""
+        capabilities = service.get_transit_service_capabilities()
+        
+        assert isinstance(capabilities, dict)
+        assert 'enhanced_transits' in capabilities
+        assert 'period_forecasts' in capabilities
+        assert 'important_transits_detection' in capabilities
+        assert 'energy_analysis' in capabilities
+        
+    def test_kerykeion_availability_constant(self):
+        """Test that KERYKEION_TRANSITS_AVAILABLE is properly set"""
+        assert isinstance(KERYKEION_TRANSITS_AVAILABLE, bool)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+class TestEnhancedTransitServiceAsync:
+    """Test async functionality of EnhancedTransitService"""
+    
+    @pytest.fixture
+    def service(self):
+        """Create TransitService instance"""
+        return TransitService()
+    
+    @pytest.fixture
+    def sample_natal_chart(self):
+        """Sample natal chart for transit testing"""
+        return {
+            "planets": {
+                "sun": {"longitude": 142.5, "sign": "leo", "degree_in_sign": 22.5},
+                "moon": {"longitude": 245.8, "sign": "sagittarius", "degree_in_sign": 5.8},
+                "mercury": {"longitude": 158.3, "sign": "virgo", "degree_in_sign": 8.3}
+            },
+            "houses": {
+                "1": {"cusp": 0, "sign": "aries"},
+                "2": {"cusp": 30, "sign": "taurus"},
+                "3": {"cusp": 60, "sign": "gemini"}
+            },
+            "birth_datetime": datetime(1990, 8, 15, 14, 30),
+            "timezone": "Europe/Moscow"
+        }
+    
+    async def test_get_current_transits_async(self, service, sample_natal_chart):
+        """Test async current transits calculation"""
+        with patch.object(service, '_calculate_current_transits') as mock_calc:
+            mock_calc.return_value = {
+                "aspects": [
+                    {
+                        "transit_planet": "jupiter",
+                        "natal_planet": "sun",
+                        "aspect_type": "trine",
+                        "orb": 2.5,
+                        "applying": True
+                    }
+                ],
+                "energy_level": 75,
+                "dominant_themes": ["expansion", "opportunity"]
+            }
+            
+            result = await service.get_current_transits_async(
+                natal_chart=sample_natal_chart,
+                transit_date=datetime.now(),
+                include_minor_aspects=True
+            )
+            
+            assert result is not None
+            assert "aspects" in result
+            assert "energy_level" in result
+            assert "dominant_themes" in result
+            
+            aspects = result.get("aspects", [])
+            assert len(aspects) > 0
+            assert aspects[0]["transit_planet"] == "jupiter"
+            assert aspects[0]["natal_planet"] == "sun"
+            assert aspects[0]["aspect_type"] == "trine"
+    
+    async def test_get_period_forecast_async(self, service, sample_natal_chart):
+        """Test async period forecast calculation"""
+        with patch.object(service, '_calculate_period_forecast') as mock_calc:
+            mock_forecast = {
+                "forecast_days": [
+                    {
+                        "date": datetime.now().date(),
+                        "energy_level": 80,
+                        "major_aspects": 2,
+                        "themes": ["creativity", "relationships"],
+                        "advice": "Good day for artistic pursuits"
+                    }
+                ],
+                "overall_energy": 75,
+                "major_themes": ["growth", "communication"],
+                "important_dates": []
+            }
+            mock_calc.return_value = mock_forecast
+            
+            result = await service.get_period_forecast_async(
+                natal_chart=sample_natal_chart,
+                days=7,
+                start_date=datetime.now()
+            )
+            
+            assert result is not None
+            assert "forecast_days" in result
+            assert "overall_energy" in result
+            assert "major_themes" in result
+            
+            forecast_days = result.get("forecast_days", [])
+            assert len(forecast_days) > 0
+            assert "date" in forecast_days[0]
+            assert "energy_level" in forecast_days[0]
+    
+    async def test_get_important_transits_async(self, service, sample_natal_chart):
+        """Test async important transits detection"""
+        with patch.object(service, '_calculate_important_transits') as mock_calc:
+            mock_transits = {
+                "major_transits": [
+                    {
+                        "transit_planet": "saturn",
+                        "natal_planet": "sun", 
+                        "aspect_type": "conjunction",
+                        "exact_date": datetime.now() + timedelta(days=30),
+                        "orb": 1.0,
+                        "significance": "high",
+                        "description": "Major life restructuring period"
+                    }
+                ],
+                "minor_transits": [],
+                "life_themes": ["responsibility", "maturation"],
+                "timing_advice": "Prepare for significant changes"
+            }
+            mock_calc.return_value = mock_transits
+            
+            result = await service.get_important_transits_async(
+                natal_chart=sample_natal_chart,
+                lookback_days=30,
+                lookahead_days=90
+            )
+            
+            assert result is not None
+            assert "major_transits" in result
+            assert "life_themes" in result
+            assert "timing_advice" in result
+            
+            major_transits = result.get("major_transits", [])
+            if major_transits:
+                assert "transit_planet" in major_transits[0]
+                assert "significance" in major_transits[0]
+    
+    async def test_comprehensive_transit_analysis_async(self, service, sample_natal_chart):
+        """Test comprehensive transit analysis combining all features"""
+        # Mock all component methods
+        with patch.object(service, 'get_current_transits_async') as mock_current, \
+             patch.object(service, 'get_period_forecast_async') as mock_forecast, \
+             patch.object(service, 'get_important_transits_async') as mock_important:
+            
+            mock_current.return_value = {"aspects": [], "energy_level": 75}
+            mock_forecast.return_value = {"forecast_days": [], "overall_energy": 70}
+            mock_important.return_value = {"major_transits": [], "life_themes": []}
+            
+            result = await service.get_comprehensive_transit_analysis_async(
+                natal_chart=sample_natal_chart
+            )
+            
+            assert result is not None
+            assert "current_transits" in result
+            assert "period_forecast" in result 
+            assert "important_transits" in result
+            assert "integrated_themes" in result
+            assert "executive_summary" in result
+            
+            # All component methods should have been called
+            mock_current.assert_called_once()
+            mock_forecast.assert_called_once()
+            mock_important.assert_called_once()
+
+
+@pytest.mark.unit
+class TestEnhancedTransitServiceCaching:
+    """Test caching functionality of EnhancedTransitService"""
+    
+    @pytest.fixture
+    def service(self):
+        return TransitService()
+    
+    @pytest.fixture
+    def sample_natal_chart(self):
+        return {
+            "planets": {
+                "sun": {"longitude": 142.5, "sign": "leo", "degree_in_sign": 22.5}
+            },
+            "birth_datetime": datetime(1990, 8, 15, 14, 30),
+            "timezone": "Europe/Moscow"
+        }
+    
+    @pytest.mark.asyncio
+    async def test_caching_current_transits(self, service, sample_natal_chart):
+        """Test that current transits are properly cached"""
+        mock_result = {"aspects": [], "energy_level": 80, "cached": False}
+        cached_result = {"aspects": [], "energy_level": 80, "cached": True}
+        
+        with patch('app.services.astro_cache_service.astro_cache') as mock_cache, \
+             patch.object(service, '_calculate_current_transits', return_value=mock_result):
+            
+            # First call - cache miss
+            mock_cache.get_cached_data = AsyncMock(return_value=None)
+            mock_cache.cache_data = AsyncMock()
+            
+            result1 = await service.get_current_transits_async(
+                natal_chart=sample_natal_chart,
+                transit_date=datetime.now(),
+                use_cache=True
+            )
+            
+            mock_cache.get_cached_data.assert_called_once()
+            mock_cache.cache_data.assert_called_once()
+            
+            # Second call - cache hit
+            mock_cache.get_cached_data.reset_mock()
+            mock_cache.get_cached_data = AsyncMock(return_value=cached_result)
+            
+            result2 = await service.get_current_transits_async(
+                natal_chart=sample_natal_chart,
+                transit_date=datetime.now(),
+                use_cache=True
+            )
+            
+            assert result2 == cached_result
+    
+    def test_generate_transit_cache_key(self, service, sample_natal_chart):
+        """Test transit cache key generation"""
+        cache_key = service._generate_transit_cache_key(
+            natal_chart=sample_natal_chart,
+            transit_date=datetime(2023, 8, 15, 12, 0),
+            include_minor_aspects=True
+        )
+        
+        assert isinstance(cache_key, str)
+        assert len(cache_key) > 0
+        
+        # Same inputs should generate same key
+        cache_key2 = service._generate_transit_cache_key(
+            natal_chart=sample_natal_chart,
+            transit_date=datetime(2023, 8, 15, 12, 0),
+            include_minor_aspects=True
+        )
+        
+        assert cache_key == cache_key2
+        
+        # Different inputs should generate different keys
+        cache_key3 = service._generate_transit_cache_key(
+            natal_chart=sample_natal_chart,
+            transit_date=datetime(2023, 8, 16, 12, 0),  # Different date
+            include_minor_aspects=True
+        )
+        
+        assert cache_key != cache_key3
+
+
+@pytest.mark.unit
+@pytest.mark.skipif(not KERYKEION_TRANSITS_AVAILABLE, reason="Kerykeion transits not available")
+class TestEnhancedTransitServiceWithKerykeion:
+    """Tests that run when Kerykeion transits are available"""
+    
+    @pytest.fixture
+    def service(self):
+        return TransitService()
+    
+    @pytest.fixture
+    def sample_natal_chart(self):
+        return {
+            "planets": {
+                "sun": {"longitude": 142.5, "sign": "leo", "degree_in_sign": 22.5},
+                "moon": {"longitude": 245.8, "sign": "sagittarius", "degree_in_sign": 5.8}
+            },
+            "birth_datetime": datetime(1990, 8, 15, 14, 30),
+            "timezone": "Europe/Moscow"
+        }
+    
+    def test_kerykeion_transits_calculation(self, service, sample_natal_chart):
+        """Test Kerykeion-based transit calculations"""
+        # This would test actual Kerykeion integration
+        # Implementation depends on the service's Kerykeion methods
+        
+        result = service._calculate_kerykeion_transits(
+            natal_chart=sample_natal_chart,
+            transit_date=datetime.now()
+        )
+        
+        # Should return meaningful transit data or error handling
+        assert result is not None
+        
+        if "error" not in result:
+            assert "aspects" in result or "transits" in result
+    
+    def test_ephemeris_data_integration(self, service, sample_natal_chart):
+        """Test integration with Kerykeion EphemerisDataFactory"""
+        # Test that the service can work with ephemeris data
+        ephemeris_data = service._get_ephemeris_data(
+            start_date=datetime.now(),
+            end_date=datetime.now() + timedelta(days=7)
+        )
+        
+        assert ephemeris_data is not None
+        # Structure depends on EphemerisDataFactory output
+
+
+@pytest.mark.unit
+class TestEnhancedTransitServiceFallback:
+    """Test fallback behavior when Kerykeion transits unavailable"""
+    
+    @pytest.fixture
+    def service_without_kerykeion(self):
+        """Service with mocked unavailable Kerykeion transits"""
+        service = TransitService()
+        # Mock the availability check
+        service._kerykeion_transits_available = False
+        return service
+    
+    @pytest.fixture
+    def sample_natal_chart(self):
+        return {
+            "planets": {
+                "sun": {"longitude": 142.5, "sign": "leo", "degree_in_sign": 22.5}
+            },
+            "birth_datetime": datetime(1990, 8, 15, 14, 30),
+            "timezone": "Europe/Moscow"
+        }
+    
+    @pytest.mark.asyncio
+    async def test_fallback_to_basic_transit_calculation(self, service_without_kerykeion, sample_natal_chart):
+        """Test fallback to basic transit calculations"""
+        # Mock the basic transit calculation
+        with patch.object(service_without_kerykeion.astrology_calculator, 'calculate_transits') as mock_basic:
+            mock_basic.return_value = {
+                "aspects": [{"planet1": "jupiter", "planet2": "sun", "aspect": "trine"}],
+                "source": "basic"
+            }
+            
+            result = await service_without_kerykeion.get_current_transits_async(
+                natal_chart=sample_natal_chart,
+                transit_date=datetime.now()
+            )
+            
+            assert result is not None
+            assert result.get("source") == "basic" or "aspects" in result
+            mock_basic.assert_called_once()
+    
+    def test_service_capabilities_without_kerykeion(self, service_without_kerykeion):
+        """Test service capabilities when Kerykeion unavailable"""
+        capabilities = service_without_kerykeion.get_transit_service_capabilities()
+        
+        assert capabilities['enhanced_transits'] == False
+        assert 'basic_transits' in capabilities
+        assert capabilities['basic_transits'] == True
+
+
+@pytest.mark.performance
+@pytest.mark.asyncio
+class TestEnhancedTransitServicePerformance:
+    """Performance tests for EnhancedTransitService"""
+    
+    @pytest.fixture
+    def service(self):
+        return TransitService()
+    
+    @pytest.fixture
+    def sample_natal_chart(self):
+        return {
+            "planets": {
+                "sun": {"longitude": 142.5, "sign": "leo", "degree_in_sign": 22.5},
+                "moon": {"longitude": 245.8, "sign": "sagittarius", "degree_in_sign": 5.8},
+                "mercury": {"longitude": 158.3, "sign": "virgo", "degree_in_sign": 8.3}
+            },
+            "birth_datetime": datetime(1990, 8, 15, 14, 30),
+            "timezone": "Europe/Moscow"
+        }
+    
+    async def test_current_transits_performance(self, service, sample_natal_chart):
+        """Test current transits calculation performance"""
+        import time
+        
+        with patch.object(service, '_calculate_current_transits') as mock_calc:
+            mock_calc.return_value = {"aspects": [], "energy_level": 75}
+            
+            start_time = time.time()
+            
+            result = await service.get_current_transits_async(
+                natal_chart=sample_natal_chart,
+                transit_date=datetime.now()
+            )
+            
+            end_time = time.time()
+            calculation_time = end_time - start_time
+            
+            # Should complete within 2 seconds
+            assert calculation_time < 2.0
+            assert result is not None
+    
+    async def test_period_forecast_performance(self, service, sample_natal_chart):
+        """Test period forecast calculation performance"""
+        import time
+        
+        with patch.object(service, '_calculate_period_forecast') as mock_calc:
+            mock_calc.return_value = {
+                "forecast_days": [{"date": datetime.now().date(), "energy_level": 75}],
+                "overall_energy": 75
+            }
+            
+            start_time = time.time()
+            
+            result = await service.get_period_forecast_async(
+                natal_chart=sample_natal_chart,
+                days=30
+            )
+            
+            end_time = time.time()
+            calculation_time = end_time - start_time
+            
+            # 30-day forecast should complete within 5 seconds
+            assert calculation_time < 5.0
+            assert result is not None
+    
+    async def test_important_transits_performance(self, service, sample_natal_chart):
+        """Test important transits detection performance"""
+        import time
+        
+        with patch.object(service, '_calculate_important_transits') as mock_calc:
+            mock_calc.return_value = {
+                "major_transits": [],
+                "life_themes": [],
+                "timing_advice": "Test advice"
+            }
+            
+            start_time = time.time()
+            
+            result = await service.get_important_transits_async(
+                natal_chart=sample_natal_chart,
+                lookback_days=30,
+                lookahead_days=90
+            )
+            
+            end_time = time.time()
+            calculation_time = end_time - start_time
+            
+            # 120-day transit scan should complete within 8 seconds
+            assert calculation_time < 8.0
+            assert result is not None
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio  
+@pytest.mark.skipif(not KERYKEION_TRANSITS_AVAILABLE, reason="Kerykeion transits not available")
+class TestEnhancedTransitServiceIntegration:
+    """Integration tests with real Kerykeion transit calculations"""
+    
+    @pytest.fixture
+    def service(self):
+        return TransitService()
+    
+    async def test_real_transit_calculation_integration(self, service):
+        """Test integration with real transit calculations"""
+        # Real natal chart data
+        natal_chart = {
+            "planets": {
+                "sun": {"longitude": 142.5, "sign": "leo", "degree_in_sign": 22.5},
+                "moon": {"longitude": 245.8, "sign": "sagittarius", "degree_in_sign": 5.8}
+            },
+            "birth_datetime": datetime(1990, 8, 15, 14, 30),
+            "timezone": "Europe/Moscow"
+        }
+        
+        result = await service.get_current_transits_async(
+            natal_chart=natal_chart,
+            transit_date=datetime.now(),
+            use_cache=False  # Ensure fresh calculation
+        )
+        
+        # Should get real transit data
+        assert result is not None
+        
+        if "error" not in result:
+            # Should have meaningful structure
+            assert "aspects" in result or "transits" in result
+            
+            if "aspects" in result:
+                aspects = result["aspects"]
+                if aspects:  # If any aspects found
+                    assert "transit_planet" in aspects[0]
+                    assert "natal_planet" in aspects[0]
+                    assert "aspect_type" in aspects[0]
+    
+    async def test_period_forecast_integration(self, service):
+        """Test period forecast with real calculations"""
+        natal_chart = {
+            "planets": {
+                "sun": {"longitude": 142.5, "sign": "leo", "degree_in_sign": 22.5}
+            },
+            "birth_datetime": datetime(1990, 8, 15, 14, 30),
+            "timezone": "Europe/Moscow"
+        }
+        
+        result = await service.get_period_forecast_async(
+            natal_chart=natal_chart,
+            days=7,
+            use_cache=False
+        )
+        
+        assert result is not None
+        
+        if "error" not in result:
+            assert "forecast_days" in result
+            forecast_days = result["forecast_days"]
+            
+            if forecast_days:
+                # Should have 7 days of forecasts
+                assert len(forecast_days) <= 7
+                
+                for day_forecast in forecast_days:
+                    assert "date" in day_forecast
+                    assert "energy_level" in day_forecast
