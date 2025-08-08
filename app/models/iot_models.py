@@ -1,6 +1,6 @@
 """IoT integration models for Astroloh."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -16,7 +16,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from app.models.database import GUID
 from app.models.database import Base as SQLBaseModel
@@ -92,14 +92,14 @@ class IoTDevice(SQLBaseModel):
     location = Column(String(255))
     room = Column(String(255))
     last_seen = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
-    automations = relationship("HomeAutomation", back_populates="device")
-    device_data = relationship("DeviceData", back_populates="device")
+    automations: Mapped[list["HomeAutomation"]] = relationship("HomeAutomation", back_populates="device")
+    device_data: Mapped[list["DeviceData"]] = relationship("DeviceData", back_populates="device")
 
 
 class HomeAutomation(SQLBaseModel):
@@ -118,13 +118,13 @@ class HomeAutomation(SQLBaseModel):
     is_enabled = Column(Boolean, default=True)
     last_executed = Column(DateTime)
     execution_count = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
-    device = relationship("IoTDevice", back_populates="automations")
+    device: Mapped["IoTDevice"] = relationship("IoTDevice", back_populates="automations")
 
 
 class DeviceData(SQLBaseModel):
@@ -138,10 +138,10 @@ class DeviceData(SQLBaseModel):
     value = Column(Float)
     unit = Column(String(50))
     device_metadata = Column(JSON)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    device = relationship("IoTDevice", back_populates="device_data")
+    device: Mapped["IoTDevice"] = relationship("IoTDevice", back_populates="device_data")
 
 
 class WearableData(SQLBaseModel):
@@ -158,7 +158,7 @@ class WearableData(SQLBaseModel):
     stress_level = Column(Float)
     mood_score = Column(Float)
     lunar_correlation = Column(Float)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 # Pydantic Models for API

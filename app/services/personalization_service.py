@@ -5,7 +5,7 @@ Personalization service for dynamic content generation and style adaptation.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import select
@@ -404,7 +404,7 @@ class InterestProfilingSystem:
             base_weight *= 1.3
 
         # Уменьшаем вес для старых взаимодействий
-        days_ago = (datetime.utcnow() - interaction.timestamp).days
+        days_ago = (datetime.now(timezone.utc) - interaction.timestamp).days
         if days_ago > 30:
             base_weight *= 0.7
         elif days_ago > 7:
@@ -473,7 +473,7 @@ class InterestProfilingSystem:
 
         if preferences:
             preferences.interests = interests
-            preferences.updated_at = datetime.utcnow()
+            preferences.updated_at = datetime.now(timezone.utc)
         else:
             preferences = UserPreference(user_id=user_id, interests=interests)
             self.db.add(preferences)

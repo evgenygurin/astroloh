@@ -1,9 +1,10 @@
 """
 Database models and configuration for secure data storage.
 """
+from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     JSON,
@@ -18,9 +19,15 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQL_UUID
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from typing import Any
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
 
 Base = declarative_base()
@@ -93,32 +100,38 @@ class User(Base):
     preferences = Column(JSON, nullable=True)
 
     # Метаданные
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )
-    last_accessed = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    last_accessed = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
 
     # Связи
-    sessions = relationship(
+    sessions: Mapped[list["UserSession"]] = relationship(
         "UserSession", back_populates="user", cascade="all, delete-orphan"
     )
-    horoscope_requests = relationship(
+    horoscope_requests: Mapped[list["HoroscopeRequest"]] = relationship(
         "HoroscopeRequest", back_populates="user", cascade="all, delete-orphan"
     )
-    user_interactions = relationship(
+    user_interactions: Mapped[list["UserInteraction"]] = relationship(
         "UserInteraction", back_populates="user", cascade="all, delete-orphan"
     )
-    user_recommendations = relationship(
+    user_recommendations: Mapped[list["Recommendation"]] = relationship(
         "Recommendation", back_populates="user", cascade="all, delete-orphan"
     )
-    user_preferences = relationship(
+    user_preferences: Mapped[list["UserPreference"]] = relationship(
         "UserPreference", back_populates="user", cascade="all, delete-orphan"
     )
-    user_clusters = relationship(
+    user_clusters: Mapped[list["UserCluster"]] = relationship(
         "UserCluster", back_populates="user", cascade="all, delete-orphan"
     )
-    user_ab_tests = relationship(
+    user_ab_tests: Mapped[list["ABTestGroup"]] = relationship(
         "ABTestGroup", back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -145,12 +158,16 @@ class UserSession(Base):
     expires_at = Column(DateTime, nullable=False)
 
     # Метаданные
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     last_activity = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    user = relationship("User", back_populates="sessions")
+    user: Mapped["User"] = relationship("User", back_populates="sessions")
 
 
 class HoroscopeRequest(Base):
@@ -175,10 +192,12 @@ class HoroscopeRequest(Base):
     )  # For compatibility requests
 
     # Метаданные запроса
-    processed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    processed_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     ip_hash = Column(String(64), nullable=True)  # Хеш IP для аналитики
 
-    user = relationship("User", back_populates="horoscope_requests")
+    user: Mapped["User"] = relationship("User", back_populates="horoscope_requests")
 
 
 class DataDeletionRequest(Base):
@@ -198,7 +217,9 @@ class DataDeletionRequest(Base):
 
     # Детали запроса
     request_reason = Column(Text, nullable=True)
-    requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    requested_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     processed_at = Column(DateTime, nullable=True)
 
     # Подтверждение
@@ -232,7 +253,9 @@ class SecurityLog(Base):
     error_message = Column(Text, nullable=True)
 
     # Временная метка
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
 
     # Индексы для быстрого поиска
     __table_args__ = (UniqueConstraint("id"),)
@@ -287,13 +310,15 @@ class UserPreference(Base):
     )  # Хранит изученные предпочтения из ML
 
     # Метаданные
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
     # Связи
-    user = relationship("User", back_populates="user_preferences")
+    user: Mapped["User"] = relationship("User", back_populates="user_preferences")
 
 
 class UserInteraction(Base):
@@ -324,10 +349,12 @@ class UserInteraction(Base):
     astronomical_data = Column(JSON, nullable=True)  # позиции планет, транзиты
 
     # Временная метка
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
 
     # Связи
-    user = relationship("User", back_populates="user_interactions")
+    user: Mapped["User"] = relationship("User", back_populates="user_interactions")
 
 
 class Recommendation(Base):
@@ -371,10 +398,12 @@ class Recommendation(Base):
     shown_at = Column(DateTime, nullable=True)
 
     # Временная метка
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
 
     # Связи
-    user = relationship("User", back_populates="user_recommendations")
+    user: Mapped["User"] = relationship("User", back_populates="user_recommendations")
 
 
 class UserCluster(Base):
@@ -397,13 +426,17 @@ class UserCluster(Base):
 
     # Метаданные
     algorithm_version = Column(String(20), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     # Связи
-    user = relationship("User", back_populates="user_clusters")
+    user: Mapped["User"] = relationship("User", back_populates="user_clusters")
 
 
 class ABTestGroup(Base):
@@ -431,10 +464,12 @@ class ABTestGroup(Base):
     is_active = Column(Boolean, default=True)
 
     # Временная метка
-    assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    assigned_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
 
     # Связи
-    user = relationship("User", back_populates="user_ab_tests")
+    user: Mapped["User"] = relationship("User", back_populates="user_ab_tests")
 
 
 class RecommendationMetrics(Base):
@@ -461,11 +496,13 @@ class RecommendationMetrics(Base):
     session_id = Column(String(255), nullable=True)
 
     # Временная метка
-    recorded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    recorded_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
 
     # Связи
-    user = relationship("User")
-    recommendation = relationship("Recommendation")
+    user: Mapped["User"] = relationship("User")
+    recommendation: Mapped["Recommendation"] = relationship("Recommendation")
 
 
 # Database connection management
@@ -475,14 +512,14 @@ class DatabaseManager:
     """
 
     def __init__(self, database_url: str):
-        self.database_url = database_url
-        self.engine = None
-        self.async_session = None
+        self.database_url: str = database_url
+        self.engine: AsyncEngine | None = None
+        self.async_session: async_sessionmaker[AsyncSession] | None = None
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Инициализация подключения к базе данных."""
         # Configure engine parameters based on database type
-        engine_kwargs = {
+        engine_kwargs: dict[str, Any] = {
             "echo": False,
         }
 
@@ -503,17 +540,19 @@ class DatabaseManager:
             self.engine, expire_on_commit=False
         )
 
-    async def create_tables(self):
+    async def create_tables(self) -> None:
         """Создание таблиц в базе данных."""
+        assert self.engine is not None
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
     async def get_session(self):
         """Получение сессии базы данных."""
+        assert self.async_session is not None
         async with self.async_session() as session:
             yield session
 
-    async def close(self):
+    async def close(self) -> None:
         """Закрытие подключений к базе данных."""
         if self.engine:
             await self.engine.dispose()

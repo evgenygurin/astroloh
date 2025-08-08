@@ -3,7 +3,7 @@
 import asyncio
 import json
 import ssl
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 
 from loguru import logger
@@ -670,7 +670,7 @@ class IoTProtocolManager:
             # Prepare update message
             message = {
                 "event_type": event_type,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "data": event_data,
                 "source": "astroloh",
             }

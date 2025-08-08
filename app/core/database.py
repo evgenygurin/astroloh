@@ -3,15 +3,18 @@ Database initialization and dependency injection.
 """
 
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.database import DatabaseManager
 
-# Global database manager instance
-db_manager: DatabaseManager = None
+"""Global database manager instance.
+
+Mypy requires an explicit Optional annotation for globals initialized with None.
+"""
+db_manager: Optional[DatabaseManager] = None
 
 # For backward compatibility with tests
 async_session_factory = None
@@ -42,6 +45,7 @@ async def get_database() -> AsyncGenerator[AsyncSession, None]:
     if not db_manager:
         await init_database()
 
+    assert db_manager is not None and db_manager.async_session is not None
     async with db_manager.async_session() as session:
         yield session
 
@@ -68,6 +72,7 @@ async def get_db_session_context() -> AsyncGenerator[AsyncSession, None]:
     if not db_manager:
         await init_database()
 
+    assert db_manager is not None and db_manager.async_session is not None
     async with db_manager.async_session() as session:
         yield session
 
