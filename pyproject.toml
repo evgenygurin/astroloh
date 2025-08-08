@@ -40,6 +40,10 @@ dependencies = [
     # Переменные окружения
     "python-dotenv==1.0.0",
     "swisseph>=0.0.0.dev1",
+    # Кэширование
+    "redis==5.0.1",
+    # Системное мониторинг
+    "psutil==5.9.6",
     # Telegram Bot API
     "aiogram==3.13.1",
     # Google Assistant integration
