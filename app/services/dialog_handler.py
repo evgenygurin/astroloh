@@ -1582,6 +1582,341 @@ class DialogHandler:
             logger.error(f"INTENT_LUNAR_RETURN_ERROR: {str(e)}", exc_info=True)
             return self.response_formatter.format_error_response("general")
 
+    # Enhanced transit and forecast handlers
+
+    async def _handle_enhanced_transits(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает расширенные транзиты с Kerykeion интеграцией."""
+        logger.info("INTENT_ENHANCED_TRANSITS_START: Processing enhanced transits request")
+        
+        # Проверяем наличие данных рождения
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.TRANSITS
+            )
+            return self.response_formatter.format_transit_request_response()
+
+        try:
+            from datetime import date
+            
+            birth_date = date.fromisoformat(user_context.birth_date)
+            logger.info(f"INTENT_ENHANCED_TRANSITS_DATE: {birth_date}")
+            
+            # Создаем расширенные данные натальной карты для транзитов
+            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
+            
+            # Получаем расширенные транзиты
+            enhanced_transits = self.transit_calculator.get_enhanced_current_transits(
+                natal_chart_data,
+                include_minor_aspects=True
+            )
+            
+            logger.info("INTENT_ENHANCED_TRANSITS_SUCCESS: Enhanced transits calculated")
+            
+            return self.response_formatter.format_enhanced_transits_response(enhanced_transits)
+            
+        except Exception as e:
+            logger.error(f"INTENT_ENHANCED_TRANSITS_ERROR: {str(e)}", exc_info=True)
+            # Fallback к обычным транзитам
+            return await self._handle_transits(entities, user_context, session)
+
+    async def _handle_period_forecast(
+        self, entities: Dict[str, Any], user_context: UserContext, session, days: int = 7
+    ) -> Any:
+        """Обрабатывает прогноз на период."""
+        logger.info(f"INTENT_PERIOD_FORECAST_START: {days} days forecast")
+        
+        # Проверяем наличие данных рождения
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.TRANSITS
+            )
+            return self.response_formatter.format_birth_date_request_response()
+
+        try:
+            # Создаем данные натальной карты
+            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
+            
+            # Получаем прогноз на период
+            period_forecast = self.transit_calculator.get_period_forecast(
+                natal_chart_data, 
+                days
+            )
+            
+            logger.info(f"INTENT_PERIOD_FORECAST_SUCCESS: {days} days calculated")
+            
+            return self.response_formatter.format_period_forecast_response(period_forecast, days)
+            
+        except Exception as e:
+            logger.error(f"INTENT_PERIOD_FORECAST_ERROR: {str(e)}", exc_info=True)
+            return self.response_formatter.format_error_response("forecast")
+
+    async def _handle_weekly_forecast(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает недельный прогноз."""
+        logger.info("INTENT_WEEKLY_FORECAST_START")
+        return await self._handle_period_forecast(entities, user_context, session, days=7)
+
+    async def _handle_important_transits(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает важные транзиты."""
+        logger.info("INTENT_IMPORTANT_TRANSITS_START")
+        
+        # Проверяем наличие данных рождения
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.TRANSITS
+            )
+            return self.response_formatter.format_birth_date_request_response()
+
+        try:
+            # Создаем данные натальной карты
+            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
+            
+            # Получаем важные транзиты (90 дней вперед, 30 назад)
+            important_transits = self.transit_calculator.get_important_transits(
+                natal_chart_data,
+                lookback_days=30,
+                lookahead_days=90
+            )
+            
+            logger.info("INTENT_IMPORTANT_TRANSITS_SUCCESS")
+            
+            return self.response_formatter.format_important_transits_response(important_transits)
+            
+        except Exception as e:
+            logger.error(f"INTENT_IMPORTANT_TRANSITS_ERROR: {str(e)}", exc_info=True)
+            return self.response_formatter.format_error_response("transits")
+
+    async def _handle_comprehensive_analysis(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает комплексный астрологический анализ."""
+        logger.info("INTENT_COMPREHENSIVE_ANALYSIS_START")
+        
+        # Проверяем наличие данных рождения
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.TRANSITS
+            )
+            return self.response_formatter.format_birth_date_request_response()
+
+        try:
+            # Создаем данные натальной карты
+            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
+            
+            # Получаем комплексный анализ (30 дней)
+            comprehensive_analysis = self.transit_calculator.get_comprehensive_transit_analysis(
+                natal_chart_data,
+                analysis_period_days=30
+            )
+            
+            logger.info("INTENT_COMPREHENSIVE_ANALYSIS_SUCCESS")
+            
+            return self.response_formatter.format_comprehensive_analysis_response(comprehensive_analysis)
+            
+        except Exception as e:
+            logger.error(f"INTENT_COMPREHENSIVE_ANALYSIS_ERROR: {str(e)}", exc_info=True)
+            return self.response_formatter.format_error_response("analysis")
+
+    async def _handle_enhanced_horoscope_with_transits(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает улучшенный гороскоп с транзитами."""
+        logger.info("INTENT_ENHANCED_HOROSCOPE_TRANSITS_START")
+        
+        # Получаем знак зодиака
+        zodiac_sign = entities.get("zodiac_sign")
+        if not zodiac_sign:
+            # Пытаемся получить из контекста пользователя
+            if user_context.birth_date:
+                try:
+                    from datetime import date
+                    birth_date = date.fromisoformat(user_context.birth_date)
+                    zodiac_sign = self.astro_calc.get_zodiac_sign(birth_date)
+                except Exception:
+                    pass
+        
+        if not zodiac_sign:
+            return self.response_formatter.format_zodiac_request_response()
+
+        try:
+            from app.models.yandex_models import YandexZodiacSign
+            from app.services.horoscope_generator import HoroscopePeriod
+            
+            # Преобразуем знак зодиака
+            try:
+                sign_enum = YandexZodiacSign(zodiac_sign.lower())
+            except ValueError:
+                logger.warning(f"INTENT_ENHANCED_HOROSCOPE_TRANSITS_INVALID_SIGN: {zodiac_sign}")
+                return self.response_formatter.format_error_response("zodiac")
+            
+            # Создаем данные натальной карты если доступны
+            natal_chart_data = None
+            if user_context.birth_date:
+                try:
+                    natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
+                except Exception as e:
+                    logger.warning(f"INTENT_ENHANCED_HOROSCOPE_TRANSITS_NATAL_ERROR: {e}")
+            
+            # Генерируем улучшенный гороскоп с транзитами
+            enhanced_horoscope = self.horoscope_generator.generate_enhanced_horoscope(
+                sign=sign_enum,
+                period=HoroscopePeriod.DAILY,
+                natal_chart_data=natal_chart_data,
+                include_transits=True
+            )
+            
+            logger.info("INTENT_ENHANCED_HOROSCOPE_TRANSITS_SUCCESS")
+            
+            return self.response_formatter.format_enhanced_horoscope_response(enhanced_horoscope)
+            
+        except Exception as e:
+            logger.error(f"INTENT_ENHANCED_HOROSCOPE_TRANSITS_ERROR: {str(e)}", exc_info=True)
+            # Fallback к обычному гороскопу
+            return await self._handle_horoscope(entities, user_context, session)
+
+    async def _handle_timing_question(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает вопросы о времени для действий ("когда лучше")."""
+        logger.info("INTENT_TIMING_QUESTION_START")
+        
+        # Проверяем наличие данных рождения
+        if not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "birth_date", YandexIntent.ADVICE
+            )
+            return self.response_formatter.format_birth_date_request_response()
+
+        try:
+            # Создаем данные натальной карты
+            natal_chart_data = await self._create_enhanced_natal_chart_data(user_context)
+            
+            # Получаем прогноз на ближайшую неделю для тайминга
+            period_forecast = self.transit_calculator.get_period_forecast(
+                natal_chart_data, 
+                days=7
+            )
+            
+            # Анализируем лучшее время для действий
+            timing_advice = self._extract_timing_advice_from_forecast(period_forecast, entities)
+            
+            logger.info("INTENT_TIMING_QUESTION_SUCCESS")
+            
+            return self.response_formatter.format_timing_advice_response(timing_advice)
+            
+        except Exception as e:
+            logger.error(f"INTENT_TIMING_QUESTION_ERROR: {str(e)}", exc_info=True)
+            return self.response_formatter.format_error_response("timing")
+
+    # Helper methods for enhanced functionality
+
+    async def _create_enhanced_natal_chart_data(self, user_context: UserContext) -> Dict[str, Any]:
+        """Создает расширенные данные натальной карты для транзитов."""
+        from datetime import date, datetime, time
+        
+        birth_date = date.fromisoformat(user_context.birth_date)
+        
+        # Используем время из контекста или полдень по умолчанию
+        birth_time = time(12, 0)  # По умолчанию полдень
+        if user_context.birth_time:
+            try:
+                birth_time = time.fromisoformat(user_context.birth_time)
+            except Exception:
+                pass
+        
+        birth_datetime = datetime.combine(birth_date, birth_time)
+        
+        # Координаты (по умолчанию Москва)
+        coordinates = {
+            "latitude": 55.7558, 
+            "longitude": 37.6176
+        }
+        if user_context.birth_place:
+            coordinates.update(user_context.birth_place)
+        
+        # Рассчитываем расширенную натальную карту
+        enhanced_natal_chart = self.natal_chart_calculator.calculate_enhanced_natal_chart(
+            name=user_context.user_id or "User",
+            birth_date=birth_date,
+            birth_time=birth_time,
+            birth_place=coordinates,
+            timezone_str="Europe/Moscow"
+        )
+        
+        # Добавляем необходимые поля для транзитного анализа
+        chart_data = {
+            "birth_datetime": birth_datetime.isoformat(),
+            "coordinates": coordinates,
+            "planets": enhanced_natal_chart.get("planets", {}),
+            "houses": enhanced_natal_chart.get("houses", {}),
+            "aspects": enhanced_natal_chart.get("aspects", []),
+        }
+        
+        return chart_data
+
+    def _extract_timing_advice_from_forecast(
+        self, 
+        period_forecast: Dict[str, Any], 
+        entities: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Извлекает советы по таймингу из прогноза."""
+        
+        daily_forecasts = period_forecast.get("daily_forecasts", [])
+        important_dates = period_forecast.get("important_dates", [])
+        
+        # Анализируем, что спрашивает пользователь
+        action_type = self._determine_action_type(entities)
+        
+        best_days = []
+        avoid_days = []
+        
+        for day_data in daily_forecasts:
+            energy_level = day_data.get("energy_level", "умеренная")
+            recommendations = day_data.get("recommendations", [])
+            
+            # Определяем подходящие дни на основе энергии и рекомендаций
+            if energy_level in ["высокая", "повышенная"]:
+                if action_type in ["новые_дела", "активность", "общее"]:
+                    best_days.append({
+                        "date": day_data.get("date", ""),
+                        "reason": f"Высокая энергия ({energy_level})",
+                        "advice": "; ".join(recommendations[:2])
+                    })
+            elif energy_level in ["низкая", "пониженная"]:
+                avoid_days.append({
+                    "date": day_data.get("date", ""),
+                    "reason": f"Низкая энергия ({energy_level})",
+                    "advice": "Лучше отложить активные дела"
+                })
+        
+        # Добавляем важные даты
+        for date_info in important_dates[:2]:
+            best_days.append({
+                "date": date_info.get("date", ""),
+                "reason": "Важное астрологическое влияние",
+                "advice": date_info.get("significance", "")
+            })
+        
+        return {
+            "action_type": action_type,
+            "best_days": best_days[:3],  # Топ-3 дня
+            "avoid_days": avoid_days[:2],  # Топ-2 дня избегания
+            "general_advice": period_forecast.get("general_advice", "Следуйте интуиции и естественным ритмам"),
+            "period": period_forecast.get("period", "7 дней")
+        }
+
+    def _determine_action_type(self, entities: Dict[str, Any]) -> str:
+        """Определяет тип действия из сущностей запроса."""
+        # Анализируем сущности для определения типа действия
+        # Возможные типы: новые_дела, отношения, работа, здоровье, общее
+        
+        return "общее"  # По умолчанию
+
     async def _handle_synastry(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
@@ -1706,6 +2041,7 @@ class DialogHandler:
                 )
             
             return self.response_formatter.format_error_response("synastry")
+
 
 
 # Глобальный экземпляр обработчика диалогов

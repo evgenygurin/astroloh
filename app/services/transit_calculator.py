@@ -1,5 +1,6 @@
 """
 Сервис расчета астрологических транзитов и их влияния на натальную карту.
+Теперь интегрирован с Enhanced Transit Service и Progression Service для полной функциональности.
 """
 
 import logging
@@ -9,6 +10,8 @@ from typing import Any, Dict, List, Optional
 import pytz
 
 from app.services.astrology_calculator import AstrologyCalculator
+from app.services.enhanced_transit_service import TransitService
+from app.services.progression_service import ProgressionService
 
 
 class TransitCalculator:
@@ -16,6 +19,8 @@ class TransitCalculator:
 
     def __init__(self):
         self.astro_calc = AstrologyCalculator()
+        self.transit_service = TransitService()
+        self.progression_service = ProgressionService()
         self.logger = logging.getLogger(__name__)
 
         # Орбы влияния для транзитных аспектов
@@ -614,3 +619,421 @@ class TransitCalculator:
         themes.append(theme)
 
         return themes
+
+    # Enhanced methods using new services
+
+    def get_enhanced_current_transits(
+        self,
+        natal_chart: Dict[str, Any],
+        transit_date: Optional[datetime] = None,
+        include_minor_aspects: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Получает расширенные текущие транзиты через Enhanced Transit Service.
+        
+        Args:
+            natal_chart: Данные натальной карты
+            transit_date: Дата для расчета транзитов
+            include_minor_aspects: Включать минорные аспекты
+        """
+        self.logger.info("TRANSIT_CALCULATOR_ENHANCED_CURRENT: Using enhanced transit service")
+        
+        # Используем новый Enhanced Transit Service для профессионального анализа
+        enhanced_result = self.transit_service.get_current_transits(
+            natal_chart, 
+            transit_date, 
+            include_minor_aspects
+        )
+        
+        # Если Enhanced service недоступен, используем базовый метод
+        if enhanced_result.get("source") == "basic" or not enhanced_result:
+            self.logger.warning("TRANSIT_CALCULATOR_ENHANCED_FALLBACK: Using legacy method")
+            natal_planets = natal_chart.get("planets", {})
+            return self.calculate_current_transits(natal_planets, transit_date)
+        
+        return enhanced_result
+
+    def get_period_forecast(
+        self,
+        natal_chart: Dict[str, Any],
+        days: int = 7,
+        start_date: Optional[datetime] = None
+    ) -> Dict[str, Any]:
+        """
+        Получает прогноз транзитов на период через Enhanced Transit Service.
+        
+        Args:
+            natal_chart: Данные натальной карты
+            days: Количество дней для прогноза
+            start_date: Начальная дата
+        """
+        self.logger.info(f"TRANSIT_CALCULATOR_PERIOD_FORECAST: {days} days forecast")
+        
+        return self.transit_service.get_period_forecast(natal_chart, days, start_date)
+
+    def get_important_transits(
+        self,
+        natal_chart: Dict[str, Any],
+        lookback_days: int = 30,
+        lookahead_days: int = 90
+    ) -> Dict[str, Any]:
+        """
+        Получает важные транзиты в расширенном периоде.
+        
+        Args:
+            natal_chart: Данные натальной карты
+            lookback_days: Дни назад для анализа
+            lookahead_days: Дни вперед для прогноза
+        """
+        self.logger.info("TRANSIT_CALCULATOR_IMPORTANT: Analyzing major transits")
+        
+        return self.transit_service.get_important_transits(
+            natal_chart, 
+            lookback_days, 
+            lookahead_days
+        )
+
+    def get_secondary_progressions(
+        self,
+        natal_chart: Dict[str, Any],
+        target_date: Optional[date] = None
+    ) -> Dict[str, Any]:
+        """
+        Вычисляет вторичные прогрессии через Progression Service.
+        
+        Args:
+            natal_chart: Данные натальной карты
+            target_date: Дата для расчета прогрессий
+        """
+        self.logger.info("TRANSIT_CALCULATOR_PROGRESSIONS: Calculating secondary progressions")
+        
+        return self.progression_service.get_secondary_progressions(natal_chart, target_date)
+
+    def get_enhanced_solar_return(
+        self,
+        natal_chart: Dict[str, Any],
+        year: int,
+        location: Optional[Dict[str, float]] = None
+    ) -> Dict[str, Any]:
+        """
+        Вычисляет расширенный соляр через Progression Service.
+        
+        Args:
+            natal_chart: Данные натальной карты
+            year: Год соляра
+            location: Место для расчета
+        """
+        self.logger.info(f"TRANSIT_CALCULATOR_SOLAR_RETURN_ENHANCED: {year}")
+        
+        # Используем новый Progression Service для расширенного анализа
+        enhanced_result = self.progression_service.get_solar_return(natal_chart, year, location)
+        
+        # Дополняем базовыми данными если нужно
+        if not enhanced_result:
+            birth_date = datetime.fromisoformat(natal_chart.get("birth_datetime", "2000-01-01T12:00:00")).date()
+            return self.calculate_solar_return(birth_date, year, location)
+        
+        return enhanced_result
+
+    def get_enhanced_lunar_return(
+        self,
+        natal_chart: Dict[str, Any],
+        month: int,
+        year: int,
+        location: Optional[Dict[str, float]] = None
+    ) -> Dict[str, Any]:
+        """
+        Вычисляет расширенный лунар через Progression Service.
+        
+        Args:
+            natal_chart: Данные натальной карты
+            month: Месяц лунара
+            year: Год лунара
+            location: Место для расчета
+        """
+        self.logger.info(f"TRANSIT_CALCULATOR_LUNAR_RETURN_ENHANCED: {month}/{year}")
+        
+        # Используем новый Progression Service
+        enhanced_result = self.progression_service.get_lunar_return(natal_chart, month, year, location)
+        
+        # Дополняем базовыми данными если нужно
+        if not enhanced_result:
+            birth_date = datetime.fromisoformat(natal_chart.get("birth_datetime", "2000-01-01T12:00:00")).date()
+            return self.calculate_lunar_return(birth_date, month, year, location)
+        
+        return enhanced_result
+
+    def get_comprehensive_transit_analysis(
+        self,
+        natal_chart: Dict[str, Any],
+        analysis_period_days: int = 30
+    ) -> Dict[str, Any]:
+        """
+        Получает комплексный анализ транзитов и прогрессий.
+        
+        Args:
+            natal_chart: Данные натальной карты
+            analysis_period_days: Период анализа в днях
+        """
+        self.logger.info("TRANSIT_CALCULATOR_COMPREHENSIVE: Full transit analysis")
+        
+        current_date = datetime.now(pytz.UTC)
+        current_year = current_date.year
+        current_month = current_date.month
+        
+        # Получаем все виды анализа
+        current_transits = self.get_enhanced_current_transits(natal_chart)
+        period_forecast = self.get_period_forecast(natal_chart, analysis_period_days)
+        important_transits = self.get_important_transits(natal_chart)
+        progressions = self.get_secondary_progressions(natal_chart)
+        solar_return = self.get_enhanced_solar_return(natal_chart, current_year)
+        lunar_return = self.get_enhanced_lunar_return(natal_chart, current_month, current_year)
+        
+        # Создаем комплексный анализ
+        comprehensive_analysis = {
+            "analysis_date": current_date.isoformat(),
+            "analysis_period": f"{analysis_period_days} дней",
+            
+            # Основные компоненты
+            "current_transits": current_transits,
+            "period_forecast": period_forecast,
+            "important_transits": important_transits,
+            "progressions": progressions,
+            "solar_return": solar_return,
+            "lunar_return": lunar_return,
+            
+            # Интегрированные выводы
+            "integrated_themes": self._extract_integrated_themes(
+                current_transits, period_forecast, important_transits, progressions
+            ),
+            "life_phase_analysis": self._analyze_current_life_phase(progressions, solar_return),
+            "timing_recommendations": self._create_timing_recommendations(
+                current_transits, period_forecast, important_transits
+            ),
+            "spiritual_guidance": self._create_spiritual_guidance(
+                progressions, important_transits, solar_return
+            ),
+            
+            # Сводка
+            "executive_summary": self._create_executive_summary(
+                current_transits, period_forecast, important_transits, progressions
+            )
+        }
+        
+        self.logger.info("TRANSIT_CALCULATOR_COMPREHENSIVE_SUCCESS: Analysis complete")
+        return comprehensive_analysis
+
+    def is_enhanced_features_available(self) -> Dict[str, bool]:
+        """Проверяет доступность расширенных функций."""
+        return {
+            "kerykeion_transits": self.transit_service.is_available(),
+            "kerykeion_progressions": self.progression_service.is_available(),
+            "enhanced_analysis": True,
+            "comprehensive_forecasts": True
+        }
+
+    # Helper methods for comprehensive analysis
+
+    def _extract_integrated_themes(
+        self,
+        current_transits: Dict[str, Any],
+        period_forecast: Dict[str, Any],
+        important_transits: Dict[str, Any],
+        progressions: Dict[str, Any]
+    ) -> List[str]:
+        """Извлекает интегрированные темы из всех видов анализа."""
+        themes = set()
+        
+        # Темы из текущих транзитов
+        for influence in current_transits.get("daily_influences", []):
+            theme = self._extract_theme_from_text(influence)
+            if theme:
+                themes.add(theme)
+        
+        # Темы из прогноза периода
+        for theme in period_forecast.get("overall_themes", []):
+            themes.add(theme)
+        
+        # Темы из важных транзитов
+        for theme in important_transits.get("life_themes", []):
+            themes.add(theme)
+        
+        # Темы из прогрессий
+        interpretation = progressions.get("interpretation", {})
+        if isinstance(interpretation, dict):
+            for trend in interpretation.get("general_trends", []):
+                theme = self._extract_theme_from_text(trend)
+                if theme:
+                    themes.add(theme)
+        
+        return list(themes)[:5]  # Ограничиваем топ-5 темами
+
+    def _analyze_current_life_phase(
+        self,
+        progressions: Dict[str, Any],
+        solar_return: Dict[str, Any]
+    ) -> Dict[str, str]:
+        """Анализирует текущую жизненную фазу."""
+        interpretation = progressions.get("interpretation", {})
+        
+        if isinstance(interpretation, dict):
+            life_stage = interpretation.get("life_stage", "Переходный период")
+            current_age = interpretation.get("current_age", 0)
+        else:
+            life_stage = "Переходный период"
+            current_age = 0
+        
+        solar_theme = solar_return.get("interpretation", {}).get("year_theme", "Год развития")
+        
+        return {
+            "life_stage": life_stage,
+            "current_age": str(current_age),
+            "year_focus": solar_theme,
+            "development_phase": self._determine_development_phase(current_age),
+            "key_lessons": self._get_age_appropriate_lessons(current_age)
+        }
+
+    def _create_timing_recommendations(
+        self,
+        current_transits: Dict[str, Any],
+        period_forecast: Dict[str, Any],
+        important_transits: Dict[str, Any]
+    ) -> List[Dict[str, str]]:
+        """Создает рекомендации по таймингу действий."""
+        recommendations = []
+        
+        # Из текущих транзитов
+        timing_recs = current_transits.get("timing_recommendations", [])
+        for rec in timing_recs[:2]:
+            recommendations.append({
+                "period": "сейчас",
+                "recommendation": rec,
+                "source": "current_transits"
+            })
+        
+        # Из важных дат периода
+        important_dates = period_forecast.get("important_dates", [])
+        for date_info in important_dates[:2]:
+            recommendations.append({
+                "period": date_info.get("date", ""),
+                "recommendation": f"Обратите внимание: {date_info.get('significance', '')}",
+                "source": "period_forecast"
+            })
+        
+        # Из подготовки к важным транзитам
+        prep_advice = important_transits.get("preparation_advice", [])
+        for advice in prep_advice[:1]:
+            recommendations.append({
+                "period": "долгосрочно",
+                "recommendation": advice,
+                "source": "important_transits"
+            })
+        
+        return recommendations[:5]
+
+    def _create_spiritual_guidance(
+        self,
+        progressions: Dict[str, Any],
+        important_transits: Dict[str, Any],
+        solar_return: Dict[str, Any]
+    ) -> str:
+        """Создает духовное руководство."""
+        spiritual_messages = []
+        
+        # Из прогрессий
+        spiritual_evolution = progressions.get("spiritual_evolution")
+        if spiritual_evolution:
+            spiritual_messages.append(spiritual_evolution)
+        
+        # Из важных транзитов
+        spiritual_guidance = important_transits.get("spiritual_guidance")
+        if spiritual_guidance:
+            spiritual_messages.append(spiritual_guidance)
+        
+        # Базовое сообщение
+        if not spiritual_messages:
+            spiritual_messages.append("Каждый момент жизни несет возможности для роста и развития сознания")
+        
+        return " ".join(spiritual_messages[:2])
+
+    def _create_executive_summary(
+        self,
+        current_transits: Dict[str, Any],
+        period_forecast: Dict[str, Any],
+        important_transits: Dict[str, Any],
+        progressions: Dict[str, Any]
+    ) -> str:
+        """Создает исполнительное резюме анализа."""
+        summary_parts = []
+        
+        # Текущее состояние
+        current_summary = current_transits.get("summary", "")
+        if current_summary:
+            summary_parts.append(f"Сейчас: {current_summary}")
+        
+        # Период
+        period_summary = period_forecast.get("period_summary", "")
+        if period_summary:
+            summary_parts.append(f"Период: {period_summary}")
+        
+        # Долгосрочно
+        if important_transits.get("important_transits"):
+            summary_parts.append("Долгосрочно ожидаются значительные астрологические влияния")
+        
+        # Прогрессии
+        interpretation = progressions.get("interpretation", {})
+        if isinstance(interpretation, dict):
+            life_stage = interpretation.get("life_stage", "")
+            if life_stage:
+                summary_parts.append(f"Жизненная фаза: {life_stage}")
+        
+        if not summary_parts:
+            return "Период стабильного развития с возможностями для личностного роста"
+        
+        return ". ".join(summary_parts[:3]) + "."
+
+    def _extract_theme_from_text(self, text: str) -> Optional[str]:
+        """Извлекает тему из текста."""
+        if not text:
+            return None
+        
+        text_lower = text.lower()
+        theme_keywords = {
+            "отношения": ["любовь", "отношения", "партнер", "брак", "семья"],
+            "карьера": ["работа", "карьера", "деньги", "успех", "достижения", "бизнес"],
+            "здоровье": ["здоровье", "энергия", "силы", "восстановление", "лечение"],
+            "творчество": ["творчество", "искусство", "вдохновение", "создание", "творческий"],
+            "духовность": ["духовность", "медитация", "развитие", "мудрость", "сознание"],
+            "обучение": ["обучение", "знания", "изучение", "понимание", "образование"],
+            "трансформация": ["трансформация", "изменения", "обновление", "перемены"]
+        }
+        
+        for theme, keywords in theme_keywords.items():
+            if any(keyword in text_lower for keyword in keywords):
+                return theme
+        
+        return None
+
+    def _determine_development_phase(self, age: int) -> str:
+        """Определяет фазу развития по возрасту."""
+        if age < 29:
+            return "Формирование и поиск идентичности"
+        elif age < 42:
+            return "Активная реализация и достижения"
+        elif age < 58:
+            return "Мастерство и наставничество"
+        else:
+            return "Мудрость и духовное развитие"
+
+    def _get_age_appropriate_lessons(self, age: int) -> str:
+        """Получает уроки, соответствующие возрасту."""
+        if age < 21:
+            return "Самопознание и формирование ценностей"
+        elif age < 29:
+            return "Принятие ответственности и независимость"
+        elif age < 42:
+            return "Баланс между амбициями и отношениями"
+        elif age < 58:
+            return "Передача опыта и развитие мудрости"
+        else:
+            return "Принятие жизненного пути и духовное созревание"
