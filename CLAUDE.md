@@ -91,6 +91,8 @@ astroloh/
 ## Key Services
 
 - **astrology_calculator.py**: Core astrological calculations
+- **synastry_service.py**: Synastry and relationship analysis using Kerykeion
+- **compatibility_analyzer.py**: Advanced multi-type compatibility analysis
 - **conversation_manager.py**: Dialog flow management
 - **horoscope_generator.py**: Horoscope generation
 - **lunar_calendar.py**: Lunar calendar functionality
@@ -111,6 +113,53 @@ The project supports multiple astronomical calculation libraries with automatic 
 - **pyswisseph**: Primary library (high accuracy, requires C compilation)
 - **skyfield**: Alternative (good accuracy, pure Python)
 - **astropy**: Professional astronomy (full-featured)
+- **Kerykeion**: Modern astrology library for synastry and advanced calculations
+
+## Synastry and Compatibility Analysis (NEW 2025-01-08)
+
+The project now includes comprehensive synastry and relationship analysis capabilities:
+
+### Core Features
+
+- **Synastry Service** (`synastry_service.py`): Full relationship analysis using Kerykeion
+  - Inter-chart aspects calculation
+  - Composite midpoints
+  - House overlays
+  - Relationship themes and growth potential
+
+- **Compatibility Analyzer** (`compatibility_analyzer.py`): Multi-type compatibility analysis
+  - Romantic relationships
+  - Business partnerships  
+  - Friendships
+  - Family dynamics
+
+### Voice Interface Integration
+
+The synastry functionality is fully integrated with Yandex Alice:
+
+- **Intent Recognition**: `YandexIntent.SYNASTRY` with partner name extraction
+- **Dialog Flow**: Multi-step data collection for partner information
+- **Session Management**: Partner data stored in `UserContext`
+- **Response Formatting**: Beautiful, voice-optimized synastry reports
+
+### Usage Patterns
+
+```python
+# Voice commands supported:
+"Синастрия с Марией"
+"Анализ отношений"
+"Совместимость с Иваном" 
+"Что говорят звезды о наших отношениях"
+"Композитная карта"
+```
+
+### Data Collection Flow
+
+1. User zodiac sign (if not already known)
+2. Partner name extraction from voice input
+3. Partner zodiac sign
+4. Optional: Partner birth date for enhanced analysis
+5. Generate comprehensive compatibility report
 
 ## API Integration
 
