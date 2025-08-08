@@ -761,7 +761,86 @@ except Exception as e:
 - Comprehensive analysis: <10 seconds
 - Important transits: <8 seconds (due to extended time range)
 
+## Enhanced AI Astrological Consultation System (NEW 2025-08-08)
+
+The project now features a comprehensive AI-powered astrological consultation system that combines professional Kerykeion calculations with advanced Yandex GPT generation.
+
+### Core AI Services
+
+**AstroAIService** (`astro_ai_service.py`): Advanced AI consultation platform
+- **Professional Natal Chart Interpretation**: Full Kerykeion data integration with AI analysis
+- **Specialized Consultations**: Career, love, health, financial, and spiritual guidance
+- **Enhanced Compatibility Analysis**: Advanced synastry with AI interpretation
+- **Transit-Based Forecasting**: AI-powered predictions using professional calculations
+- **Content Quality Control**: Built-in safety filters and disclaimers
+- **Multi-Backend Support**: Graceful fallbacks when advanced features unavailable
+
+**Enhanced AIHoroscopeService** (`ai_horoscope_service.py`): Extended integration
+- **Natal Chart Interpretations**: `generate_natal_chart_interpretation()`
+- **Enhanced Compatibility**: `generate_enhanced_compatibility_analysis()`
+- **Transit Forecasts**: `generate_transit_forecast_analysis()` 
+- **Specialized Consultations**: `generate_specialized_consultation()`
+- **Service Status Monitoring**: `get_enhanced_service_status()`
+
+### Sophisticated Prompt Engineering
+
+**YandexGPTClient Enhanced** (`yandex_gpt.py`): Professional prompt templates
+- **Natal Chart Prompts**: Professional interpretation using Kerykeion data
+- **Synastry Analysis Prompts**: Relationship compatibility with aspect analysis
+- **Transit Forecast Prompts**: Predictive astrology with timing recommendations
+- **Specialized Consultation Prompts**: Topic-specific guidance (career, love, health, finances, spiritual)
+- **Context-Aware Generation**: Adapts prompts based on available astrological data
+
+### New Voice Commands for Alice
+
+**Enhanced Intent Recognition** (`intent_recognition.py`): 60+ new voice patterns
+- "интерпретация натальной карты" → AI_NATAL_INTERPRETATION
+- "карьерный совет" / "совет по работе" → AI_CAREER_CONSULTATION  
+- "любовная консультация" / "совет по любви" → AI_LOVE_CONSULTATION
+- "здоровье и звезды" / "совет по здоровью" → AI_HEALTH_CONSULTATION
+- "финансовая консультация" / "деньги и звезды" → AI_FINANCIAL_CONSULTATION
+- "духовная консультация" / "кармические задачи" → AI_SPIRITUAL_CONSULTATION
+- "улучшенная совместимость" / "детальная совместимость" → AI_ENHANCED_COMPATIBILITY
+- "прогноз транзитов" / "транзитный прогноз" → AI_TRANSIT_FORECAST
+- "статус ии" / "проверь ии" → AI_SERVICE_STATUS
+
+### Content Safety and Quality Control
+
+**AIContentFilter** (`ai_content_filter.py`): Comprehensive content validation
+- **Safety Filtering**: Removes harmful, medical, and risky financial advice
+- **Quality Assessment**: Evaluates astrological relevance and coherence
+- **Content Enhancement**: Adds appropriate disclaimers based on consultation type
+- **Length Optimization**: Ensures Alice voice interface compliance
+- **Multi-Level Validation**: Safe/Warning/Blocked classification system
+
+### Development Patterns for AI Features
+
+**Service Integration Pattern**:
+```python
+# Check availability and generate with professional data
+if self.astro_ai_service and settings.ENABLE_AI_GENERATION:
+    try:
+        result = await self.astro_ai_service.generate_consultation(...)
+        return result  # Content validation happens automatically
+    except Exception as e:
+        logger.error(f"AI_CONSULTATION_ERROR: {e}")
+        return traditional_fallback()  # Graceful degradation
+```
+
+**Configuration Requirements**:
+- Kerykeion >=4.11.0 (professional calculations)
+- ENABLE_AI_GENERATION=True (feature flag)
+- YANDEX_API_KEY (GPT integration)
+- Proper Docker environment variable mapping
+
 ### Knowledge Update History
+
+**2025-08-08**: 
+- **MAJOR UPDATE**: Added comprehensive AI astrological consultation system integrating Kerykeion professional calculations with advanced Yandex GPT generation
+- Enhanced dialog handlers with 60+ new voice command patterns for specialized AI consultations
+- Implemented robust content safety filtering with multi-level validation and automatic disclaimer systems
+- Created sophisticated prompt engineering templates for natal charts, synastry, transits, and specialized guidance
+- Added complete Alice voice interface optimization for AI-powered consultations
 
 **2025-08-08**: Added comprehensive transit and progression system with full Kerykeion integration, enhanced dialog handlers for new Alice voice commands, professional-grade astrological calculations, and intelligent fallback mechanisms for production reliability.
 
