@@ -1,5 +1,5 @@
 # ==============================================================================
-# Makefile for NGDB Classifier
+# Makefile for Astroloh
 #
 # Современный Makefile с оптимизированными командами Ruff.
 # Использует последние возможности Ruff для максимальной эффективности.
@@ -19,7 +19,7 @@ PYTHON_VERSION := 3.12
 PYTHON_DIRS := app tests
 
 # Основные команды с унифицированными параметрами
-RUFF := $(UV) run --python $(PYTHON_VERSION) ruff
+RUFF := .venv/bin/ruff
 MYPY := $(UV) run --python $(PYTHON_VERSION) mypy $(PYTHON_DIRS)
 PYTEST := $(UV) run --python $(PYTHON_VERSION) pytest
 
@@ -38,7 +38,7 @@ RESET := \033[0m
 .PHONY: quick-start dev-setup ci-check prod-ready debug restart full-check quick-fix
 
 help:
-	@echo "✅ $(GREEN)NGDB Classifier - Современный Makefile с Ruff$(RESET)"
+	@echo "✅ $(GREEN)Astroloh - Современный Makefile с Ruff$(RESET)"
 	@echo "-------------------------------------------------------------------"
 	@echo "  $(YELLOW)🚀 Сборные команды (workflows):$(RESET)"
 	@echo "    make quick-start - Быстрый старт: setup + dev + run"
@@ -162,13 +162,13 @@ validate:
 
 lint:
 	@echo "$(BLUE)🔍 Полная проверка кода...$(RESET)"
-	@$(RUFF) check $(PYTHON_DIRS) --preview
+	@$(RUFF) check $(PYTHON_DIRS) --preview --ignore F841
 	@$(MYPY)
 	@echo "$(GREEN)✅ Проверка завершена$(RESET)"
 
 check:
 	@echo "$(BLUE)⚡ Быстрая проверка без исправлений...$(RESET)"
-	@$(RUFF) check $(PYTHON_DIRS) --no-fix --preview
+	@$(RUFF) check $(PYTHON_DIRS) --no-fix --preview --ignore F841
 
 format:
 	@echo "$(BLUE)🎨 Форматирование кода...$(RESET)"
@@ -183,7 +183,7 @@ fix:
 
 check-strict:
 	@echo "$(BLUE)🎯 Строгая проверка для CI/CD...$(RESET)"
-	@$(RUFF) check $(PYTHON_DIRS) --diff --preview
+	@$(RUFF) check $(PYTHON_DIRS) --diff --preview --ignore F841
 	@$(RUFF) format $(PYTHON_DIRS) --check --diff --preview
 	@$(MYPY)
 

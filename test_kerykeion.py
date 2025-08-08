@@ -7,8 +7,8 @@ from datetime import datetime
 
 import pytz
 
-# Add project root to path
-sys.path.insert(0, "/Users/laptop/dev/astroloh")
+# Add project root to path (repo root)
+sys.path.insert(0, "/workspace")
 
 from app.models.yandex_models import YandexZodiacSign
 from app.services.astrology_calculator import AstrologyCalculator
