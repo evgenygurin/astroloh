@@ -49,6 +49,7 @@ dependencies = [
     # Google Assistant integration
     "google-cloud-dialogflow==2.28.0",
     "greenlet>=3.2.3",
+    "kerykeion==4.15.0",
 ]
 
 [project.optional-dependencies]

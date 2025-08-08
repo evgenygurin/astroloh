@@ -13,6 +13,7 @@ psycopg2-binary==2.9.9
 
 # Астрологические вычисления
 kerykeion
+slowapi
 
 # Шифрование и безопасность
 cryptography==45.0.5

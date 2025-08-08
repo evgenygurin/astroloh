@@ -27,7 +27,7 @@ RUN chown -R astroloh:astroloh /app
 COPY --chown=astroloh:astroloh requirements.txt pyproject.toml ./
 
 # Install Python dependencies with development tools
-RUN pip install --upgrade pip &&     pip install -r requirements.txt &&     pip install watchfiles python-multipart pyswisseph
+RUN pip install --upgrade pip &&     pip install -r requirements.txt &&     pip install watchfiles python-multipart "pyswisseph[binary]" --use-pep517 --no-build-isolation
 
 # Switch to development user
 USER astroloh
