@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from app.models.yandex_models import YandexZodiacSign
 from app.services.astrology_calculator import AstrologyCalculator
+from app.services.transit_calculator import TransitCalculator
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class HoroscopeGenerator:
 
     def __init__(self):
         self.astro_calc = AstrologyCalculator()
+        self.transit_calc = TransitCalculator()
 
         # Базовые характеристики знаков зодиака
         self.sign_characteristics = {
@@ -843,3 +845,549 @@ class HoroscopeGenerator:
             f"ADVICE_GENERATION_SUCCESS: final_length={len(base_advice)}"
         )
         return base_advice
+
+    # Enhanced methods with transit integration
+
+    def generate_enhanced_horoscope(
+        self,
+        sign: YandexZodiacSign,
+        period: HoroscopePeriod = HoroscopePeriod.DAILY,
+        natal_chart_data: Optional[Dict[str, Any]] = None,
+        include_transits: bool = True,
+        target_date: Optional[date] = None
+    ) -> Dict[str, Any]:
+        """
+        Генерирует улучшенный гороскоп с интеграцией транзитов.
+        
+        Args:
+            sign: Знак зодиака
+            period: Период гороскопа
+            natal_chart_data: Данные натальной карты (опционально)
+            include_transits: Включать анализ транзитов
+            target_date: Дата для гороскопа
+        """
+        logger.info(f"HOROSCOPE_ENHANCED_START: sign={sign.value}, period={period.value}, transits={include_transits}")
+        
+        if target_date is None:
+            target_date = date.today()
+        
+        # Генерируем базовый гороскоп
+        base_horoscope = self.generate_horoscope(sign, period, target_date)
+        
+        enhanced_horoscope = {
+            "sign": sign.value,
+            "period": period.value,
+            "date": target_date.isoformat(),
+            "base_horoscope": base_horoscope,
+        }
+        
+        # Добавляем анализ транзитов, если доступны данные натальной карты
+        if include_transits and natal_chart_data and self.transit_calc.is_enhanced_features_available().get("enhanced_analysis", False):
+            try:
+                transit_analysis = self._get_transit_enhanced_content(natal_chart_data, period, target_date)
+                enhanced_horoscope["transit_influences"] = transit_analysis
+                
+                # Объединяем базовый гороскоп с транзитным анализом
+                enhanced_horoscope["integrated_forecast"] = self._integrate_base_and_transit_content(
+                    base_horoscope, transit_analysis
+                )
+                
+                logger.info("HOROSCOPE_ENHANCED_TRANSIT_SUCCESS: Transit analysis integrated")
+            except Exception as e:
+                logger.error(f"HOROSCOPE_ENHANCED_TRANSIT_ERROR: {e}")
+                enhanced_horoscope["transit_influences"] = {"error": "Transit analysis unavailable"}
+        else:
+            logger.info("HOROSCOPE_ENHANCED_TRANSIT_SKIPPED: No natal chart data or transits disabled")
+        
+        # Добавляем улучшенные рекомендации
+        enhanced_horoscope["enhanced_recommendations"] = self._generate_enhanced_recommendations(
+            sign, period, target_date, enhanced_horoscope.get("transit_influences", {})
+        )
+        
+        # Добавляем энергетический анализ
+        enhanced_horoscope["energy_analysis"] = self._generate_energy_analysis(
+            sign, target_date, enhanced_horoscope.get("transit_influences", {})
+        )
+        
+        logger.info("HOROSCOPE_ENHANCED_SUCCESS: Enhanced horoscope generated")
+        return enhanced_horoscope
+
+    def generate_transit_forecast(
+        self,
+        natal_chart_data: Dict[str, Any],
+        forecast_days: int = 7
+    ) -> Dict[str, Any]:
+        """
+        Генерирует прогноз на основе транзитов.
+        
+        Args:
+            natal_chart_data: Данные натальной карты
+            forecast_days: Количество дней для прогноза
+        """
+        logger.info(f"HOROSCOPE_TRANSIT_FORECAST_START: {forecast_days} days")
+        
+        try:
+            # Получаем период прогноза транзитов
+            period_forecast = self.transit_calc.get_period_forecast(
+                natal_chart_data, 
+                forecast_days
+            )
+            
+            # Получаем важные транзиты
+            important_transits = self.transit_calc.get_important_transits(
+                natal_chart_data,
+                lookback_days=7,
+                lookahead_days=forecast_days
+            )
+            
+            # Создаем прогноз
+            forecast = {
+                "forecast_period": f"{forecast_days} дней",
+                "generated_date": date.today().isoformat(),
+                "period_forecast": period_forecast,
+                "important_transits": important_transits,
+                "daily_guidance": self._create_daily_guidance_from_transits(period_forecast),
+                "key_themes": self._extract_key_themes_from_transits(period_forecast, important_transits),
+                "timing_advice": self._create_timing_advice_from_transits(period_forecast, important_transits)
+            }
+            
+            logger.info("HOROSCOPE_TRANSIT_FORECAST_SUCCESS")
+            return forecast
+            
+        except Exception as e:
+            logger.error(f"HOROSCOPE_TRANSIT_FORECAST_ERROR: {e}")
+            return {
+                "error": "Не удалось создать прогноз на основе транзитов",
+                "forecast_period": f"{forecast_days} дней",
+                "generated_date": date.today().isoformat()
+            }
+
+    def generate_comprehensive_analysis(
+        self,
+        natal_chart_data: Dict[str, Any],
+        analysis_period_days: int = 30
+    ) -> Dict[str, Any]:
+        """
+        Генерирует комплексный астрологический анализ.
+        
+        Args:
+            natal_chart_data: Данные натальной карты
+            analysis_period_days: Период анализа в днях
+        """
+        logger.info(f"HOROSCOPE_COMPREHENSIVE_START: {analysis_period_days} days analysis")
+        
+        try:
+            # Получаем комплексный анализ транзитов
+            comprehensive_transit_analysis = self.transit_calc.get_comprehensive_transit_analysis(
+                natal_chart_data, 
+                analysis_period_days
+            )
+            
+            # Добавляем гороскопную интерпретацию
+            analysis = {
+                "analysis_type": "comprehensive",
+                "analysis_period": f"{analysis_period_days} дней",
+                "generated_date": date.today().isoformat(),
+                
+                # Основной анализ транзитов
+                "transit_analysis": comprehensive_transit_analysis,
+                
+                # Интерпретация для пользователя
+                "user_interpretation": self._create_user_friendly_interpretation(comprehensive_transit_analysis),
+                
+                # Практические рекомендации
+                "practical_guidance": self._create_practical_guidance(comprehensive_transit_analysis),
+                
+                # Духовные инсайты
+                "spiritual_insights": self._create_spiritual_insights(comprehensive_transit_analysis)
+            }
+            
+            logger.info("HOROSCOPE_COMPREHENSIVE_SUCCESS")
+            return analysis
+            
+        except Exception as e:
+            logger.error(f"HOROSCOPE_COMPREHENSIVE_ERROR: {e}")
+            return {
+                "error": "Не удалось создать комплексный анализ",
+                "analysis_type": "comprehensive",
+                "analysis_period": f"{analysis_period_days} дней",
+                "generated_date": date.today().isoformat()
+            }
+
+    # Helper methods for enhanced functionality
+
+    def _get_transit_enhanced_content(
+        self,
+        natal_chart_data: Dict[str, Any],
+        period: HoroscopePeriod,
+        target_date: date
+    ) -> Dict[str, Any]:
+        """Получает контент на основе анализа транзитов."""
+        
+        if period == HoroscopePeriod.DAILY:
+            # Для ежедневного гороскопа - текущие транзиты
+            current_transits = self.transit_calc.get_enhanced_current_transits(
+                natal_chart_data,
+                datetime.combine(target_date, datetime.min.time())
+            )
+            
+            return {
+                "type": "daily_transits",
+                "current_transits": current_transits,
+                "daily_influences": current_transits.get("daily_influences", []),
+                "energy_level": current_transits.get("energy_assessment", {}).get("description", "умеренная энергия"),
+                "timing_recommendations": current_transits.get("timing_recommendations", [])
+            }
+            
+        elif period == HoroscopePeriod.WEEKLY:
+            # Для недельного гороскопа - прогноз на 7 дней
+            period_forecast = self.transit_calc.get_period_forecast(
+                natal_chart_data,
+                days=7,
+                start_date=datetime.combine(target_date, datetime.min.time())
+            )
+            
+            return {
+                "type": "weekly_forecast",
+                "period_forecast": period_forecast,
+                "weekly_themes": period_forecast.get("overall_themes", []),
+                "important_dates": period_forecast.get("important_dates", []),
+                "general_advice": period_forecast.get("general_advice", "")
+            }
+            
+        elif period == HoroscopePeriod.MONTHLY:
+            # Для месячного гороскопа - прогноз на 30 дней + лунар
+            period_forecast = self.transit_calc.get_period_forecast(
+                natal_chart_data,
+                days=30,
+                start_date=datetime.combine(target_date, datetime.min.time())
+            )
+            
+            # Добавляем лунар для месяца
+            lunar_return = self.transit_calc.get_enhanced_lunar_return(
+                natal_chart_data,
+                target_date.month,
+                target_date.year
+            )
+            
+            return {
+                "type": "monthly_forecast",
+                "period_forecast": period_forecast,
+                "lunar_return": lunar_return,
+                "monthly_themes": period_forecast.get("overall_themes", []),
+                "lunar_guidance": lunar_return.get("emotional_guidance", []),
+                "important_dates": period_forecast.get("important_dates", [])
+            }
+        
+        return {"type": "basic", "message": "Транзитный анализ недоступен"}
+
+    def _integrate_base_and_transit_content(
+        self,
+        base_horoscope: Dict[str, Any],
+        transit_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Интегрирует базовый гороскоп с транзитным анализом."""
+        
+        integrated = {
+            "base_forecast": base_horoscope.get("forecast", ""),
+            "transit_overlay": "",
+            "combined_advice": [],
+            "energy_synthesis": "",
+            "timing_guidance": []
+        }
+        
+        # Объединяем прогнозы
+        base_forecast = base_horoscope.get("forecast", "")
+        transit_influences = transit_analysis.get("daily_influences", [])
+        
+        if transit_influences:
+            transit_overlay = f"Астрологические влияния: {'. '.join(transit_influences[:2])}."
+            integrated["transit_overlay"] = transit_overlay
+            integrated["base_forecast"] = f"{base_forecast} {transit_overlay}"
+        
+        # Объединяем советы
+        base_advice = base_horoscope.get("advice", "")
+        transit_timing = transit_analysis.get("timing_recommendations", [])
+        
+        combined_advice = [base_advice] if base_advice else []
+        combined_advice.extend(transit_timing[:2])
+        integrated["combined_advice"] = combined_advice
+        
+        # Синтезируем энергию
+        base_energy = base_horoscope.get("energy_level", 50)
+        transit_energy = transit_analysis.get("energy_level", "умеренная энергия")
+        
+        integrated["energy_synthesis"] = f"Базовая энергия: {base_energy}%. Транзитное влияние: {transit_energy}"
+        
+        return integrated
+
+    def _generate_enhanced_recommendations(
+        self,
+        sign: YandexZodiacSign,
+        period: HoroscopePeriod,
+        target_date: date,
+        transit_influences: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Генерирует улучшенные рекомендации."""
+        
+        recommendations = {
+            "general": [],
+            "relationships": [],
+            "career": [],
+            "health": [],
+            "spiritual": []
+        }
+        
+        # Базовые рекомендации по знаку
+        sign_keywords = self.sign_characteristics.get(sign, {}).get("keywords", [])
+        
+        if "лидерство" in sign_keywords:
+            recommendations["career"].append("Проявите инициативу в профессиональных делах")
+        if "стабильность" in sign_keywords:
+            recommendations["general"].append("Сосредоточьтесь на создании устойчивых основ")
+        if "общение" in sign_keywords:
+            recommendations["relationships"].append("Активно взаимодействуйте с окружающими")
+        
+        # Рекомендации на основе транзитов
+        if transit_influences and not transit_influences.get("error"):
+            transit_timing = transit_influences.get("timing_recommendations", [])
+            for rec in transit_timing[:2]:
+                recommendations["general"].append(rec)
+            
+            # Анализируем темы транзитов
+            if "weekly_themes" in transit_influences:
+                for theme in transit_influences["weekly_themes"][:2]:
+                    if "отношения" in theme.lower():
+                        recommendations["relationships"].append(f"Фокус на теме: {theme}")
+                    elif "карьера" in theme.lower():
+                        recommendations["career"].append(f"Фокус на теме: {theme}")
+            
+            # Эмоциональное руководство из лунара
+            if "lunar_guidance" in transit_influences:
+                recommendations["spiritual"].extend(transit_influences["lunar_guidance"][:2])
+        
+        # Заполняем пустые категории базовыми советами
+        if not recommendations["relationships"]:
+            recommendations["relationships"] = ["Уделите внимание близким отношениям"]
+        if not recommendations["career"]:
+            recommendations["career"] = ["Сосредоточьтесь на текущих профессиональных задачах"]
+        if not recommendations["health"]:
+            recommendations["health"] = ["Поддерживайте баланс между активностью и отдыхом"]
+        if not recommendations["spiritual"]:
+            recommendations["spiritual"] = ["Найдите время для внутренней рефлексии"]
+        
+        return recommendations
+
+    def _generate_energy_analysis(
+        self,
+        sign: YandexZodiacSign,
+        target_date: date,
+        transit_influences: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Генерирует анализ энергетических влияний."""
+        
+        energy_analysis = {
+            "overall_level": 50,  # Базовый уровень
+            "description": "умеренная",
+            "sources": [],
+            "recommendations": [],
+            "peak_times": [],
+            "rest_times": []
+        }
+        
+        # Базовая энергия знака
+        element = self.sign_characteristics.get(sign, {}).get("element", "")
+        
+        if element == "fire":
+            energy_analysis["overall_level"] += 15
+            energy_analysis["sources"].append("Огненная энергия знака")
+        elif element == "air":
+            energy_analysis["overall_level"] += 10
+            energy_analysis["sources"].append("Воздушная активность знака")
+        elif element == "earth":
+            energy_analysis["overall_level"] += 5
+            energy_analysis["sources"].append("Земная стабильность знака")
+        elif element == "water":
+            energy_analysis["overall_level"] -= 5
+            energy_analysis["sources"].append("Водная интуитивность знака")
+        
+        # Влияние транзитов на энергию
+        if transit_influences and not transit_influences.get("error"):
+            if "energy_level" in transit_influences:
+                energy_desc = transit_influences["energy_level"]
+                if "высокая" in energy_desc:
+                    energy_analysis["overall_level"] += 20
+                    energy_analysis["sources"].append("Активирующие транзиты")
+                elif "низкая" in energy_desc:
+                    energy_analysis["overall_level"] -= 15
+                    energy_analysis["sources"].append("Замедляющие транзиты")
+        
+        # Лунное влияние
+        current_moon_phase = self.astro_calc.calculate_moon_phase(datetime.combine(target_date, datetime.min.time()))
+        moon_phase_name = current_moon_phase.get("phase_name", "")
+        
+        if moon_phase_name in ["Новолуние", "Растущая Луна"]:
+            energy_analysis["overall_level"] += 10
+            energy_analysis["sources"].append(f"Поддержка {moon_phase_name}")
+        elif moon_phase_name == "Полнолуние":
+            energy_analysis["overall_level"] += 15
+            energy_analysis["sources"].append("Энергия Полнолуния")
+        
+        # Нормализуем уровень энергии
+        energy_analysis["overall_level"] = max(0, min(100, energy_analysis["overall_level"]))
+        
+        # Определяем описание
+        level = energy_analysis["overall_level"]
+        if level >= 80:
+            energy_analysis["description"] = "очень высокая"
+            energy_analysis["recommendations"] = ["Используйте пик энергии", "Не перенапрягайтесь"]
+        elif level >= 60:
+            energy_analysis["description"] = "повышенная"
+            energy_analysis["recommendations"] = ["Время для активных действий", "Планируйте важные дела"]
+        elif level >= 40:
+            energy_analysis["description"] = "умеренная"
+            energy_analysis["recommendations"] = ["Сохраняйте баланс", "Следуйте естественным ритмам"]
+        elif level >= 20:
+            energy_analysis["description"] = "пониженная"
+            energy_analysis["recommendations"] = ["Больше отдыхайте", "Избегайте стресса"]
+        else:
+            energy_analysis["description"] = "низкая"
+            energy_analysis["recommendations"] = ["Необходим полноценный отдых", "Восстановите силы"]
+        
+        return energy_analysis
+
+    def _create_daily_guidance_from_transits(self, period_forecast: Dict[str, Any]) -> List[Dict[str, str]]:
+        """Создает ежедневные рекомендации из прогноза транзитов."""
+        guidance = []
+        
+        daily_forecasts = period_forecast.get("daily_forecasts", [])
+        
+        for day_data in daily_forecasts:
+            day_guidance = {
+                "date": day_data.get("date", ""),
+                "energy": day_data.get("energy_level", "умеренная"),
+                "main_themes": ", ".join(day_data.get("main_influences", [])),
+                "recommendations": "; ".join(day_data.get("recommendations", []))
+            }
+            guidance.append(day_guidance)
+        
+        return guidance[:7]  # Ограничиваем неделей
+
+    def _extract_key_themes_from_transits(
+        self,
+        period_forecast: Dict[str, Any],
+        important_transits: Dict[str, Any]
+    ) -> List[str]:
+        """Извлекает ключевые темы из транзитов."""
+        themes = set()
+        
+        # Из периодного прогноза
+        themes.update(period_forecast.get("overall_themes", []))
+        
+        # Из важных транзитов
+        themes.update(important_transits.get("life_themes", []))
+        
+        return list(themes)[:5]
+
+    def _create_timing_advice_from_transits(
+        self,
+        period_forecast: Dict[str, Any],
+        important_transits: Dict[str, Any]
+    ) -> List[Dict[str, str]]:
+        """Создает советы по таймингу из транзитов."""
+        timing_advice = []
+        
+        # Из важных дат
+        important_dates = period_forecast.get("important_dates", [])
+        for date_info in important_dates[:3]:
+            timing_advice.append({
+                "date": date_info.get("date", ""),
+                "event": date_info.get("event", ""),
+                "advice": date_info.get("significance", "")
+            })
+        
+        # Из подготовки к транзитам
+        prep_advice = important_transits.get("preparation_advice", [])
+        for advice in prep_advice[:2]:
+            timing_advice.append({
+                "period": "долгосрочно",
+                "advice": advice,
+                "category": "подготовка"
+            })
+        
+        return timing_advice
+
+    def _create_user_friendly_interpretation(self, comprehensive_analysis: Dict[str, Any]) -> Dict[str, str]:
+        """Создает пользовательскую интерпретацию комплексного анализа."""
+        
+        # Извлекаем основные компоненты
+        current_transits = comprehensive_analysis.get("current_transits", {})
+        life_phase = comprehensive_analysis.get("life_phase_analysis", {})
+        integrated_themes = comprehensive_analysis.get("integrated_themes", [])
+        executive_summary = comprehensive_analysis.get("executive_summary", "")
+        
+        interpretation = {
+            "current_moment": current_transits.get("summary", "Спокойный период развития"),
+            "life_phase": f"Вы находитесь в фазе: {life_phase.get('life_stage', 'развития')}",
+            "main_themes": f"Основные темы периода: {', '.join(integrated_themes[:3])}" if integrated_themes else "Время для общего развития",
+            "overall_message": executive_summary or "Период стабильного роста с возможностями для развития"
+        }
+        
+        return interpretation
+
+    def _create_practical_guidance(self, comprehensive_analysis: Dict[str, Any]) -> Dict[str, List[str]]:
+        """Создает практические рекомендации из комплексного анализа."""
+        
+        timing_recs = comprehensive_analysis.get("timing_recommendations", [])
+        integrated_themes = comprehensive_analysis.get("integrated_themes", [])
+        
+        guidance = {
+            "immediate_actions": [],
+            "weekly_focus": [],
+            "monthly_planning": []
+        }
+        
+        # Немедленные действия
+        for rec in timing_recs:
+            if rec.get("period") == "сейчас":
+                guidance["immediate_actions"].append(rec.get("recommendation", ""))
+        
+        # Недельный фокус на основе тем
+        for theme in integrated_themes[:2]:
+            if theme == "отношения":
+                guidance["weekly_focus"].append("Уделите время укреплению отношений")
+            elif theme == "карьера":
+                guidance["weekly_focus"].append("Сосредоточьтесь на профессиональных задачах")
+            elif theme == "здоровье":
+                guidance["weekly_focus"].append("Позаботьтесь о физическом и эмоциональном здоровье")
+        
+        # Месячное планирование
+        for rec in timing_recs:
+            if rec.get("period") == "долгосрочно":
+                guidance["monthly_planning"].append(rec.get("recommendation", ""))
+        
+        # Заполняем пустые категории базовыми советами
+        if not guidance["immediate_actions"]:
+            guidance["immediate_actions"] = ["Начните день с осознанности и ясного намерения"]
+        if not guidance["weekly_focus"]:
+            guidance["weekly_focus"] = ["Поддерживайте баланс между работой и отдыхом"]
+        if not guidance["monthly_planning"]:
+            guidance["monthly_planning"] = ["Планируйте будущее с учетом текущих возможностей"]
+        
+        return guidance
+
+    def _create_spiritual_insights(self, comprehensive_analysis: Dict[str, Any]) -> Dict[str, str]:
+        """Создает духовные инсайты из комплексного анализа."""
+        
+        spiritual_guidance = comprehensive_analysis.get("spiritual_guidance", "")
+        life_phase = comprehensive_analysis.get("life_phase_analysis", {})
+        progressions = comprehensive_analysis.get("progressions", {})
+        
+        insights = {
+            "soul_purpose": "Ваша душа стремится к развитию через текущие жизненные обстоятельства",
+            "growth_opportunity": spiritual_guidance or "Каждый момент несет возможности для осознанного роста",
+            "life_lesson": life_phase.get("key_lessons", "Принятие и интеграция жизненного опыта"),
+            "spiritual_evolution": progressions.get("spiritual_evolution", "Постепенное развитие сознания через опыт")
+        }
+        
+        return insights

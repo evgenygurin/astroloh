@@ -92,8 +92,11 @@ astroloh/
 
 - **astrology_calculator.py**: Core astrological calculations with multi-backend support
 - **kerykeion_service.py**: ⭐ **NEW** - Advanced Kerykeion-based astrological service with full professional features
+- **enhanced_transit_service.py**: ⭐ **NEW** - Professional transit analysis with Kerykeion TransitsTimeRangeFactory integration
+- **progression_service.py**: ⭐ **NEW** - Secondary progressions, solar/lunar returns, and temporal astrology techniques
+- **transit_calculator.py**: Enhanced with new transit services integration and comprehensive analysis
 - **natal_chart.py**: Enhanced birth chart calculations with Kerykeion integration
-- **horoscope_generator.py**: Horoscope generation with AI and traditional methods
+- **horoscope_generator.py**: Enhanced with transit integration for personalized forecasts
 - **conversation_manager.py**: Dialog flow management
 - **lunar_calendar.py**: Lunar calendar functionality
 - **session_manager.py**: User session handling
@@ -511,6 +514,200 @@ curl -X POST http://localhost:8000/api/v1/yandex/webhook \
 - All astronomical backends failing (calculation fallback issues)
 - Response time exceeding Alice voice interface limits
 
+## Enhanced Transit and Progression System (Updated 2025-08-08)
+
+### New Professional Transit Analysis
+
+**Enhanced Transit Service** (`enhanced_transit_service.py`):
+- **Kerykeion Integration**: Uses `TransitsTimeRangeFactory` and `EphemerisDataFactory` for professional-grade calculations
+- **Comprehensive Aspect Analysis**: Supports all 11 major and minor aspects with configurable orbs
+- **Period Forecasts**: Generates detailed forecasts for 7, 30, or custom day periods
+- **Important Transits Detection**: Identifies life-changing transits from slow-moving planets (Jupiter, Saturn, Uranus, Neptune, Pluto)
+- **Energy Pattern Analysis**: Assesses daily energy levels based on transit combinations
+- **Timing Recommendations**: Provides optimal timing advice for various activities
+- **Graceful Fallbacks**: Automatically falls back to basic calculations when Kerykeion unavailable
+
+**Key Methods**:
+```python
+# Current transits with professional accuracy
+get_current_transits(natal_chart, transit_date, include_minor_aspects=True)
+
+# Period forecast with daily guidance
+get_period_forecast(natal_chart, days=7, start_date=None)
+
+# Major life transit analysis (90 days ahead, 30 days back)
+get_important_transits(natal_chart, lookback_days=30, lookahead_days=90)
+```
+
+### Advanced Progression Service
+
+**Progression Service** (`progression_service.py`):
+- **Secondary Progressions**: Day-for-year progression calculations with life phase analysis
+- **Solar Returns**: Annual chart calculations with exact solar return timing
+- **Lunar Returns**: Monthly new moon charts with emotional guidance
+- **Life Phase Integration**: Age-appropriate interpretations and spiritual evolution tracking
+- **Enhanced Interpretations**: Detailed analysis of progressed planets and their meanings
+
+**Key Methods**:
+```python
+# Secondary progressions with life phase analysis
+get_secondary_progressions(natal_chart, target_date=None)
+
+# Enhanced solar return with seasonal themes
+get_solar_return(natal_chart, year, location=None)
+
+# Lunar return with emotional guidance
+get_lunar_return(natal_chart, month, year, location=None)
+```
+
+### Comprehensive Transit Calculator Enhancement
+
+**Updated Transit Calculator** (`transit_calculator.py`):
+- **Unified Interface**: Combines all transit and progression services under one interface
+- **Comprehensive Analysis**: `get_comprehensive_transit_analysis()` method for complete astrological overview
+- **Feature Detection**: `is_enhanced_features_available()` checks Kerykeion availability
+- **Intelligent Fallbacks**: Seamless degradation to basic calculations when advanced features unavailable
+
+**New Comprehensive Analysis Features**:
+```python
+comprehensive_analysis = {
+    "current_transits": {...},          # Current planetary influences
+    "period_forecast": {...},           # 30-day forecast
+    "important_transits": {...},        # Major life transitions
+    "progressions": {...},              # Secondary progressions
+    "solar_return": {...},              # Annual chart
+    "lunar_return": {...},              # Monthly chart
+    "integrated_themes": [...],         # Combined life themes
+    "life_phase_analysis": {...},       # Current life stage
+    "timing_recommendations": [...],     # Optimal action timing
+    "spiritual_guidance": "...",         # Spiritual insights
+    "executive_summary": "..."           # Overview for users
+}
+```
+
+### Enhanced Horoscope Generation
+
+**Updated Horoscope Generator** (`horoscope_generator.py`):
+- **Transit-Integrated Horoscopes**: `generate_enhanced_horoscope()` combines traditional horoscopes with transit analysis
+- **Transit Forecasts**: `generate_transit_forecast()` creates period-based predictions
+- **Comprehensive Analysis**: `generate_comprehensive_analysis()` for full astrological insights
+- **Energy Analysis**: Detailed energy level calculations based on multiple astrological factors
+- **Practical Guidance**: Categorized recommendations (general, relationships, career, health, spiritual)
+
+**Enhanced Features**:
+- Automatic transit overlay on base horoscopes
+- Energy synthesis from multiple sources (sign, transits, moon phase)
+- Timing-specific recommendations
+- Spiritual insights integration
+- User-friendly interpretation of complex astrological data
+
+### Dialog Handler Extensions
+
+**New Alice Voice Commands** supported by `dialog_handler.py`:
+- **Enhanced Transits**: "что меня ждет сегодня", "покажи транзиты"
+- **Period Forecasts**: "прогноз на неделю", "что будет в ближайшие дни"
+- **Important Transits**: "важные транзиты", "что меня ждет в будущем"
+- **Timing Questions**: "когда лучше начать дело", "хорошее ли время для..."
+- **Comprehensive Analysis**: "полный анализ", "детальный прогноз"
+
+**Enhanced Handler Methods**:
+```python
+_handle_enhanced_transits()          # Professional transit analysis
+_handle_period_forecast()            # Time-based forecasts
+_handle_important_transits()         # Major life transits
+_handle_timing_question()           # Optimal timing advice
+_handle_comprehensive_analysis()     # Complete astrological overview
+_handle_enhanced_horoscope_with_transits()  # Transit-integrated horoscopes
+```
+
+### Technical Architecture
+
+**Multi-Backend Compatibility**:
+1. **Kerykeion** (primary): Full professional features with TransitsTimeRangeFactory
+2. **Swiss Ephemeris** (fallback): High precision backup calculations  
+3. **Skyfield** (fallback): Pure Python alternative
+4. **Built-in** (fallback): Basic calculation methods
+
+**Error Handling & Logging**:
+- Comprehensive logging with `ENHANCED_TRANSIT_SERVICE_*` and `PROGRESSION_SERVICE_*` prefixes
+- Graceful degradation when advanced features unavailable
+- Detailed error tracking with correlation IDs
+- Performance monitoring for complex calculations
+
+**Data Models**:
+- Full Pydantic models in `transit_models.py` for all transit and progression data
+- Request/response models for API integration
+- Comprehensive analysis result models
+- Timing and forecast data structures
+
+### Configuration Requirements
+
+**For Full Transit/Progression Functionality**:
+- Kerykeion >=4.11.0 (included in `full` and `professional` dependency sets)
+- Sufficient memory for complex ephemeris calculations
+- Proper timezone handling (pytz dependency)
+- Optional: Enhanced error handling for large dataset processing
+
+**Feature Availability Checking**:
+```python
+# Check what features are available
+availability = transit_calculator.is_enhanced_features_available()
+# Returns: {"kerykeion_transits": bool, "kerykeion_progressions": bool, ...}
+```
+
+### Alice Voice Interface Optimizations
+
+**New Voice Commands Supported**:
+- "Что меня ждет сегодня" → Enhanced current transits
+- "Прогноз на неделю" → 7-day transit forecast  
+- "Важные транзиты" → Major life transition analysis
+- "Когда лучше начать дело" → Timing optimization
+- "Полный астрологический анализ" → Comprehensive overview
+
+**Response Optimizations**:
+- Voice-friendly transit descriptions (max 800 characters)
+- Prioritized information based on strength and relevance
+- Emotional context from lunar returns
+- Practical timing advice in accessible language
+- Spiritual guidance integration
+
+### Development Best Practices
+
+**Working with Enhanced Transit System**:
+1. Always check `is_enhanced_features_available()` before using advanced features
+2. Implement proper fallback chains (Kerykeion → SwissEph → Basic)
+3. Use comprehensive logging patterns for debugging complex calculations
+4. Test both enhanced and fallback scenarios
+5. Respect Alice voice interface constraints (response length, complexity)
+
+**Error Handling Patterns**:
+```python
+try:
+    enhanced_result = transit_service.get_current_transits(natal_chart)
+    if enhanced_result.get("source") == "basic":
+        logger.warning("Enhanced features unavailable, using basic calculations")
+except Exception as e:
+    logger.error(f"Transit calculation failed: {e}")
+    return fallback_response()
+```
+
+### Performance Considerations
+
+**Optimization Techniques**:
+- Intelligent caching of ephemeris data for repeated calculations
+- Batch processing of multiple transit calculations
+- Asynchronous handling of complex analysis requests
+- Memory-efficient handling of large time range calculations
+- Progressive loading for comprehensive analysis
+
+**Response Time Targets**:
+- Current transits: <2 seconds
+- Period forecasts: <5 seconds  
+- Comprehensive analysis: <10 seconds
+- Important transits: <8 seconds (due to extended time range)
+
 ### Knowledge Update History
+
+**2025-08-08**: Added comprehensive transit and progression system with full Kerykeion integration, enhanced dialog handlers for new Alice voice commands, professional-grade astrological calculations, and intelligent fallback mechanisms for production reliability.
 
 **2025-01-08**: Added comprehensive logging architecture across all services, documented astrological calculation details, enhanced Alice voice interface specifications, and expanded debugging practices based on Docker environment variable resolution and systematic webhook flow analysis.
