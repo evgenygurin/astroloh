@@ -833,6 +833,176 @@ if self.astro_ai_service and settings.ENABLE_AI_GENERATION:
 - YANDEX_API_KEY (GPT integration)
 - Proper Docker environment variable mapping
 
+## Russian Localization System (NEW 2025-08-08) - Issue #68
+
+The project now features comprehensive Russian localization for all astrological data, providing native Russian experience for Yandex Alice users.
+
+### Core Russian Localization Service
+
+**RussianAstrologyAdapter** (`russian_astrology_adapter.py`): Complete localization platform
+- **Comprehensive Terminology**: Full Russian names for planets, signs, houses, aspects
+- **Grammatical Declensions**: All 6 Russian cases (nominative, genitive, dative, accusative, instrumental, prepositional)
+- **Timezone Integration**: Support for all 11 Russian time zones with city detection
+- **Voice Optimization**: Proper stress marks and pronunciation rules for TTS
+- **Cultural Adaptation**: Russian interpretations and cultural context
+- **Kerykeion Integration**: Seamless integration with professional astrological calculations
+
+### Russian Astrological Terminology
+
+**Russian Zodiac Signs** (RussianZodiacSign enum):
+```python
+ARIES = {"ru": "Овен", "genitive": "Овна", "dative": "Овну", ...}
+TAURUS = {"ru": "Телец", "genitive": "Тельца", "dative": "Тельцу", ...}
+# All 12 signs with complete grammatical declensions
+```
+
+**Russian Planets** (RussianPlanet enum):
+- Complete planetary names with keywords and descriptions
+- Cultural meanings: Солнце, Луна, Меркурий, Венера, Марс, Юпитер, Сатурн, Уран, Нептун, Плутон, Хирон, Лилит
+- Node support: Северный Узел, Лунный Узел
+- Professional descriptions with astrological keywords
+
+**Russian Houses** (RussianHouse enum):
+- All 12 astrological houses with Russian names
+- Detailed descriptions: "Дом Личности", "Дом Ресурсов", etc.
+- Keyword associations for each house
+
+**Russian Aspects** (RussianAspect enum):
+- Complete aspect terminology: Соединение, Оппозиция, Тригон, Квадрат, etc.
+- Orb information and nature classifications
+- Professional astrological interpretations
+
+### Russian Timezone Support
+
+**Russian Timezone System** (RussianTimezone enum):
+- Complete support for all 11 Russian time zones
+- Automatic city detection for major Russian cities
+- Timezone mapping: Калининградское, Московское, Самарское, Екатеринбургское, etc.
+- Historical timezone data support
+
+**City-to-Timezone Mapping**:
+```python
+city_timezone_map = {
+    "москва": RussianTimezone.MOSCOW.value,
+    "санкт-петербург": RussianTimezone.MOSCOW.value,
+    "екатеринбург": RussianTimezone.YEKATERINBURG.value,
+    "новосибирск": RussianTimezone.KRASNOYARSK.value,
+    "владивосток": RussianTimezone.VLADIVOSTOK.value,
+    # 50+ major Russian cities supported
+}
+```
+
+### New Russian Intent Handlers
+
+**Enhanced Intent Recognition** (5 new intents):
+
+1. **SIGN_DESCRIPTION**: "Расскажи про мой знак зодиака"
+   - Detailed zodiac sign characteristics
+   - Cultural Russian interpretations
+   - Voice-optimized responses
+
+2. **PLANET_IN_SIGN**: "Что означает Солнце в Овне?"
+   - Planetary placements analysis  
+   - Combined interpretations
+   - Professional astrological meanings
+
+3. **HOUSE_CHARACTERISTICS**: "Характеристика седьмого дома"
+   - Complete house system descriptions
+   - Life area explanations
+   - Astrological house meanings
+
+4. **ENHANCED_COMPATIBILITY**: "Совместимость Льва и Стрельца"
+   - Advanced compatibility analysis in Russian
+   - Professional relationship insights
+   - Cultural relationship context
+
+5. **RETROGRADE_INFLUENCE**: "Влияние Меркурия в ретрограде"
+   - Retrograde planetary effects
+   - Practical advice and interpretations
+   - Russian astrological context
+
+### Voice Interface Optimization
+
+**Russian TTS Enhancement**:
+- Stress mark dictionary for proper pronunciation
+- Astrological term stress patterns: овéн, мерку́рий, юпи́тер
+- Natural Russian speech patterns
+- Alice voice interface compliance
+
+**Grammatical Case Usage**:
+```python
+# Automatic case selection based on context
+planet_name = get_russian_planet_description("Venus", case="instrumental")
+# Returns: "Венерой" (instrumental case)
+```
+
+### Development Patterns for Russian Features
+
+**Service Integration Pattern**:
+```python
+# Import and use Russian adapter
+from app.services.russian_astrology_adapter import russian_adapter
+
+# Get localized descriptions
+sign_desc = russian_adapter.get_russian_sign_description("Leo", case="genitive")
+planet_desc = russian_adapter.get_russian_planet_description("Mars")
+house_desc = russian_adapter.get_russian_house_description(7)
+
+# Format for voice output
+voice_text = russian_adapter.format_for_voice(response_text, add_stress_marks=True)
+```
+
+**Timezone Detection**:
+```python
+# Automatic timezone detection for Russian cities
+timezone_info = russian_adapter.detect_russian_timezone("Екатеринбург")
+# Returns: {"zone": "Asia/Yekaterinburg", "offset": "+05:00", "name": "Екатеринбургское время"}
+```
+
+### Configuration Requirements
+
+**For Full Russian Localization**:
+- Kerykeion >=4.11.0 (professional calculations)
+- pytz for Russian timezone handling
+- Proper UTF-8 encoding for Cyrillic characters
+- Alice voice interface compliance
+
+**Performance Optimizations**:
+- Localization data caching for repeated requests
+- Efficient grammatical case lookup
+- Memory-optimized terminology storage
+- Fast timezone detection algorithms
+
+### Alice Voice Commands Integration
+
+**New Voice Patterns** (60+ new Russian patterns added):
+- Natural language zodiac sign descriptions
+- Planet-in-sign combinations with proper grammar
+- House characteristic requests
+- Enhanced compatibility questions with Russian sign names
+- Retrograde influence inquiries
+
+**Voice Response Optimization**:
+- Character limits for Alice TTS (800 chars for detailed responses)
+- Proper Russian stress marks for natural pronunciation
+- Cultural context in astrological interpretations
+- Button limitations compliance (5 buttons maximum)
+
+### Testing and Quality Assurance
+
+**Russian Localization Testing**:
+- Comprehensive terminology coverage tests
+- Grammatical case accuracy validation
+- Timezone detection accuracy for Russian cities
+- Voice interface TTS optimization testing
+- Cultural interpretation appropriateness
+
+**Production Deployment Notes**:
+- Full Russian localization available in production
+- Graceful fallback to English terminology if needed
+- Performance monitoring for localized responses
+- Alice voice interface compliance validation
+
 ### Knowledge Update History
 
 **2025-08-08**: 
@@ -841,6 +1011,16 @@ if self.astro_ai_service and settings.ENABLE_AI_GENERATION:
 - Implemented robust content safety filtering with multi-level validation and automatic disclaimer systems
 - Created sophisticated prompt engineering templates for natal charts, synastry, transits, and specialized guidance
 - Added complete Alice voice interface optimization for AI-powered consultations
+
+**2025-08-08 (Issue #68)**: 
+- **MAJOR RUSSIAN LOCALIZATION**: Implemented comprehensive Russian localization system for Kerykeion astrological data
+- Added RussianAstrologyAdapter with 800+ lines of code providing full terminology localization
+- Implemented grammatical declensions for all astrological terms (6 Russian cases)
+- Added support for all 11 Russian time zones with automatic city detection
+- Created 5 new intent handlers for Russian astrological queries
+- Enhanced voice interface with proper Russian stress marks and pronunciation
+- Added cultural adaptation of astrological interpretations for Russian audience
+- Integrated seamless Russian timezone support with major Russian cities mapping
 
 **2025-08-08**: Added comprehensive transit and progression system with full Kerykeion integration, enhanced dialog handlers for new Alice voice commands, professional-grade astrological calculations, and intelligent fallback mechanisms for production reliability.
 
