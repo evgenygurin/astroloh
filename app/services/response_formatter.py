@@ -25,6 +25,7 @@ class ResponseFormatter:
             YandexButton(
                 title="Совместимость", payload={"action": "compatibility"}
             ),
+            YandexButton(title="Синастрия", payload={"action": "synastry"}),
             YandexButton(title="Совет дня", payload={"action": "advice"}),
             YandexButton(title="Помощь", payload={"action": "help"}),
         ]
@@ -516,6 +517,102 @@ class ResponseFormatter:
         )
         return response
 
+    def format_synastry_response(
+        self,
+        user_name: str,
+        partner_name: str,
+        compatibility_report: Dict[str, Any],
+    ) -> YandexResponse:
+        """Форматирует ответ с анализом синастрии и отношений."""
+        logger.info(
+            f"RESPONSE_FORMAT_SYNASTRY_START: user={user_name}, partner={partner_name}, score={compatibility_report.get('overall_score', 0)}"
+        )
+
+        overall_score = compatibility_report.get("overall_score", 50)
+        compatibility_type = compatibility_report.get("compatibility_type", "romantic")
+        strengths = compatibility_report.get("strengths", [])
+        challenges = compatibility_report.get("challenges", [])
+        advice = compatibility_report.get("advice", [])
+        relationship_themes = compatibility_report.get("relationship_themes", [])
+
+        # Визуальные элементы
+        stars = "⭐" * min(5, max(1, round(overall_score / 20)))
+        if overall_score >= 80:
+            hearts = "💞"
+            summary = "Идеальная гармония"
+        elif overall_score >= 60:
+            hearts = "💕"
+            summary = "Хорошие перспективы"
+        elif overall_score >= 40:
+            hearts = "💗"
+            summary = "Средняя совместимость"
+        else:
+            hearts = "💛"
+            summary = "Работа над отношениями"
+
+        # Формируем основной текст
+        text = f"🔮 Синастрия: {user_name} и {partner_name}\n\n"
+        text += f"{hearts} Общая совместимость: {overall_score:.1f}/100 {stars}\n"
+        text += f"📊 Оценка: {summary}\n\n"
+
+        # Темы отношений
+        if relationship_themes:
+            text += "✨ Ключевые темы:\n"
+            for theme in relationship_themes[:2]:  # Ограничиваем до 2 тем
+                text += f"• {theme}\n"
+            text += "\n"
+
+        # Сильные стороны
+        if strengths:
+            text += "💪 Сильные стороны:\n"
+            for strength in strengths[:3]:  # Ограничиваем до 3 пунктов
+                text += f"• {strength}\n"
+            text += "\n"
+
+        # Вызовы
+        if challenges:
+            text += "⚠️ Области роста:\n"
+            for challenge in challenges[:2]:  # Ограничиваем до 2 пунктов
+                text += f"• {challenge}\n"
+            text += "\n"
+
+        # Советы
+        if advice:
+            text += f"💡 Совет: {advice[0]}"  # Берем первый совет
+        else:
+            text += "💡 Совет: Развивайте взаимопонимание и поддержку."
+
+        # Ограничиваем длину для голосового интерфейса (максимум 600 символов)
+        if len(text) > 600:
+            text = text[:590] + "..."
+
+        buttons = [
+            YandexButton(
+                title="Детали", payload={"action": "synastry_details"}
+            ),
+            YandexButton(
+                title="Композитная карта", payload={"action": "composite_chart"}
+            ),
+            YandexButton(
+                title="Новый анализ", payload={"action": "new_synastry"}
+            ),
+            YandexButton(
+                title="Главное меню", payload={"action": "main_menu"}
+            ),
+        ]
+
+        response = YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=buttons,
+            end_session=False,
+        )
+
+        logger.info(
+            f"RESPONSE_FORMAT_SYNASTRY_SUCCESS: text_length={len(text)}, compatibility_type={compatibility_type}"
+        )
+        return response
+
     def format_advice_response(self) -> YandexResponse:
         """Форматирует астрологический совет."""
         advice_text = self._generate_advice_text()
@@ -545,6 +642,7 @@ class ResponseFormatter:
 
 🌟 Составлять персональные гороскопы на день, неделю или месяц
 💑 Проверять совместимость знаков зодиака  
+💞 Анализировать синастрию и отношения
 🔮 Давать астрологические советы
 🌙 Рассказывать о влиянии лунных фаз
 
@@ -569,6 +667,7 @@ class ResponseFormatter:
             "invalid_sign": "Не удалось распознать знак зодиака. Выберите из кнопок ниже.",
             "no_data": "Мне нужно больше информации. Попробуйте уточнить запрос.",
             "timeout": "Слишком долго не могу обработать запрос. Попробуйте позже.",
+            "synastry": "Не удалось выполнить анализ отношений. Попробуйте простую совместимость по знакам зодиака.",
         }
 
         text = error_messages.get(error_type, error_messages["general"])
@@ -886,9 +985,30 @@ class ResponseFormatter:
         """Форматирует приветственный ответ для тестов."""
         return self.format_welcome_response(is_returning_user=not is_new_user)
 
-    def format_zodiac_request_response(self) -> YandexResponse:
+    def format_text_response(
+        self, text: str, buttons: Optional[List[str]] = None
+    ) -> YandexResponse:
+        """Форматирует простой текстовый ответ с опциональными кнопками."""
+        button_objects = []
+        if buttons:
+            for button_text in buttons:
+                button_objects.append(
+                    YandexButton(
+                        title=button_text,
+                        payload={"action": button_text.lower().replace(" ", "_")},
+                    )
+                )
+
+        return YandexResponse(
+            text=text,
+            tts=self._add_tts_pauses(text),
+            buttons=button_objects,
+            end_session=False,
+        )
+
+    def format_zodiac_request_response(self, custom_message: Optional[str] = None) -> YandexResponse:
         """Форматирует запрос знака зодиака для тестов."""
-        text = "Назовите ваш знак зодиака для составления гороскопа."
+        text = custom_message or "Назовите ваш знак зодиака для составления гороскопа."
 
         return YandexResponse(
             text=text,

@@ -96,6 +96,29 @@ class IntentRecognizer:
                 r"мы.*подходим",
                 r"хорошая.*ли.*пара",
             ],
+            YandexIntent.SYNASTRY: [
+                r"синастрия",
+                r"анализ отношений",
+                r"карта отношений",
+                r"совместимость с",
+                r"что говорят звезды о наших отношениях",
+                r"композитная карта",
+                r"анализ пары",
+                r"астрологический анализ отношений",
+                r"synastry",
+                r"composite chart",
+                # Голосовые варианты для синастрии
+                r"расскажи.*отношени",
+                r"проанализируй.*отношения",
+                r"какие.*отношения.*с",
+                r"как.*сочетаемся.*астрологически",
+                r"что.*карты.*говорят.*отношени",
+                r"астрологический.*портрет.*пары",
+                r"звездный.*анализ.*отношений",
+                r"планетарная.*совместимость",
+                r"глубокий.*анализ.*совместимости",
+                r"детальная.*совместимость",
+            ],
             YandexIntent.NATAL_CHART: [
                 r"натальная карта",
                 r"карта рождения",
@@ -484,6 +507,11 @@ class IntentRecognizer:
         if periods:
             entities["periods"] = periods
 
+        # Извлечение имен партнеров для синастрии
+        partner_names = self._extract_partner_names(text)
+        if partner_names:
+            entities["partner_names"] = partner_names
+
         # Анализ настроения
         sentiment = self._analyze_sentiment(text)
         if sentiment:
@@ -601,6 +629,48 @@ class IntentRecognizer:
         logger.debug(f"PERIOD_EXTRACTION_RESULT: periods={periods}")
         return periods
 
+    def _extract_partner_names(self, text: str) -> List[str]:
+        """Извлекает имена партнеров из текста для синастрии."""
+        logger.debug(f"PARTNER_NAME_EXTRACTION_START: text='{text[:50]}'")
+        partner_names = []
+        
+        # Паттерны для распознавания имен в контексте синастрии
+        name_patterns = [
+            r"с\s+([А-ЯЁ][а-яё]+)(?:\s|$)",  # "с Марией"
+            r"совместимость\s+с\s+([А-ЯЁ][а-яё]+)",  # "совместимость с Иваном"
+            r"отношения\s+с\s+([А-ЯЁ][а-яё]+)",  # "отношения с Анной"
+            r"мой\s+([А-ЯЁ][а-яё]+)",  # "мой Александр"
+            r"моя\s+([А-ЯЁ][а-яё]+)",  # "моя Елена"
+            r"партнер\s+([А-ЯЁ][а-яё]+)",  # "партнер Дмитрий"
+            r"партнерша\s+([А-ЯЁ][а-яё]+)",  # "партнерша Ольга"
+            r"и\s+([А-ЯЁ][а-яё]+)(?:\s|$)",  # "Лев и Мария"
+            r"([А-ЯЁ][а-яё]+)\s+и\s+",  # "Иван и..."
+            r"между\s+мной\s+и\s+([А-ЯЁ][а-яё]+)",  # "между мной и Петром"
+            r"меня\s+и\s+([А-ЯЁ][а-яё]+)",  # "меня и Светлана"
+            r"([А-ЯЁ][а-яё]+)\s+родил[аос]я",  # "Анна родилась"
+            r"имя\s+([А-ЯЁ][а-яё]+)",  # "имя Михаил"
+        ]
+        
+        for pattern in name_patterns:
+            matches = re.finditer(pattern, text, re.IGNORECASE)
+            for match in matches:
+                name = match.group(1).strip().title()
+                # Фильтруем слишком короткие имена и служебные слова
+                if len(name) >= 3 and name.lower() not in [
+                    'для', 'при', 'мне', 'нем', 'ней', 'тем', 'той', 'том', 'все', 'что', 'как'
+                ]:
+                    partner_names.append(name)
+                    logger.debug(f"PARTNER_NAME_MATCH: found_name='{name}', pattern='{pattern}'")
+        
+        # Убираем дубликаты, сохраняя порядок
+        unique_names = []
+        for name in partner_names:
+            if name not in unique_names:
+                unique_names.append(name)
+        
+        logger.debug(f"PARTNER_NAME_EXTRACTION_RESULT: names={unique_names}")
+        return unique_names
+
     def _analyze_sentiment(self, text: str) -> str:
         """Анализирует настроение в тексте."""
         logger.debug(f"SENTIMENT_ANALYSIS_START: text='{text[:50]}'")
@@ -695,6 +765,54 @@ class IntentRecognizer:
                 )
                 return ProcessedRequest(
                     intent=YandexIntent.COMPATIBILITY,
+                    entities=entities,
+                    confidence=1.0,
+                    raw_text=text,
+                    user_context=user_context,
+                )
+        elif user_context.awaiting_data == "partner_name":
+            logger.debug(
+                f"AWAITED_DATA_PARTNER_NAME: extracted_entities={list(entities.keys())}"
+            )
+            if entities.get("partner_names"):
+                entities["partner_name"] = entities["partner_names"][0]
+                logger.info(
+                    f"AWAITED_DATA_SUCCESS: partner_name='{entities['partner_name']}'"
+                )
+                return ProcessedRequest(
+                    intent=YandexIntent.SYNASTRY,
+                    entities=entities,
+                    confidence=1.0,
+                    raw_text=text,
+                    user_context=user_context,
+                )
+        elif user_context.awaiting_data == "partner_birth_date":
+            logger.debug(
+                f"AWAITED_DATA_PARTNER_BIRTH_DATE: extracted_entities={list(entities.keys())}"
+            )
+            if entities.get("dates"):
+                entities["partner_birth_date"] = entities["dates"][0]
+                logger.info(
+                    f"AWAITED_DATA_SUCCESS: partner_birth_date='{entities['partner_birth_date']}'"
+                )
+                return ProcessedRequest(
+                    intent=YandexIntent.SYNASTRY,
+                    entities=entities,
+                    confidence=1.0,
+                    raw_text=text,
+                    user_context=user_context,
+                )
+        elif user_context.awaiting_data == "partner_zodiac_sign":
+            logger.debug(
+                f"AWAITED_DATA_PARTNER_ZODIAC_SIGN: extracted_entities={list(entities.keys())}"
+            )
+            if entities.get("zodiac_signs"):
+                entities["partner_zodiac_sign"] = entities["zodiac_signs"][0]
+                logger.info(
+                    f"AWAITED_DATA_SUCCESS: partner_zodiac_sign='{entities['partner_zodiac_sign'].value}'"
+                )
+                return ProcessedRequest(
+                    intent=YandexIntent.SYNASTRY,
                     entities=entities,
                     confidence=1.0,
                     raw_text=text,

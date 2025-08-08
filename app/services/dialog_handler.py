@@ -18,7 +18,9 @@ from app.models.yandex_models import (
 )
 from app.services.ai_horoscope_service import ai_horoscope_service
 from app.services.astrology_calculator import AstrologyCalculator
+from app.services.compatibility_analyzer import CompatibilityAnalyzer, CompatibilityType
 from app.services.conversation_manager import ConversationManager
+from app.services.synastry_service import SynastryService, PartnerData
 from app.services.dialog_flow_manager import DialogFlowManager, DialogState
 from app.services.horoscope_generator import HoroscopeGenerator, HoroscopePeriod
 from app.services.intent_recognition import IntentRecognizer
@@ -54,6 +56,10 @@ class DialogHandler:
 
         # AI-powered сервисы
         self.ai_horoscope_service = ai_horoscope_service
+        
+        # Synastry and advanced compatibility services
+        self.synastry_service = SynastryService(self.astro_calculator)
+        self.compatibility_analyzer = CompatibilityAnalyzer(self.synastry_service)
 
         # Расширенная функциональность Stage 5
         self.dialog_flow_manager = DialogFlowManager()
@@ -667,6 +673,11 @@ class DialogHandler:
 
         elif intent == YandexIntent.COMPATIBILITY:
             return await self._handle_compatibility(
+                entities, user_context, session
+            )
+
+        elif intent == YandexIntent.SYNASTRY:
+            return await self._handle_synastry(
                 entities, user_context, session
             )
 
@@ -1570,6 +1581,131 @@ class DialogHandler:
         except Exception as e:
             logger.error(f"INTENT_LUNAR_RETURN_ERROR: {str(e)}", exc_info=True)
             return self.response_formatter.format_error_response("general")
+
+    async def _handle_synastry(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает запрос синастрии и анализа отношений."""
+        logger.info("INTENT_SYNASTRY_START: Processing synastry request")
+        
+        partner_names = entities.get("partner_names", [])
+        zodiac_signs = entities.get("zodiac_signs", [])
+        dates = entities.get("dates", [])
+        
+        logger.info(
+            f"INTENT_SYNASTRY_ENTITIES: partner_names={partner_names}, "
+            f"zodiac_signs=[{', '.join(sign.value for sign in zodiac_signs)}], "
+            f"dates={dates}"
+        )
+
+        # Проверяем наличие данных пользователя
+        if not user_context.zodiac_sign and not user_context.birth_date:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "zodiac_sign", YandexIntent.SYNASTRY
+            )
+            return self.response_formatter.format_zodiac_request_response(
+                "Для анализа отношений нужен ваш знак зодиака. Назовите его."
+            )
+
+        # Если есть имя партнера, но нет данных о партнере
+        if partner_names and not user_context.partner_name:
+            user_context.partner_name = partner_names[0]
+            logger.info(f"INTENT_SYNASTRY_PARTNER_NAME_SET: {user_context.partner_name}")
+
+        # Проверяем наличие имени партнера
+        if not user_context.partner_name:
+            self.session_manager.set_awaiting_data(
+                session, user_context, "partner_name", YandexIntent.SYNASTRY
+            )
+            return self.response_formatter.format_text_response(
+                "Как зовут вашего партнера? Мне нужно имя для более персонального анализа отношений.",
+                buttons=["Отмена"]
+            )
+
+        # Проверяем наличие знака партнера
+        if not user_context.partner_sign:
+            # Если в сообщении есть знак зодиака, используем его как знак партнера
+            if zodiac_signs:
+                user_context.partner_sign = zodiac_signs[0]
+                logger.info(f"INTENT_SYNASTRY_PARTNER_SIGN_SET: {user_context.partner_sign.value}")
+            else:
+                self.session_manager.set_awaiting_data(
+                    session, user_context, "partner_zodiac_sign", YandexIntent.SYNASTRY
+                )
+                return self.response_formatter.format_text_response(
+                    f"Какой знак зодиака у {user_context.partner_name}?",
+                    buttons=["Не знаю", "Отмена"]
+                )
+
+        # Опционально: дата рождения партнера для более точной синастрии
+        if not user_context.partner_birth_date and dates:
+            user_context.partner_birth_date = dates[0]
+            logger.info(f"INTENT_SYNASTRY_PARTNER_BIRTH_DATE_SET: {user_context.partner_birth_date}")
+
+        # Все необходимые данные собраны, выполняем синастрию
+        try:
+            from datetime import datetime
+            
+            # Создаем объекты партнеров
+            person1 = PartnerData(
+                name="Вы",
+                birth_date=datetime.fromisoformat(user_context.birth_date) if user_context.birth_date else datetime.now(),
+                birth_time=datetime.fromisoformat(user_context.birth_time) if user_context.birth_time else None,
+                birth_place=user_context.birth_place,
+                zodiac_sign=user_context.zodiac_sign,
+            )
+            
+            person2 = PartnerData(
+                name=user_context.partner_name,
+                birth_date=datetime.fromisoformat(user_context.partner_birth_date) if user_context.partner_birth_date else datetime.now(),
+                birth_time=None,  # Пока не собираем время партнера
+                birth_place=None,  # Пока не собираем место партнера
+                zodiac_sign=user_context.partner_sign,
+            )
+            
+            logger.info(
+                f"INTENT_SYNASTRY_CALCULATION_START: Analyzing {person1.name} ({person1.zodiac_sign.value}) "
+                f"and {person2.name} ({person2.zodiac_sign.value})"
+            )
+
+            # Выполняем полный анализ совместимости
+            compatibility_report = await self.compatibility_analyzer.analyze_full_compatibility(
+                person1, person2, CompatibilityType.ROMANTIC
+            )
+            
+            logger.info(
+                f"INTENT_SYNASTRY_SUCCESS: Generated compatibility report with {compatibility_report['overall_score']}% compatibility"
+            )
+
+            # Очищаем ожидание данных
+            self.session_manager.clear_awaiting_data(session, user_context)
+
+            # Формируем ответ
+            return self.response_formatter.format_synastry_response(
+                user_name="Вы",
+                partner_name=user_context.partner_name,
+                compatibility_report=compatibility_report
+            )
+
+        except Exception as e:
+            logger.error(f"INTENT_SYNASTRY_ERROR: {str(e)}", exc_info=True)
+            
+            # Fallback к простой совместимости по знакам
+            if user_context.zodiac_sign and user_context.partner_sign:
+                compatibility = self.astro_calculator.calculate_compatibility_score(
+                    user_context.zodiac_sign, user_context.partner_sign
+                )
+                
+                logger.info("INTENT_SYNASTRY_FALLBACK: Using basic zodiac compatibility")
+                
+                return self.response_formatter.format_compatibility_response(
+                    user_context.zodiac_sign,
+                    user_context.partner_sign,
+                    compatibility,
+                    partner_name=user_context.partner_name
+                )
+            
+            return self.response_formatter.format_error_response("synastry")
 
 
 # Глобальный экземпляр обработчика диалогов
