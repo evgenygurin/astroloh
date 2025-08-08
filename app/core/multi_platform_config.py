@@ -26,7 +26,9 @@ class TelegramSettings(BaseSettings):
     MAX_PHOTO_SIZE_MB: int = Field(default=10)
     ENABLE_INLINE_QUERIES: bool = Field(default=False)
 
-    model_config = SettingsConfigDict(env_prefix="TELEGRAM_", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_prefix="TELEGRAM_", case_sensitive=True
+    )
 
 
 class GoogleAssistantSettings(BaseSettings):
@@ -52,7 +54,9 @@ class GoogleAssistantSettings(BaseSettings):
     ENABLE_SUGGESTIONS: bool = Field(default=True)
     MAX_SUGGESTIONS: int = Field(default=8)
 
-    model_config = SettingsConfigDict(env_prefix="GOOGLE_", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_prefix="GOOGLE_", case_sensitive=True
+    )
 
 
 class MultiPlatformSettings(BaseSettings):
@@ -69,7 +73,9 @@ class MultiPlatformSettings(BaseSettings):
 
     # User data synchronization
     ENABLE_USER_SYNC: bool = Field(default=False)
-    USER_SYNC_STRATEGY: str = Field(default="opt_in")  # opt_in, opt_out, automatic
+    USER_SYNC_STRATEGY: str = Field(
+        default="opt_in"
+    )  # opt_in, opt_out, automatic
 
     # Content adaptation
     ADAPTIVE_RESPONSES: bool = Field(default=True)
@@ -87,7 +93,9 @@ class MultiPlatformSettings(BaseSettings):
         default_factory=GoogleAssistantSettings
     )
 
-    model_config = SettingsConfigDict(env_prefix="MULTIPLATFORM_", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_prefix="MULTIPLATFORM_", case_sensitive=True
+    )
 
 
 # Global settings instance

@@ -12,7 +12,7 @@ asyncpg==0.29.0
 psycopg2-binary==2.9.9
 
 # Астрологические вычисления
-pyswisseph
+kerykeion
 
 # Шифрование и безопасность
 cryptography==45.0.5
@@ -24,10 +24,10 @@ httpx==0.25.2
 aiohttp==3.9.1
 
 # Email validation
-email-validator==2.1.0
+email-validator==2.2.0
 
 # OAuth2 forms
-python-multipart==0.0.6
+python-multipart==0.0.20
 
 # Обработка данных
 python-dateutil==2.8.2
@@ -53,3 +53,12 @@ python-dotenv==1.0.0
 
 # Rate Limiting
 slowapi==0.1.9
+
+# Astronomical calculations and scientific computing
+numpy
+skyfield
+astropy
+
+# Additional testing dependencies
+pytest-mock==3.12.0
+pytest-xdist==3.5.0

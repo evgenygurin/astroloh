@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -19,7 +20,6 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQL_UUID
-from typing import Any
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -197,7 +197,9 @@ class HoroscopeRequest(Base):
     )
     ip_hash = Column(String(64), nullable=True)  # Хеш IP для аналитики
 
-    user: Mapped["User"] = relationship("User", back_populates="horoscope_requests")
+    user: Mapped["User"] = relationship(
+        "User", back_populates="horoscope_requests"
+    )
 
 
 class DataDeletionRequest(Base):
@@ -314,11 +316,15 @@ class UserPreference(Base):
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     # Связи
-    user: Mapped["User"] = relationship("User", back_populates="user_preferences")
+    user: Mapped["User"] = relationship(
+        "User", back_populates="user_preferences"
+    )
 
 
 class UserInteraction(Base):
@@ -354,7 +360,9 @@ class UserInteraction(Base):
     )
 
     # Связи
-    user: Mapped["User"] = relationship("User", back_populates="user_interactions")
+    user: Mapped["User"] = relationship(
+        "User", back_populates="user_interactions"
+    )
 
 
 class Recommendation(Base):
@@ -403,7 +411,9 @@ class Recommendation(Base):
     )
 
     # Связи
-    user: Mapped["User"] = relationship("User", back_populates="user_recommendations")
+    user: Mapped["User"] = relationship(
+        "User", back_populates="user_recommendations"
+    )
 
 
 class UserCluster(Base):

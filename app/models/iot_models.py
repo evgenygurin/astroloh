@@ -94,12 +94,18 @@ class IoTDevice(SQLBaseModel):
     last_seen = Column(DateTime)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     # Relationships
-    automations: Mapped[list["HomeAutomation"]] = relationship("HomeAutomation", back_populates="device")
-    device_data: Mapped[list["DeviceData"]] = relationship("DeviceData", back_populates="device")
+    automations: Mapped[list["HomeAutomation"]] = relationship(
+        "HomeAutomation", back_populates="device"
+    )
+    device_data: Mapped[list["DeviceData"]] = relationship(
+        "DeviceData", back_populates="device"
+    )
 
 
 class HomeAutomation(SQLBaseModel):
@@ -120,11 +126,15 @@ class HomeAutomation(SQLBaseModel):
     execution_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     # Relationships
-    device: Mapped["IoTDevice"] = relationship("IoTDevice", back_populates="automations")
+    device: Mapped["IoTDevice"] = relationship(
+        "IoTDevice", back_populates="automations"
+    )
 
 
 class DeviceData(SQLBaseModel):
@@ -141,7 +151,9 @@ class DeviceData(SQLBaseModel):
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    device: Mapped["IoTDevice"] = relationship("IoTDevice", back_populates="device_data")
+    device: Mapped["IoTDevice"] = relationship(
+        "IoTDevice", back_populates="device_data"
+    )
 
 
 class WearableData(SQLBaseModel):

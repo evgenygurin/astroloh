@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import delete, select, update
@@ -76,7 +76,7 @@ class UserManager:
             )
         else:
             # Обновляем время последнего доступа
-            user.last_accessed = datetime.utcnow()
+            user.last_accessed = datetime.now(timezone.utc)
             await self.db.commit()
 
         return user
@@ -123,7 +123,7 @@ class UserManager:
                         "encrypted_birth_location"
                     ),
                     zodiac_sign=zodiac_sign,
-                    updated_at=datetime.utcnow(),
+                    updated_at=datetime.now(timezone.utc),
                 )
             )
             await self.db.commit()
@@ -221,7 +221,7 @@ class UserManager:
                 .values(
                     data_consent=consent,
                     data_retention_days=retention_days,
-                    updated_at=datetime.utcnow(),
+                    updated_at=datetime.now(timezone.utc),
                 )
             )
             await self.db.commit()
@@ -309,7 +309,7 @@ class UserManager:
             # Обновить статус запроса
             deletion_request.status = "processing"
             deletion_request.verified = True
-            deletion_request.processed_at = datetime.utcnow()
+            deletion_request.processed_at = datetime.now(timezone.utc)
 
             # Удалить все данные пользователя
             await self._delete_user_data(user_id)
@@ -345,7 +345,7 @@ class UserManager:
             Количество удаленных пользователей
         """
         # Найти пользователей с истекшим сроком хранения данных
-        cutoff_date = datetime.utcnow() - timedelta(
+        cutoff_date = datetime.now(timezone.utc) - timedelta(
             days=365
         )  # Максимальный срок хранения
 
@@ -395,7 +395,7 @@ class UserManager:
         Args:
             user: User object to update
         """
-        user.last_accessed = datetime.utcnow()
+        user.last_accessed = datetime.now(timezone.utc)
         await self.db.commit()
 
     async def get_user_preferences(self, user: User) -> Dict[str, Any]:
@@ -437,7 +437,9 @@ class UserManager:
         Returns:
             List of users for cleanup
         """
-        cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(
+            days=days_threshold
+        )
         result = await self.db.execute(
             select(User).where(User.last_accessed < cutoff_date)
         )
@@ -500,7 +502,7 @@ class UserManager:
         Returns:
             Dictionary with user statistics
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # Calculate days since registration
         days_since_registration = (
@@ -540,7 +542,9 @@ class UserManager:
         if not user.last_accessed:
             return False
 
-        cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(
+            days=days_threshold
+        )
         return user.last_accessed > cutoff_date
 
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
@@ -621,7 +625,7 @@ class UserManager:
             await self.db.execute(
                 update(User)
                 .where(User.yandex_user_id.in_(user_ids))
-                .values(last_accessed=datetime.utcnow())
+                .values(last_accessed=datetime.now(timezone.utc))
             )
             await self.db.commit()
             return True
@@ -660,7 +664,7 @@ class UserManager:
         user = await self.get_user_by_yandex_id(db_session, user_id)
         if user:
             # Update last accessed time
-            user.last_accessed = datetime.utcnow()
+            user.last_accessed = datetime.now(timezone.utc)
 
             # Update conversation count if available
             if hasattr(context, "conversation_count"):
@@ -716,7 +720,7 @@ class UserManager:
             description=description,
             success=success,
             error_message=error_message,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
 
         self.db.add(log_entry)
@@ -811,7 +815,7 @@ class SessionManager:
         try:
             update_values = {
                 "current_state": SecurityUtils.sanitize_input(state, 50),
-                "last_activity": datetime.utcnow(),
+                "last_activity": datetime.now(timezone.utc),
             }
 
             if context_data:
@@ -842,7 +846,7 @@ class SessionManager:
         result = await self.db.execute(
             update(UserSession)
             .where(
-                UserSession.expires_at < datetime.utcnow(),
+                UserSession.expires_at < datetime.now(timezone.utc),
                 UserSession.is_active,
             )
             .values(is_active=False)

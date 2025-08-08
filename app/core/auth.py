@@ -4,8 +4,8 @@ from typing import Optional
 
 from fastapi import Depends, Header, HTTPException, status
 from loguru import logger
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db_session as get_db
 
@@ -82,6 +82,7 @@ async def _validate_user_exists(db: AsyncSession, user_id: int) -> bool:
         # Check if user exists (assuming users table exists or will be created)
         # mypy can't type-check string SQL; cast params to Mapping[str, Any]
         from typing import Any, Mapping
+
         params: Mapping[str, Any] = {"user_id": user_id}
         result = await db.execute(
             text("SELECT 1 FROM users WHERE id = :user_id LIMIT 1"),

@@ -2,7 +2,7 @@
 Tests for dialog handler functionality.
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -63,7 +63,7 @@ class TestDialogHandler:
 
         with patch.multiple(
             self.dialog_handler,
-            intent_recognizer=AsyncMock(),
+            intent_recognizer=Mock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
@@ -116,7 +116,7 @@ class TestDialogHandler:
 
         with patch.multiple(
             self.dialog_handler,
-            intent_recognizer=AsyncMock(),
+            intent_recognizer=Mock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
@@ -165,7 +165,7 @@ class TestDialogHandler:
 
         with patch.multiple(
             self.dialog_handler,
-            intent_recognizer=AsyncMock(),
+            intent_recognizer=Mock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
@@ -231,7 +231,7 @@ class TestDialogHandler:
 
         with patch.multiple(
             self.dialog_handler,
-            intent_recognizer=AsyncMock(),
+            intent_recognizer=Mock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
@@ -271,7 +271,7 @@ class TestDialogHandler:
 
         with patch.multiple(
             self.dialog_handler,
-            intent_recognizer=AsyncMock(),
+            intent_recognizer=Mock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
@@ -324,7 +324,7 @@ class TestDialogHandler:
 
         with patch.multiple(
             self.dialog_handler,
-            intent_recognizer=AsyncMock(),
+            intent_recognizer=Mock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),
@@ -388,7 +388,7 @@ class TestDialogHandler:
 
         with patch.multiple(
             self.dialog_handler,
-            intent_recognizer=AsyncMock(),
+            intent_recognizer=Mock(),
             conversation_manager=AsyncMock(),
             response_formatter=AsyncMock(),
             dialog_flow_manager=AsyncMock(),

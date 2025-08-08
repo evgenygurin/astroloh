@@ -3,7 +3,7 @@
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from app.models.yandex_models import UserContext, YandexIntent, YandexSession
@@ -79,7 +79,7 @@ class SessionManager:
 
         # Обновляем активность для Alice
         old_message_count = session_data.get("message_count", 0)
-        session_data["last_activity"] = datetime.utcnow().isoformat()
+        session_data["last_activity"] = datetime.now(timezone.utc).isoformat()
         session_data["message_count"] = old_message_count + 1
         logger.debug(
             f"SESSION_ACTIVITY_UPDATED: message_count={old_message_count} -> {session_data['message_count']}"
@@ -106,7 +106,7 @@ class SessionManager:
     ) -> None:
         """Обновляет контекст пользователя в сессии с улучшенным отслеживанием."""
         session_key = self._get_session_key(session)
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         logger.info(
             f"SESSION_UPDATE_CONTEXT_START: session_key={session_key}, intent={context.intent.value if context.intent else None}"
         )
@@ -283,7 +283,10 @@ class SessionManager:
             last_activity = datetime.fromisoformat(
                 session_data["last_activity"]
             )
-            return datetime.utcnow() - last_activity > self._session_timeout
+            return (
+                datetime.now(timezone.utc) - last_activity
+                > self._session_timeout
+            )
         except (KeyError, ValueError):
             return True
 
@@ -296,7 +299,8 @@ class SessionManager:
 
             awaiting_time = datetime.fromisoformat(awaiting_since)
             return (
-                datetime.utcnow() - awaiting_time > self._conversation_timeout
+                datetime.now(timezone.utc) - awaiting_time
+                > self._conversation_timeout
             )
         except (ValueError, TypeError):
             return False

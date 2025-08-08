@@ -13,7 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_database
 from app.models.yandex_models import YandexRequestModel, YandexResponseModel
 from app.services.dialog_handler import dialog_handler
-from app.services.user_manager import UserManager
 from app.utils.error_handler import error_handler
 
 logger = logging.getLogger(__name__)
@@ -89,14 +88,15 @@ async def yandex_webhook(
         )
 
         # Инициализируем менеджер пользователей с базой данных
-        user_manager = UserManager(db)
+        # user_manager = UserManager(db)
 
         logger.info(
             "USER_LOOKUP_START", extra={**log_context, "step": "user_lookup"}
         )
 
-        # Получаем или создаем пользователя
-        user = await user_manager.get_or_create_user(request.session.user_id)
+        # Получаем или создаем пользователя (ВРЕМЕННО ОТКЛЮЧЕНО)
+        # user = await user_manager.get_or_create_user(request.session.user_id)
+        user = None  # Временное отключение БД
 
         logger.info(
             "USER_LOOKUP_COMPLETE",
@@ -104,11 +104,7 @@ async def yandex_webhook(
                 **log_context,
                 "step": "user_lookup_complete",
                 "user_exists": user is not None,
-                "user_created": hasattr(user, "_sa_instance_state")
-                and hasattr(user._sa_instance_state, "pending")
-                and user._sa_instance_state.pending
-                if user is not None
-                else False,
+                "user_created": False,
             },
         )
 
