@@ -758,6 +758,22 @@ class DialogHandler:
         elif intent == YandexIntent.AI_SERVICE_STATUS:
             return await self._handle_ai_service_status(user_context, session)
 
+        # NEW RUSSIAN LOCALIZATION HANDLERS - Issue #68
+        elif intent == YandexIntent.SIGN_DESCRIPTION:
+            return await self._handle_sign_description(entities, user_context, session)
+            
+        elif intent == YandexIntent.PLANET_IN_SIGN:
+            return await self._handle_planet_in_sign(entities, user_context, session)
+            
+        elif intent == YandexIntent.HOUSE_CHARACTERISTICS:
+            return await self._handle_house_characteristics(entities, user_context, session)
+            
+        elif intent == YandexIntent.ENHANCED_COMPATIBILITY:
+            return await self._handle_enhanced_compatibility_analysis(entities, user_context, session)
+            
+        elif intent == YandexIntent.RETROGRADE_INFLUENCE:
+            return await self._handle_retrograde_influence(entities, user_context, session)
+
         elif intent == YandexIntent.HELP:
             return await self._handle_help(user_context, session)
 
@@ -2474,6 +2490,476 @@ class DialogHandler:
             logger.error(f"AI_SERVICE_STATUS_ERROR: {e}")
             return self.response_formatter.format_error_response("service_status")
 
+    # NEW RUSSIAN LOCALIZATION HANDLERS - Issue #68
+    async def _handle_sign_description(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает запрос описания знака зодиака."""
+        logger.info("RUSSIAN_LOCALIZATION_SIGN_DESCRIPTION_START")
+        
+        try:
+            # Импорт адаптера русификации
+            from app.services.russian_astrology_adapter import russian_adapter
+            
+            # Получаем знак пользователя из контекста или запрашиваем
+            user_sign = user_context.zodiac_sign
+            if not user_sign and entities.get("zodiac_sign"):
+                user_sign = entities["zodiac_sign"]
+            
+            if not user_sign:
+                response_text = (
+                    "Чтобы рассказать о вашем знаке зодиака, мне нужно его знать. "
+                    "Скажите, например: 'Мой знак - Лев' или 'Я Близнецы'."
+                )
+                buttons = ["Мой гороскоп", "Совместимость", "Помощь"]
+                return self.response_formatter.format_text_response(
+                    text=response_text, buttons=buttons
+                )
+            
+            # Получаем детальное описание знака
+            sign_description = russian_adapter.get_russian_sign_description(user_sign)
+            
+            if "error" in sign_description:
+                logger.warning(f"SIGN_DESCRIPTION_ERROR: {sign_description['error']}")
+                response_text = f"Извините, не могу найти информацию о знаке '{user_sign}'"
+                return self.response_formatter.format_text_response(text=response_text)
+            
+            sign_name = sign_description["name"]
+            
+            # Формируем детальное описание
+            response_text = f"Ваш знак зодиака - {sign_name}.\n\n"
+            
+            # Получаем дополнительную информацию о знаке
+            if russian_adapter.subject and hasattr(russian_adapter.subject, 'sun'):
+                sun_info = russian_adapter.get_russian_planet_description("Sun")
+                if "keywords" in sun_info:
+                    keywords = ", ".join(sun_info["keywords"][:5])
+                    response_text += f"Ключевые качества: {keywords}.\n\n"
+                
+                if "description" in sun_info:
+                    response_text += f"{sun_info['description']}\n\n"
+            else:
+                # Базовые характеристики знаков
+                sign_traits = {
+                    "овен": "Энергичные, инициативные лидеры с сильной волей",
+                    "телец": "Практичные, стабильные люди, ценящие комфорт",
+                    "близнецы": "Общительные, любознательные интеллектуалы",
+                    "рак": "Чувствительные, заботливые домашние люди",
+                    "лев": "Творческие, великодушные лидеры с королевским нравом",
+                    "дева": "Аналитичные, перфекционисты с практическим складом ума",
+                    "весы": "Гармоничные, дипломатичные ценители красоты",
+                    "скорпион": "Интенсивные, проницательные трансформаторы",
+                    "стрелец": "Оптимистичные, свободолюбивые философы",
+                    "козерог": "Целеустремленные, дисциплинированные строители",
+                    "водолей": "Независимые, инновационные гуманисты",
+                    "рыбы": "Мечтательные, интуитивные эмпаты"
+                }
+                
+                trait = sign_traits.get(user_sign.lower(), "Уникальные личности")
+                response_text += f"{trait}."
+            
+            # Форматируем для голосового вывода
+            voice_text = russian_adapter.format_for_voice(response_text)
+            
+            buttons = ["Мой гороскоп", "Натальная карта", "Совместимость", "Планеты"]
+            
+            logger.info("RUSSIAN_LOCALIZATION_SIGN_DESCRIPTION_SUCCESS")
+            return self.response_formatter.format_text_response(
+                text=voice_text, buttons=buttons
+            )
+            
+        except Exception as e:
+            logger.error(f"SIGN_DESCRIPTION_HANDLER_ERROR: {e}")
+            return self.response_formatter.format_error_response("sign_description")
+
+    async def _handle_planet_in_sign(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает запрос о планете в знаке."""
+        logger.info("RUSSIAN_LOCALIZATION_PLANET_IN_SIGN_START")
+        
+        try:
+            from app.services.russian_astrology_adapter import russian_adapter
+            
+            # Извлекаем планету и знак из запроса
+            request_text = entities.get("original_text", "").lower()
+            
+            # Простая логика извлечения планеты и знака
+            planet_matches = {
+                "солнце": "Sun", "луна": "Moon", "меркурий": "Mercury",
+                "венера": "Venus", "марс": "Mars", "юпитер": "Jupiter",
+                "сатурн": "Saturn", "уран": "Uranus", "нептун": "Neptune", 
+                "плутон": "Pluto", "хирон": "Chiron"
+            }
+            
+            sign_matches = {
+                "овне": "Aries", "тельце": "Taurus", "близнецах": "Gemini",
+                "раке": "Cancer", "льве": "Leo", "деве": "Virgo",
+                "весах": "Libra", "скорпионе": "Scorpio", "стрельце": "Sagittarius",
+                "козероге": "Capricorn", "водолее": "Aquarius", "рыбах": "Pisces"
+            }
+            
+            found_planet = None
+            found_sign = None
+            
+            for ru_planet, en_planet in planet_matches.items():
+                if ru_planet in request_text:
+                    found_planet = en_planet
+                    break
+            
+            for ru_sign, en_sign in sign_matches.items():
+                if ru_sign in request_text:
+                    found_sign = en_sign
+                    break
+            
+            if not found_planet or not found_sign:
+                response_text = (
+                    "Спросите, например: 'Что означает Солнце в Овне?' или "
+                    "'Венера в Весах что значит?'. Я расскажу о влиянии планеты в знаке."
+                )
+                buttons = ["Мой гороскоп", "Натальная карта", "Помощь"]
+                return self.response_formatter.format_text_response(
+                    text=response_text, buttons=buttons
+                )
+            
+            # Получаем описания планеты и знака
+            planet_desc = russian_adapter.get_russian_planet_description(found_planet)
+            sign_desc = russian_adapter.get_russian_sign_description(found_sign)
+            
+            if "error" in planet_desc or "error" in sign_desc:
+                response_text = "Извините, не могу найти информацию об этой комбинации."
+                return self.response_formatter.format_text_response(text=response_text)
+            
+            planet_name = planet_desc["name"]
+            sign_name = sign_desc["name"]
+            
+            # Формируем ответ
+            response_text = f"{planet_name} в знаке {sign_name}:\n\n"
+            
+            # Базовые интерпретации комбинаций
+            planet_keywords = planet_desc.get("keywords", [])
+            planet_description = planet_desc.get("description", "")
+            
+            if planet_keywords:
+                keywords_text = ", ".join(planet_keywords[:3])
+                response_text += f"Эта комбинация влияет на: {keywords_text}.\n\n"
+            
+            if planet_description:
+                response_text += f"{planet_description} проявляется в стиле знака {sign_name}.\n\n"
+            
+            # Простые интерпретации для популярных комбинаций
+            interpretations = {
+                ("Sun", "Aries"): "Сильные лидерские качества, инициативность, пионерский дух.",
+                ("Sun", "Leo"): "Творческая натура, великодушие, естественная харизма.",
+                ("Moon", "Cancer"): "Глубокая эмоциональность, забота о семье, интуитивность.",
+                ("Venus", "Libra"): "Тонкий эстетический вкус, дипломатичность в отношениях.",
+                ("Mars", "Scorpio"): "Интенсивная энергия, решительность, способность к трансформации."
+            }
+            
+            interpretation = interpretations.get((found_planet, found_sign))
+            if interpretation:
+                response_text += f"Особенности: {interpretation}"
+            else:
+                response_text += "Это уникальное сочетание создает особый характер проявления энергии."
+            
+            # Форматируем для голоса
+            voice_text = russian_adapter.format_for_voice(response_text)
+            
+            buttons = ["Мой гороскоп", "Натальная карта", "Другая планета", "Совместимость"]
+            
+            logger.info("RUSSIAN_LOCALIZATION_PLANET_IN_SIGN_SUCCESS")
+            return self.response_formatter.format_text_response(
+                text=voice_text, buttons=buttons
+            )
+            
+        except Exception as e:
+            logger.error(f"PLANET_IN_SIGN_HANDLER_ERROR: {e}")
+            return self.response_formatter.format_error_response("planet_in_sign")
+
+    async def _handle_house_characteristics(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает запрос о характеристиках домов гороскопа."""
+        logger.info("RUSSIAN_LOCALIZATION_HOUSE_CHARACTERISTICS_START")
+        
+        try:
+            from app.services.russian_astrology_adapter import russian_adapter
+            
+            request_text = entities.get("original_text", "").lower()
+            
+            # Извлекаем номер дома из запроса
+            house_numbers = {
+                "первом": 1, "втором": 2, "третьем": 3, "четвертом": 4,
+                "пятом": 5, "шестом": 6, "седьмом": 7, "восьмом": 8,
+                "девятом": 9, "десятом": 10, "одиннадцатом": 11, "двенадцатом": 12
+            }
+            
+            found_house = None
+            for house_word, house_num in house_numbers.items():
+                if house_word in request_text:
+                    found_house = house_num
+                    break
+            
+            # Если дом не найден, предлагаем выбор
+            if not found_house:
+                response_text = (
+                    "В астрологии есть 12 домов гороскопа. Каждый дом отвечает за определенную "
+                    "сферу жизни. Спросите, например: 'Что означает седьмой дом?' или "
+                    "'Солнце в четвертом доме'."
+                )
+                buttons = ["1-й дом", "7-й дом", "10-й дом", "Натальная карта"]
+                return self.response_formatter.format_text_response(
+                    text=response_text, buttons=buttons
+                )
+            
+            # Получаем описание дома
+            house_desc = russian_adapter.get_russian_house_description(found_house)
+            
+            if "error" in house_desc:
+                response_text = f"Извините, не могу найти информацию о {found_house} доме."
+                return self.response_formatter.format_text_response(text=response_text)
+            
+            # Формируем детальный ответ
+            response_text = f"{house_desc['roman']} ({house_desc['name']}):\n\n"
+            response_text += f"{house_desc['description']}\n\n"
+            
+            if house_desc.get("keywords"):
+                keywords = ", ".join(house_desc["keywords"][:5])
+                response_text += f"Ключевые темы: {keywords}.\n\n"
+            
+            # Дополнительная информация о важных домах
+            house_details = {
+                1: "Определяет вашу личность и первое впечатление на окружающих.",
+                4: "Показывает ваши корни, семью и потребность в безопасности.",
+                7: "Раскрывает ваш подход к партнерству и браку.",
+                10: "Указывает на карьерные цели и общественное признание.",
+            }
+            
+            if found_house in house_details:
+                response_text += house_details[found_house]
+            
+            # Форматируем для голоса
+            voice_text = russian_adapter.format_for_voice(response_text)
+            
+            buttons = ["Мой гороскоп", "Натальная карта", "Другой дом", "Планеты в домах"]
+            
+            logger.info("RUSSIAN_LOCALIZATION_HOUSE_CHARACTERISTICS_SUCCESS")
+            return self.response_formatter.format_text_response(
+                text=voice_text, buttons=buttons
+            )
+            
+        except Exception as e:
+            logger.error(f"HOUSE_CHARACTERISTICS_HANDLER_ERROR: {e}")
+            return self.response_formatter.format_error_response("house_characteristics")
+
+    async def _handle_enhanced_compatibility_analysis(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает расширенный анализ совместимости с русскими терминами."""
+        logger.info("RUSSIAN_LOCALIZATION_ENHANCED_COMPATIBILITY_START")
+        
+        try:
+            from app.services.russian_astrology_adapter import russian_adapter
+            
+            # Извлекаем знаки из запроса
+            request_text = entities.get("original_text", "").lower()
+            
+            sign_matches = {
+                "овен": "aries", "телец": "taurus", "близнецы": "gemini",
+                "рак": "cancer", "лев": "leo", "дева": "virgo",
+                "весы": "libra", "скорпион": "scorpio", "стрелец": "sagittarius",
+                "козерог": "capricorn", "водолей": "aquarius", "рыбы": "pisces"
+            }
+            
+            found_signs = []
+            for ru_sign, en_sign in sign_matches.items():
+                if ru_sign in request_text:
+                    found_signs.append(en_sign)
+            
+            # Если знаки не найдены, используем знак пользователя
+            user_sign = user_context.zodiac_sign
+            if len(found_signs) < 2 and user_sign:
+                if user_sign.lower() not in [s.lower() for s in found_signs]:
+                    found_signs.append(user_sign.lower())
+            
+            if len(found_signs) < 2:
+                response_text = (
+                    "Для анализа совместимости мне нужны два знака зодиака. "
+                    "Скажите, например: 'Совместимость Льва и Стрельца' или "
+                    "'Подходят ли Весы и Водолей?'"
+                )
+                buttons = ["Мой знак", "Обычная совместимость", "Помощь"]
+                return self.response_formatter.format_text_response(
+                    text=response_text, buttons=buttons
+                )
+            
+            sign1, sign2 = found_signs[:2]
+            
+            # Получаем русские названия знаков
+            sign1_ru = russian_adapter.get_russian_sign_description(sign1)["name"]
+            sign2_ru = russian_adapter.get_russian_sign_description(sign2)["name"]
+            
+            # Используем существующий анализатор совместимости
+            compatibility_result = await self.compatibility_analyzer.analyze_compatibility(
+                sign1, sign2, CompatibilityType.ROMANTIC
+            )
+            
+            if "error" in compatibility_result:
+                response_text = "Извините, не могу проанализировать совместимость этих знаков."
+                return self.response_formatter.format_text_response(text=response_text)
+            
+            # Формируем расширенный ответ на русском
+            percentage = compatibility_result.get("percentage", 0)
+            category = compatibility_result.get("category", "")
+            
+            # Переводим категории на русский
+            category_translations = {
+                "excellent": "отличная", "very_good": "очень хорошая", 
+                "good": "хорошая", "moderate": "умеренная", 
+                "challenging": "сложная", "difficult": "трудная"
+            }
+            category_ru = category_translations.get(category, category)
+            
+            response_text = f"Совместимость {sign1_ru} и {sign2_ru}:\n\n"
+            response_text += f"Общий показатель: {percentage}% ({category_ru} совместимость)\n\n"
+            
+            # Детальный анализ
+            strengths = compatibility_result.get("strengths", [])
+            challenges = compatibility_result.get("challenges", [])
+            advice = compatibility_result.get("advice", [])
+            
+            if strengths:
+                response_text += "Сильные стороны:\n"
+                for strength in strengths[:2]:  # Ограничиваем для голоса
+                    response_text += f"• {strength}\n"
+                response_text += "\n"
+            
+            if challenges and len(challenges) > 0:
+                response_text += f"Вызовы: {challenges[0]}\n\n"
+            
+            if advice and len(advice) > 0:
+                response_text += f"Рекомендация: {advice[0]}"
+            
+            # Форматируем для голоса
+            voice_text = russian_adapter.format_for_voice(response_text)
+            
+            # Ограничиваем длину для Alice
+            if len(voice_text) > 800:
+                voice_text = voice_text[:750] + "... Подробности в натальной карте."
+            
+            buttons = ["Синастрия", "Мой гороскоп", "Другая пара", "Натальная карта"]
+            
+            logger.info("RUSSIAN_LOCALIZATION_ENHANCED_COMPATIBILITY_SUCCESS")
+            return self.response_formatter.format_text_response(
+                text=voice_text, buttons=buttons
+            )
+            
+        except Exception as e:
+            logger.error(f"ENHANCED_COMPATIBILITY_HANDLER_ERROR: {e}")
+            return self.response_formatter.format_error_response("enhanced_compatibility")
+
+    async def _handle_retrograde_influence(
+        self, entities: Dict[str, Any], user_context: UserContext, session
+    ) -> Any:
+        """Обрабатывает запрос о влиянии ретроградных планет."""
+        logger.info("RUSSIAN_LOCALIZATION_RETROGRADE_INFLUENCE_START")
+        
+        try:
+            from app.services.russian_astrology_adapter import russian_adapter
+            
+            request_text = entities.get("original_text", "").lower()
+            
+            # Извлекаем планету из запроса
+            planet_matches = {
+                "меркурий": "Mercury", "венера": "Venus", "марс": "Mars",
+                "юпитер": "Jupiter", "сатурн": "Saturn", "уран": "Uranus",
+                "нептун": "Neptune", "плутон": "Pluto"
+            }
+            
+            found_planet = None
+            for ru_planet, en_planet in planet_matches.items():
+                if ru_planet in request_text:
+                    found_planet = en_planet
+                    break
+            
+            if not found_planet:
+                # Общая информация о ретроградах
+                response_text = (
+                    "Ретроградное движение планет - это иллюзия обратного движения "
+                    "планеты на небе, если смотреть с Земли.\n\n"
+                    "Влияние ретроградов:\n"
+                    "• Меркурий: проблемы с коммуникацией, техникой, документами\n"
+                    "• Венера: пересмотр отношений, финансовых вопросов\n"
+                    "• Марс: снижение энергии, задержки в делах\n\n"
+                    "Спросите про конкретную планету для подробностей."
+                )
+                buttons = ["Меркурий ретро", "Венера ретро", "Марс ретро", "Мой гороскоп"]
+                return self.response_formatter.format_text_response(
+                    text=response_text, buttons=buttons
+                )
+            
+            # Получаем описание планеты
+            planet_desc = russian_adapter.get_russian_planet_description(found_planet)
+            planet_name = planet_desc["name"]
+            
+            # Специфические описания ретроградов
+            retrograde_descriptions = {
+                "Mercury": (
+                    f"Ретроградный {planet_name} влияет на:\n\n"
+                    "• Общение и коммуникацию - возможны недопонимания\n"
+                    "• Технику и транспорт - чаще ломается и глючит\n"
+                    "• Документы и договоры - внимательно перечитывайте\n"
+                    "• Поездки - возможны задержки и изменения планов\n\n"
+                    "Совет: не подписывайте важных договоров, делайте резервные копии файлов."
+                ),
+                "Venus": (
+                    f"Ретроградная {planet_name} влияет на:\n\n"
+                    "• Любовные отношения - время переосмысления чувств\n"
+                    "• Финансы - не лучший период для крупных покупок\n"
+                    "• Красоту и стиль - пересмотр имиджа\n"
+                    "• Ценности - переоценка приоритетов\n\n"
+                    "Совет: время для внутренней работы, а не новых романов."
+                ),
+                "Mars": (
+                    f"Ретроградный {planet_name} влияет на:\n\n"
+                    "• Энергию и активность - снижение мотивации\n"
+                    "• Конфликты - старые споры могут возобновиться\n"
+                    "• Спорт и физическую активность - больше травм\n"
+                    "• Начинания - лучше завершать старые дела\n\n"
+                    "Совет: время планирования, а не активных действий."
+                ),
+                "Jupiter": (
+                    f"Ретроградный {planet_name}:\n\n"
+                    "• Философские взгляды подвергаются пересмотру\n"
+                    "• Образование - время переосмысления знаний\n"
+                    "• Путешествия - возможны отмены поездок\n"
+                    "• Духовный рост через внутреннюю работу"
+                ),
+                "Saturn": (
+                    f"Ретроградный {planet_name}:\n\n"
+                    "• Пересмотр жизненных структур и правил\n"
+                    "• Работа с ограничениями и дисциплиной\n"
+                    "• Уроки прошлого становятся актуальными\n"
+                    "• Время внутренней дисциплины"
+                )
+            }
+            
+            response_text = retrograde_descriptions.get(found_planet, 
+                f"Ретроградный {planet_name} требует пересмотра связанных с ним сфер жизни.")
+            
+            # Форматируем для голоса
+            voice_text = russian_adapter.format_for_voice(response_text)
+            
+            buttons = ["Мой гороскоп", "Транзиты", "Другая планета", "Натальная карта"]
+            
+            logger.info("RUSSIAN_LOCALIZATION_RETROGRADE_INFLUENCE_SUCCESS")
+            return self.response_formatter.format_text_response(
+                text=voice_text, buttons=buttons
+            )
+            
+        except Exception as e:
+            logger.error(f"RETROGRADE_INFLUENCE_HANDLER_ERROR: {e}")
+            return self.response_formatter.format_error_response("retrograde_influence")
 
 
 # Глобальный экземпляр обработчика диалогов
