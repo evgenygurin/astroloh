@@ -4,6 +4,8 @@
 """
 
 import logging
+import uuid
+from datetime import datetime
 from typing import Any, Dict
 
 from app.models.yandex_models import (
@@ -113,46 +115,151 @@ class DialogHandler:
     async def handle_request(self, request: YandexRequestModel) -> YandexResponseModel:
         """Обрабатывает запрос от Яндекс.Диалогов с расширенной функциональностью."""
 
-        # Валидация запроса
-        self.request_validator.validate_request_structure(request.dict())
+        # Создаем correlation ID для диалога (если не передан из webhook)
+        dialog_correlation_id = str(uuid.uuid4())
+        start_time = datetime.now()
+        
+        # Контекст логирования для диалога
+        log_context = {
+            "correlation_id": dialog_correlation_id,
+            "user_id": request.session.user_id,
+            "session_id": request.session.session_id,
+            "message_id": request.session.message_id,
+            "timestamp": start_time.isoformat()
+        }
 
-        # Получение контекста пользователя
-        user_context = self.session_manager.get_user_context(request.session)
-
-        # Обработка в зависимости от типа запроса
-        if request.request.type == "ButtonPressed":
-            # Обрабатываем нажатия кнопок
-            clean_input = self._handle_button_press(request)
-        else:
-            # Санитизация пользовательского ввода для обычных запросов
-            clean_input = self.request_validator.sanitize_user_input(
-                request.request.original_utterance or ""
-            )
-
-        # Распознавание интента с расширенными возможностями
-        processed_request = self.intent_recognizer.recognize_intent(
-            clean_input, user_context
+        logger.info(
+            "DIALOG_HANDLER_START",
+            extra={
+                **log_context,
+                "request_type": getattr(request.request, 'type', 'SimpleUtterance'),
+                "new_session": request.session.new,
+                "original_utterance": request.request.original_utterance[:100] if request.request.original_utterance else ""
+            }
         )
 
-        # Обработка в контексте разговора (Stage 5 enhancement)
         try:
+            # Валидация запроса
+            logger.info("REQUEST_VALIDATION_START", extra={**log_context, "step": "validation"})
+            self.request_validator.validate_request_structure(request.dict())
+            logger.info("REQUEST_VALIDATION_SUCCESS", extra={**log_context, "step": "validation_complete"})
+
+            # Получение контекста пользователя
+            logger.info("USER_CONTEXT_RETRIEVAL_START", extra={**log_context, "step": "context_retrieval"})
+            user_context = self.session_manager.get_user_context(request.session)
+            
+            logger.info(
+                "USER_CONTEXT_RETRIEVAL_SUCCESS",
+                extra={
+                    **log_context,
+                    "step": "context_retrieval_complete",
+                    "context_data": {
+                        "awaiting_data": getattr(user_context, 'awaiting_data', None),
+                        "conversation_step": getattr(user_context, 'conversation_step', 0),
+                        "user_preferences": getattr(user_context, 'user_preferences', None) is not None,
+                        "zodiac_sign": getattr(user_context, 'zodiac_sign', None),
+                        "has_birth_date": getattr(user_context, 'birth_date', None) is not None
+                    }
+                }
+            )
+
+            # Обработка в зависимости от типа запроса
+            logger.info("INPUT_PROCESSING_START", extra={**log_context, "step": "input_processing"})
+            if request.request.type == "ButtonPressed":
+                # Обрабатываем нажатия кнопок
+                clean_input = self._handle_button_press(request)
+                logger.info(
+                    "BUTTON_PRESS_PROCESSED",
+                    extra={
+                        **log_context,
+                        "input_type": "button",
+                        "clean_input": clean_input[:50]
+                    }
+                )
+            else:
+                # Санитизация пользовательского ввода для обычных запросов
+                original_input = request.request.original_utterance or ""
+                clean_input = self.request_validator.sanitize_user_input(original_input)
+                logger.info(
+                    "TEXT_INPUT_PROCESSED",
+                    extra={
+                        **log_context,
+                        "input_type": "text",
+                        "original_length": len(original_input),
+                        "clean_length": len(clean_input),
+                        "sanitized": original_input != clean_input,
+                        "clean_input": clean_input[:50]
+                    }
+                )
+
+            # Распознавание интента с расширенными возможностями
+            logger.info("INTENT_RECOGNITION_START", extra={**log_context, "step": "intent_recognition"})
+            
+            intent_start_time = datetime.now()
+            processed_request = self.intent_recognizer.recognize_intent(
+                clean_input, user_context
+            )
+            intent_processing_time = (datetime.now() - intent_start_time).total_seconds()
+            
+            logger.info(f"Intent recognized: {processed_request.intent.value} (confidence: {processed_request.confidence:.2f}) for input: '{clean_input}'")
+
+            # Обработка в контексте разговора (Stage 5 enhancement)
+            logger.info("CONVERSATION_PROCESSING_START", extra={**log_context, "step": "conversation_processing"})
+            
+            conversation_start_time = datetime.now()
             conversation_result = await self.conversation_manager.process_conversation(
                 user_id=request.session.user_id,
                 session_id=request.session.session_id,
                 processed_request=processed_request,
             )
+            conversation_processing_time = (datetime.now() - conversation_start_time).total_seconds()
+            
             if isinstance(conversation_result, tuple) and len(conversation_result) == 2:
                 dialog_state, response_context = conversation_result
             else:
                 dialog_state = DialogState.INITIAL
                 response_context = {}
 
+            logger.info(
+                "CONVERSATION_PROCESSING_SUCCESS",
+                extra={
+                    **log_context,
+                    "step": "conversation_processing_complete",
+                    "processing_time_seconds": conversation_processing_time,
+                    "conversation_result": {
+                        "dialog_state": dialog_state.value if hasattr(dialog_state, 'value') else str(dialog_state),
+                        "has_response_context": bool(response_context),
+                        "response_context_keys": list(response_context.keys()) if response_context else []
+                    }
+                }
+            )
+
             # Генерируем ответ с учетом состояния диалога и контекста
+            logger.info("RESPONSE_GENERATION_START", extra={**log_context, "step": "response_generation"})
+            
+            response_start_time = datetime.now()
             response = await self._generate_contextual_response(
                 dialog_state,
                 response_context,
                 processed_request,
                 request.session,
+            )
+            response_generation_time = (datetime.now() - response_start_time).total_seconds()
+            
+            logger.info(
+                "RESPONSE_GENERATION_SUCCESS",
+                extra={
+                    **log_context,
+                    "step": "response_generation_complete",
+                    "processing_time_seconds": response_generation_time,
+                    "response_preview": {
+                        "text_length": len(response.text) if hasattr(response, 'text') and response.text else 0,
+                        "has_tts": bool(getattr(response, 'tts', None)),
+                        "has_buttons": bool(getattr(response, 'buttons', None)),
+                        "has_card": bool(getattr(response, 'card', None)),
+                        "end_session": getattr(response, 'end_session', False)
+                    }
+                }
             )
 
         except Exception as e:
@@ -161,8 +268,23 @@ class DialogHandler:
             )
 
             # Alice-совместимая обработка ошибок
+            # Создаем dummy processed_request если он не был создан
+            dummy_processed_request = None
+            try:
+                dummy_processed_request = processed_request
+            except NameError:
+                # processed_request не был создан из-за ошибки в валидации или распознавании интента
+                from app.models.yandex_models import ProcessedRequest, YandexIntent
+                dummy_processed_request = ProcessedRequest(
+                    intent=YandexIntent.UNKNOWN,
+                    confidence=0.0,
+                    entities={},
+                    user_input=request.request.original_utterance or "",
+                    context_data={}
+                )
+            
             response = await self._handle_error_gracefully(
-                e, request, processed_request
+                e, request, dummy_processed_request
             )
 
             # Очищаем состояние сессии при критических ошибках
@@ -173,12 +295,16 @@ class DialogHandler:
                 self.session_manager.update_user_context(request.session, user_context)
 
         # Логирование обработки запроса
-        self.error_handler.log_request_processing(
-            user_id=request.session.user_id,
-            session_id=request.session.session_id,
-            intent=processed_request.intent.value,
-            success=True,
-        )
+        try:
+            final_processed_request = processed_request if 'processed_request' in locals() else dummy_processed_request
+            self.error_handler.log_request_processing(
+                user_id=request.session.user_id,
+                session_id=request.session.session_id,
+                intent=final_processed_request.intent.value if final_processed_request else "unknown",
+                success=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Failed to log request processing: {log_error}")
 
         # Формирование полного ответа
         return YandexResponseModel(
@@ -461,19 +587,27 @@ class DialogHandler:
 
     async def _handle_greet(self, user_context: UserContext, session) -> Any:
         """Обрабатывает приветствие."""
+        logger.info(f"INTENT_GREET_START: Processing greeting")
         is_returning = not self.session_manager.is_new_session(session)
+        logger.info(f"INTENT_GREET_USER_TYPE: returning={is_returning}")
 
         # Очищаем контекст для новой сессии
         if not is_returning:
+            logger.info(f"INTENT_GREET_NEW_USER: Clearing context for new session")
             user_context = UserContext()
             self.session_manager.update_user_context(session, user_context)
 
-        return self.response_formatter.format_welcome_response(is_returning)
+        response = self.response_formatter.format_welcome_response(is_returning)
+        logger.info(f"INTENT_GREET_SUCCESS: Generated welcome response")
+        return response
 
     async def _handle_horoscope(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос гороскопа."""
+        logger.info(f"INTENT_HOROSCOPE_START: Processing horoscope request")
+        logger.info(f"INTENT_HOROSCOPE_ENTITIES: {list(entities.keys())}")
+        logger.info(f"INTENT_HOROSCOPE_CONTEXT: birth_date={user_context.birth_date}, zodiac_sign={user_context.zodiac_sign}")
 
         # Проверяем, есть ли дата рождения в entities или в контексте
         birth_date = None
@@ -501,39 +635,103 @@ class DialogHandler:
                 )
 
         elif entities.get("dates"):
-            birth_date_str = entities["dates"][0]
-            birth_date = self.date_validator.parse_date_string(birth_date_str)
+            # Проверяем контекст: это дата прогноза или дата рождения?
+            date_str = entities["dates"][0]
+            parsed_date = self.date_validator.parse_date_string(date_str)
 
-            if birth_date:
-                self.date_validator.validate_birth_date(birth_date)
-                user_context.birth_date = birth_date.isoformat()
-                zodiac_sign = self.date_validator.get_zodiac_sign_by_date(birth_date)
-                user_context.zodiac_sign = zodiac_sign
-                self.session_manager.clear_awaiting_data(session, user_context)
-
-                # Генерируем персональный гороскоп с AI
-                try:
-                    horoscope = (
-                        await self.ai_horoscope_service.generate_enhanced_horoscope(
+            if parsed_date:
+                # Определяем тип даты на основе контекста запроса
+                from datetime import date
+                current_date = date.today()
+                
+                # Если дата в будущем или сегодня, это дата прогноза
+                if parsed_date >= current_date:
+                    logger.info(f"INTENT_HOROSCOPE_FORECAST_DATE: date={parsed_date.isoformat()}")
+                    
+                    # Если у пользователя уже есть знак зодиака, используем его
+                    if user_context.zodiac_sign:
+                        zodiac_sign = user_context.zodiac_sign
+                        logger.info(f"INTENT_HOROSCOPE_USING_SAVED_SIGN: {zodiac_sign}")
+                    elif entities.get("zodiac_signs"):
+                        zodiac_sign = entities["zodiac_signs"][0]
+                        logger.info(f"INTENT_HOROSCOPE_USING_EXTRACTED_SIGN: {zodiac_sign}")
+                    else:
+                        # Запрашиваем знак зодиака
+                        logger.info("INTENT_HOROSCOPE_REQUEST_ZODIAC_SIGN")
+                        user_context.awaiting_data = "zodiac_sign"
+                        self.session_manager.set_awaiting_data(session, user_context, "zodiac_sign")
+                        return self.response_formatter.format_clarification_response(
+                            recent_context=["Для какого знака зодиака составить гороскоп?"], 
+                            suggestions=["Овен", "Телец", "Близнецы", "Рак", "Лев", "Дева"]
+                        )
+                    
+                    # Генерируем гороскоп на указанную дату
+                    print(f"🚀 DEBUG: About to call AI horoscope service for {zodiac_sign} on {parsed_date.isoformat()}")
+                    logger.error(f"🚀 FORCE_LOG: Starting AI generation for {zodiac_sign} on {parsed_date.isoformat()}")
+                    try:
+                        horoscope = (
+                            await self.ai_horoscope_service.generate_enhanced_horoscope(
+                                zodiac_sign=zodiac_sign,
+                                birth_date=None,  # Не передаем дату рождения для прогноза
+                                period=HoroscopePeriod.DAILY,
+                                forecast_date=parsed_date,  # Передаем дату прогноза
+                            )
+                        )
+                        ai_generated = horoscope.get('ai_generated', False) if isinstance(horoscope, dict) else False
+                    except Exception as e:
+                        logger.error(f"AI_HOROSCOPE_ERROR: {e}")
+                        # Fallback к традиционному гороскопу
+                        horoscope = self.horoscope_generator.generate_personalized_horoscope(
                             zodiac_sign=zodiac_sign,
-                            birth_date=birth_date,
+                            birth_date=None,
                             period=HoroscopePeriod.DAILY,
                         )
-                    )
-                except Exception as e:
-                    self.logger.error(f"AI horoscope generation failed: {e}")
-                    # Fallback к традиционному гороскопу
-                    horoscope = (
-                        self.horoscope_generator.generate_personalized_horoscope(
-                            zodiac_sign=zodiac_sign,
-                            birth_date=birth_date,
-                            period=HoroscopePeriod.DAILY,
-                        )
-                    )
+                        ai_generated = False
 
-                return self.response_formatter.format_horoscope_response(
-                    zodiac_sign, horoscope
-                )
+                    logger.error(f"✅ FORCE_LOG: AI service completed - ai_generated={ai_generated}")
+                    return self.response_formatter.format_horoscope_response(
+                        zodiac_sign, horoscope
+                    )
+                
+                # Если дата в прошлом, это дата рождения
+                else:
+                    logger.info(f"INTENT_HOROSCOPE_BIRTH_DATE: date={parsed_date.isoformat()}")
+                    self.date_validator.validate_birth_date(parsed_date)
+                    user_context.birth_date = parsed_date.isoformat()
+                    zodiac_sign = self.date_validator.get_zodiac_sign_by_date(parsed_date)
+                    user_context.zodiac_sign = zodiac_sign
+                    self.session_manager.clear_awaiting_data(session, user_context)
+
+                    # Генерируем персональный гороскоп с AI
+                    print(f"🚀 DEBUG: About to call AI horoscope service for {zodiac_sign}")
+                    logger.error(f"🚀 FORCE_LOG: Starting AI generation for {zodiac_sign}")
+                    try:
+                        horoscope = (
+                            await self.ai_horoscope_service.generate_enhanced_horoscope(
+                                zodiac_sign=zodiac_sign,
+                                birth_date=parsed_date,
+                                period=HoroscopePeriod.DAILY,
+                            )
+                        )
+                        ai_generated = horoscope.get('ai_generated', False) if isinstance(horoscope, dict) else False
+                    except Exception as e:
+                        print(f"❌ DEBUG: AI horoscope generation failed: {e}")
+                        logger.error(f"❌ FORCE_LOG: AI generation error: {e}")
+                        # Fallback к традиционному гороскопу
+                        horoscope = (
+                            self.horoscope_generator.generate_personalized_horoscope(
+                                zodiac_sign=zodiac_sign,
+                                birth_date=parsed_date,
+                                period=HoroscopePeriod.DAILY,
+                            )
+                        )
+                        ai_generated = False
+
+                    print(f"✅ DEBUG: AI horoscope result - ai_generated={ai_generated}")
+                    logger.error(f"✅ FORCE_LOG: AI service completed - ai_generated={ai_generated}")
+                    return self.response_formatter.format_horoscope_response(
+                        zodiac_sign, horoscope
+                    )
 
         elif user_context.birth_date:
             # Используем сохраненную дату рождения
@@ -573,17 +771,20 @@ class DialogHandler:
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос совместимости."""
-
+        logger.info(f"INTENT_COMPATIBILITY_START: Processing compatibility request")
         zodiac_signs = entities.get("zodiac_signs", [])
+        logger.info(f"INTENT_COMPATIBILITY_SIGNS: Found {len(zodiac_signs)} signs: {zodiac_signs}")
 
         # Если есть оба знака
         if len(zodiac_signs) >= 2:
             sign1, sign2 = zodiac_signs[0], zodiac_signs[1]
+            logger.info(f"INTENT_COMPATIBILITY_BOTH_SIGNS: {sign1} + {sign2}")
             user_context.zodiac_sign = sign1
             user_context.partner_sign = sign2
             self.session_manager.clear_awaiting_data(session, user_context)
 
             # Вычисляем совместимость с AI поддержкой
+            logger.info(f"INTENT_COMPATIBILITY_AI_START: Calculating compatibility with AI")
             try:
                 compatibility = (
                     await self.ai_horoscope_service.generate_compatibility_analysis(
@@ -686,6 +887,8 @@ class DialogHandler:
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос натальной карты."""
+        logger.info(f"INTENT_NATAL_CHART_START: Processing natal chart request")
+        logger.info(f"INTENT_NATAL_CHART_CONTEXT: birth_date={user_context.birth_date}")
 
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
@@ -699,38 +902,45 @@ class DialogHandler:
             from datetime import date
 
             birth_date = date.fromisoformat(user_context.birth_date)
+            logger.info(f"INTENT_NATAL_CHART_CALCULATION_START: birth_date={birth_date}")
 
             # Рассчитываем натальную карту
             natal_chart = self.natal_chart_calculator.calculate_natal_chart(birth_date)
+            logger.info(f"INTENT_NATAL_CHART_SUCCESS: Calculated natal chart with {len(natal_chart.get('planets', {}))} planets")
 
             return self.response_formatter.format_natal_chart_response(natal_chart)
 
         except Exception as e:
-            logger.error(f"Natal chart calculation error: {str(e)}")
+            logger.error(f"INTENT_NATAL_CHART_ERROR: {str(e)}", exc_info=True)
             return self.response_formatter.format_error_response("general")
 
     async def _handle_lunar_calendar(self, user_context: UserContext, session) -> Any:
         """Обрабатывает запрос лунного календаря."""
+        logger.info(f"INTENT_LUNAR_CALENDAR_START: Processing lunar calendar request")
 
         try:
             from datetime import datetime
 
             # Получаем информацию о сегодняшнем лунном дне
             today = datetime.now()
+            logger.info(f"INTENT_LUNAR_CALENDAR_CALCULATION: date={today.date()}")
             lunar_info = self.lunar_calendar.get_lunar_day_info(today)
+            logger.info(f"INTENT_LUNAR_CALENDAR_SUCCESS: Retrieved lunar info for day {lunar_info.get('lunar_day', 'unknown')}")
 
             return self.response_formatter.format_lunar_calendar_response(lunar_info)
 
         except Exception as e:
-            logger.error(f"Lunar calendar error: {str(e)}")
+            logger.error(f"INTENT_LUNAR_CALENDAR_ERROR: {str(e)}", exc_info=True)
             return self.response_formatter.format_error_response("general")
 
     async def _handle_advice(self, user_context: UserContext, session) -> Any:
         """Обрабатывает запрос астрологического совета с AI поддержкой."""
+        logger.info(f"INTENT_ADVICE_START: Processing advice request")
         self.session_manager.clear_awaiting_data(session, user_context)
 
         # Пытаемся сгенерировать персонализированный совет с AI
         if user_context.zodiac_sign:
+            logger.info(f"INTENT_ADVICE_PERSONALIZED: Using zodiac sign {user_context.zodiac_sign}")
             try:
                 advice = await self.ai_horoscope_service.generate_personalized_advice(
                     zodiac_sign=user_context.zodiac_sign,
@@ -752,13 +962,18 @@ class DialogHandler:
 
     async def _handle_help(self, user_context: UserContext, session) -> Any:
         """Обрабатывает запрос справки."""
+        logger.info(f"INTENT_HELP_START: Processing help request")
         self.session_manager.clear_awaiting_data(session, user_context)
+        logger.info(f"INTENT_HELP_SUCCESS: Generated help response")
         return self.response_formatter.format_help_response()
 
     async def _handle_exit(self, user_context: UserContext, session) -> Any:
         """Обрабатывает запрос на выход из навыка."""
+        logger.info(f"INTENT_EXIT_START: Processing exit request")
+        
         # Очищаем состояние сессии
         self.session_manager.clear_user_context(session)
+        logger.info(f"INTENT_EXIT_SESSION_CLEARED: User session cleared")
 
         # Проверяем, хочет ли пользователь персонализированное прощание
         has_user_data = (
@@ -766,15 +981,20 @@ class DialogHandler:
             or user_context.birth_date
             or user_context.conversation_step > 2
         )
+        logger.info(f"INTENT_EXIT_PERSONALIZATION: has_user_data={has_user_data}")
 
         return self.response_formatter.format_goodbye_response(
-            personalized=has_user_data, user_context=user_context
+            personalized=bool(has_user_data), user_context=user_context
         )
 
     async def _handle_unknown(self, user_context: UserContext, session) -> Any:
         """Обрабатывает неизвестный интент с помощью по контексту."""
+        logger.info(f"INTENT_UNKNOWN_START: Processing unknown intent")
+        logger.info(f"INTENT_UNKNOWN_CONTEXT: awaiting_data={user_context.awaiting_data}")
+        
         # Проверяем, можем ли помочь на основе текущего состояния
         if user_context.awaiting_data:
+            logger.info(f"INTENT_UNKNOWN_AWAITING_DATA: Providing contextual help for {user_context.awaiting_data}")
             # Пользователь может быть запутался в процессе ввода данных
             if user_context.awaiting_data == "birth_date":
                 return self.response_formatter.format_personalized_birth_date_request(
@@ -786,6 +1006,7 @@ class DialogHandler:
                 )
 
         # Обычный ответ с помощью
+        logger.info(f"INTENT_UNKNOWN_FALLBACK: Providing general clarification")
         return self.response_formatter.format_clarification_response(
             suggestions=["Мой гороскоп", "Совместимость", "Помощь"]
         )
@@ -882,6 +1103,8 @@ class DialogHandler:
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос транзитов."""
+        logger.info(f"INTENT_TRANSITS_START: Processing transits request")
+        logger.info(f"INTENT_TRANSITS_CONTEXT: birth_date={user_context.birth_date}")
 
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
@@ -894,24 +1117,29 @@ class DialogHandler:
             from datetime import date
 
             birth_date = date.fromisoformat(user_context.birth_date)
+            logger.info(f"INTENT_TRANSITS_CALCULATION_START: birth_date={birth_date}")
 
             # Вычисляем натальную карту для транзитов
             natal_chart = self.natal_chart_calculator.calculate_natal_chart(birth_date)
             natal_planets = natal_chart["planets"]
+            logger.info(f"INTENT_TRANSITS_NATAL_CHART: {len(natal_planets)} planets calculated")
 
             # Вычисляем текущие транзиты
             transits = self.transit_calculator.calculate_current_transits(natal_planets)
+            logger.info(f"INTENT_TRANSITS_SUCCESS: Calculated {len(transits)} transits")
 
             return self.response_formatter.format_transits_response(transits)
 
         except Exception as e:
-            logger.error(f"Transit calculation error: {str(e)}")
+            logger.error(f"INTENT_TRANSITS_ERROR: {str(e)}", exc_info=True)
             return self.response_formatter.format_error_response("general")
 
     async def _handle_progressions(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос прогрессий."""
+        logger.info(f"INTENT_PROGRESSIONS_START: Processing progressions request")
+        logger.info(f"INTENT_PROGRESSIONS_CONTEXT: birth_date={user_context.birth_date}")
 
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
@@ -924,22 +1152,26 @@ class DialogHandler:
             from datetime import date
 
             birth_date = date.fromisoformat(user_context.birth_date)
+            logger.info(f"INTENT_PROGRESSIONS_CALCULATION_START: birth_date={birth_date}")
 
             # Вычисляем прогрессии
             progressions = self.natal_chart_calculator.calculate_progressions(
                 birth_date
             )
+            logger.info(f"INTENT_PROGRESSIONS_SUCCESS: Calculated progressions")
 
             return self.response_formatter.format_progressions_response(progressions)
 
         except Exception as e:
-            logger.error(f"Progressions calculation error: {str(e)}")
+            logger.error(f"INTENT_PROGRESSIONS_ERROR: {str(e)}", exc_info=True)
             return self.response_formatter.format_error_response("general")
 
     async def _handle_solar_return(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос соляра."""
+        logger.info(f"INTENT_SOLAR_RETURN_START: Processing solar return request")
+        logger.info(f"INTENT_SOLAR_RETURN_CONTEXT: birth_date={user_context.birth_date}")
 
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
@@ -953,22 +1185,26 @@ class DialogHandler:
 
             birth_date = date.fromisoformat(user_context.birth_date)
             current_year = date.today().year
+            logger.info(f"INTENT_SOLAR_RETURN_CALCULATION_START: birth_date={birth_date}, year={current_year}")
 
             # Вычисляем соляр на текущий год
             solar_return = self.transit_calculator.calculate_solar_return(
                 birth_date, current_year
             )
+            logger.info(f"INTENT_SOLAR_RETURN_SUCCESS: Calculated solar return for {current_year}")
 
             return self.response_formatter.format_solar_return_response(solar_return)
 
         except Exception as e:
-            logger.error(f"Solar return calculation error: {str(e)}")
+            logger.error(f"INTENT_SOLAR_RETURN_ERROR: {str(e)}", exc_info=True)
             return self.response_formatter.format_error_response("general")
 
     async def _handle_lunar_return(
         self, entities: Dict[str, Any], user_context: UserContext, session
     ) -> Any:
         """Обрабатывает запрос лунара."""
+        logger.info(f"INTENT_LUNAR_RETURN_START: Processing lunar return request")
+        logger.info(f"INTENT_LUNAR_RETURN_CONTEXT: birth_date={user_context.birth_date}")
 
         # Проверяем наличие данных рождения
         if not user_context.birth_date:
@@ -982,16 +1218,18 @@ class DialogHandler:
 
             birth_date = date.fromisoformat(user_context.birth_date)
             current_date = date.today()
+            logger.info(f"INTENT_LUNAR_RETURN_CALCULATION_START: birth_date={birth_date}, month={current_date.month}, year={current_date.year}")
 
             # Вычисляем лунар на текущий месяц
             lunar_return = self.transit_calculator.calculate_lunar_return(
                 birth_date, current_date.month, current_date.year
             )
+            logger.info(f"INTENT_LUNAR_RETURN_SUCCESS: Calculated lunar return for {current_date.month}/{current_date.year}")
 
             return self.response_formatter.format_lunar_return_response(lunar_return)
 
         except Exception as e:
-            logger.error(f"Lunar return calculation error: {str(e)}")
+            logger.error(f"INTENT_LUNAR_RETURN_ERROR: {str(e)}", exc_info=True)
             return self.response_formatter.format_error_response("general")
 
 

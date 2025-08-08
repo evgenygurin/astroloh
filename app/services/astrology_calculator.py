@@ -202,34 +202,41 @@ class AstrologyCalculator:
 
     def get_zodiac_sign_by_date(self, birth_date: date) -> YandexZodiacSign:
         """Определяет знак зодиака по дате рождения."""
+        logger = logging.getLogger(__name__)
+        logger.debug(f"ZODIAC_SIGN_CALCULATION_START: date={birth_date.strftime('%Y-%m-%d')}")
+        
         month = birth_date.month
         day = birth_date.day
+        logger.debug(f"ZODIAC_SIGN_DATE_PARSE: month={month}, day={day}")
 
         # Границы знаков зодиака
         if (month == 3 and day >= 21) or (month == 4 and day <= 19):
-            return YandexZodiacSign.ARIES
+            result = YandexZodiacSign.ARIES
         elif (month == 4 and day >= 20) or (month == 5 and day <= 20):
-            return YandexZodiacSign.TAURUS
+            result = YandexZodiacSign.TAURUS
         elif (month == 5 and day >= 21) or (month == 6 and day <= 20):
-            return YandexZodiacSign.GEMINI
+            result = YandexZodiacSign.GEMINI
         elif (month == 6 and day >= 21) or (month == 7 and day <= 22):
-            return YandexZodiacSign.CANCER
+            result = YandexZodiacSign.CANCER
         elif (month == 7 and day >= 23) or (month == 8 and day <= 22):
-            return YandexZodiacSign.LEO
+            result = YandexZodiacSign.LEO
         elif (month == 8 and day >= 23) or (month == 9 and day <= 22):
-            return YandexZodiacSign.VIRGO
+            result = YandexZodiacSign.VIRGO
         elif (month == 9 and day >= 23) or (month == 10 and day <= 22):
-            return YandexZodiacSign.LIBRA
+            result = YandexZodiacSign.LIBRA
         elif (month == 10 and day >= 23) or (month == 11 and day <= 21):
-            return YandexZodiacSign.SCORPIO
+            result = YandexZodiacSign.SCORPIO
         elif (month == 11 and day >= 22) or (month == 12 and day <= 21):
-            return YandexZodiacSign.SAGITTARIUS
+            result = YandexZodiacSign.SAGITTARIUS
         elif (month == 12 and day >= 22) or (month == 1 and day <= 19):
-            return YandexZodiacSign.CAPRICORN
+            result = YandexZodiacSign.CAPRICORN
         elif (month == 1 and day >= 20) or (month == 2 and day <= 18):
-            return YandexZodiacSign.AQUARIUS
+            result = YandexZodiacSign.AQUARIUS
         else:  # (month == 2 and day >= 19) or (month == 3 and day <= 20)
-            return YandexZodiacSign.PISCES
+            result = YandexZodiacSign.PISCES
+            
+        logger.info(f"ZODIAC_SIGN_CALCULATED: date={birth_date.strftime('%Y-%m-%d')}, sign={result.value}")
+        return result
 
     def calculate_planet_positions(
         self,
@@ -550,12 +557,17 @@ class AstrologyCalculator:
 
     def calculate_moon_phase(self, target_date: datetime) -> Dict[str, Any]:
         """Вычисляет фазу Луны на заданную дату."""
+        logger = logging.getLogger(__name__)
+        logger.info(f"MOON_PHASE_CALCULATION_START: date={target_date.strftime('%Y-%m-%d')}, backend={self.backend}")
+        
         try:
             if self.backend == "swisseph":
+                logger.debug("MOON_PHASE_SWISSEPH: using_swiss_ephemeris")
                 jd = self.calculate_julian_day(target_date)
                 # Получаем позиции Солнца и Луны
                 sun_pos, _ = swe.calc_ut(jd, swe.SUN)
                 moon_pos, _ = swe.calc_ut(jd, swe.MOON)
+                logger.debug(f"MOON_PHASE_POSITIONS: sun_lon={sun_pos[0]:.2f}, moon_lon={moon_pos[0]:.2f}")
 
                 # Вычисляем угол между Солнцем и Луной
                 angle = moon_pos[0] - sun_pos[0]
@@ -563,6 +575,7 @@ class AstrologyCalculator:
                     angle += 360
 
             elif self.backend == "skyfield":
+                logger.debug("MOON_PHASE_SKYFIELD: using_skyfield")
                 t = self.skyfield_ts.from_datetime(target_date.replace(tzinfo=pytz.UTC))
                 sun = self.skyfield_planets["sun"].at(t)
                 moon = self.skyfield_planets["moon"].at(t)
@@ -571,8 +584,10 @@ class AstrologyCalculator:
                 _, moon_lon, _ = moon.ecliptic_latlon()
 
                 angle = (moon_lon.degrees - sun_lon.degrees) % 360
+                logger.debug(f"MOON_PHASE_SKYFIELD_POSITIONS: sun_lon={sun_lon.degrees:.2f}, moon_lon={moon_lon.degrees:.2f}")
 
             elif self.backend == "astropy":
+                logger.debug("MOON_PHASE_ASTROPY: using_astropy")
                 from astropy.coordinates import get_moon, get_sun
                 from astropy.time import Time
 
@@ -584,39 +599,54 @@ class AstrologyCalculator:
                 moon_lon = moon.geocentrictrueecliptic.lon.degree
 
                 angle = (moon_lon - sun_lon) % 360
+                logger.debug(f"MOON_PHASE_ASTROPY_POSITIONS: sun_lon={sun_lon:.2f}, moon_lon={moon_lon:.2f}")
 
             else:
                 # Fallback: упрощенный расчет
+                logger.warning("MOON_PHASE_FALLBACK: using_simplified_calculation")
                 day_of_month = target_date.day
                 angle = (day_of_month / 29.5) * 360
 
+            logger.debug(f"MOON_PHASE_ANGLE: calculated_angle={angle:.2f}")
+
             # Определяем фазу
             phase_info = self._get_moon_phase_info(angle)
+            logger.debug(f"MOON_PHASE_INFO: phase_name='{phase_info['name']}', description='{phase_info['description']}'")
 
             # Вычисляем освещенность
             illumination = (1 - math.cos(math.radians(angle))) / 2 * 100
+            logger.debug(f"MOON_PHASE_ILLUMINATION: illumination={illumination:.1f}%")
 
-            return {
+            result = {
                 "phase_name": phase_info["name"],
                 "phase_description": phase_info["description"],
                 "angle": angle,
                 "illumination_percent": round(illumination, 1),
                 "is_waxing": bool(angle < 180),
             }
+            
+            logger.info(f"MOON_PHASE_CALCULATION_SUCCESS: phase='{result['phase_name']}', illumination={result['illumination_percent']}%")
+            return result
 
-        except Exception:
+        except Exception as e:
             # Упрощенный расчет в случае ошибки
+            logger.error(f"MOON_PHASE_CALCULATION_ERROR: {e}")
+            logger.warning("MOON_PHASE_FALLBACK_CALCULATION: using_simplified_approach")
+            
             day_of_month = target_date.day
             phase_angle = (day_of_month / 29.5) * 360
             phase_info = self._get_moon_phase_info(phase_angle)
 
-            return {
+            result = {
                 "phase_name": phase_info["name"],
                 "phase_description": phase_info["description"],
                 "angle": phase_angle,
                 "illumination_percent": 50,
                 "is_waxing": bool(day_of_month <= 14),
             }
+            
+            logger.warning(f"MOON_PHASE_FALLBACK_RESULT: phase='{result['phase_name']}', using_simplified_illumination")
+            return result
 
     def _get_moon_phase_info(self, angle: float) -> Dict[str, str]:
         """Возвращает информацию о фазе Луны по углу."""
@@ -665,6 +695,9 @@ class AstrologyCalculator:
         self, sign1: YandexZodiacSign, sign2: YandexZodiacSign
     ) -> Dict[str, Any]:
         """Вычисляет совместимость знаков зодиака."""
+        logger = logging.getLogger(__name__)
+        logger.info(f"COMPATIBILITY_CALCULATION_START: sign1={sign1.value}, sign2={sign2.value}")
+        
         sign1_name = sign1.value
         sign2_name = sign2.value
 
@@ -673,21 +706,27 @@ class AstrologyCalculator:
         element2 = self.elements.get(sign2_name, "earth")
         quality1 = self.qualities.get(sign1_name, "mutable")
         quality2 = self.qualities.get(sign2_name, "mutable")
+        
+        logger.debug(f"COMPATIBILITY_ELEMENTS: {sign1_name}={element1}, {sign2_name}={element2}")
+        logger.debug(f"COMPATIBILITY_QUALITIES: {sign1_name}={quality1}, {sign2_name}={quality2}")
 
         # Базовая совместимость по элементам
         element_compatibility = self._calculate_element_compatibility(
             element1, element2
         )
+        logger.debug(f"COMPATIBILITY_ELEMENT_SCORE: {element_compatibility}")
 
         # Совместимость по качествам
         quality_compatibility = self._calculate_quality_compatibility(
             quality1, quality2
         )
+        logger.debug(f"COMPATIBILITY_QUALITY_SCORE: {quality_compatibility}")
 
         # Общий счет
         total_score = (element_compatibility + quality_compatibility) / 2
+        logger.debug(f"COMPATIBILITY_TOTAL_SCORE: {total_score:.1f}")
 
-        return {
+        result = {
             "score": round(total_score, 1),  # For backward compatibility with tests
             "total_score": round(total_score, 1),
             "element_score": element_compatibility,
@@ -698,6 +737,9 @@ class AstrologyCalculator:
             "quality2": quality2,
             "description": self._get_compatibility_description(total_score),
         }
+        
+        logger.info(f"COMPATIBILITY_CALCULATION_SUCCESS: {sign1.value}+{sign2.value}={result['total_score']}, description='{result['description']}'")
+        return result
 
     def _calculate_element_compatibility(self, element1: str, element2: str) -> float:
         """Вычисляет совместимость по элементам."""
@@ -754,8 +796,13 @@ class AstrologyCalculator:
 
     def get_planetary_hours(self, target_date: datetime) -> Dict[str, Any]:
         """Вычисляет планетные часы для заданной даты."""
+        logger = logging.getLogger(__name__)
+        logger.debug(f"PLANETARY_HOURS_CALCULATION_START: date={target_date.strftime('%Y-%m-%d %H:%M')}")
+        
         # Упрощенный расчет планетных часов
         weekday = target_date.weekday()  # 0 = понедельник
+        hour = target_date.hour
+        logger.debug(f"PLANETARY_HOURS_TIME: weekday={weekday}, hour={hour}")
 
         # Правящие планеты дней недели
         day_rulers = [
@@ -769,14 +816,21 @@ class AstrologyCalculator:
         ]
 
         ruler = day_rulers[weekday]
-        hour = target_date.hour
+        hour_ruler = self._get_hour_ruler(weekday, hour)
+        favorable_hours = self._get_favorable_hours(weekday)
+        
+        logger.debug(f"PLANETARY_HOURS_RULERS: day_ruler={ruler}, hour_ruler={hour_ruler}")
+        logger.debug(f"PLANETARY_HOURS_FAVORABLE: hours={favorable_hours}")
 
-        return {
+        result = {
             "day_ruler": ruler,
-            "current_hour_ruler": self._get_hour_ruler(weekday, hour),
-            "favorable_hours": self._get_favorable_hours(weekday),
+            "current_hour_ruler": hour_ruler,
+            "favorable_hours": favorable_hours,
             "description": f"День управляется {ruler}",
         }
+        
+        logger.info(f"PLANETARY_HOURS_CALCULATION_SUCCESS: day_ruler={ruler}, current_hour_ruler={hour_ruler}")
+        return result
 
     def _get_hour_ruler(self, weekday: int, hour: int) -> str:
         """Возвращает планету-управителя текущего часа."""

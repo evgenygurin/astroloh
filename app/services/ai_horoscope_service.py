@@ -29,6 +29,7 @@ class AIHoroscopeService:
         birth_time: Optional[datetime] = None,
         period: HoroscopePeriod = HoroscopePeriod.DAILY,
         target_date: Optional[datetime] = None,
+        forecast_date: Optional[date] = None,
         use_ai: bool = True,
     ) -> Dict[str, Any]:
         """
@@ -47,6 +48,10 @@ class AIHoroscopeService:
         """
         if target_date is None:
             target_date = datetime.now()
+        
+        # Если указана дата прогноза, используем её вместо target_date
+        if forecast_date is not None:
+            target_date = datetime.combine(forecast_date, datetime.min.time())
 
         # Получаем базовые астрологические данные
         base_horoscope = self.traditional_generator.generate_personalized_horoscope(
@@ -58,23 +63,39 @@ class AIHoroscopeService:
         )
 
         # Если AI включен и доступен, генерируем улучшенный контент
+        logger.error(f"🔍 DEBUG: AI check - use_ai={use_ai}, enabled={settings.ENABLE_AI_GENERATION}")
+        print(f"🔍 DEBUG: AI check - use_ai={use_ai}, enabled={settings.ENABLE_AI_GENERATION}")
         if use_ai and settings.ENABLE_AI_GENERATION:
+            logger.info(f"AI_HOROSCOPE_GENERATION_START: sign={zodiac_sign}, period={period}")
+            print(f"🔍 DEBUG: About to call _generate_ai_content")
             try:
                 ai_enhanced = await self._generate_ai_content(
                     zodiac_sign=zodiac_sign,
                     period=period,
                     birth_date=birth_date,
                     base_data=base_horoscope,
+                    forecast_date=forecast_date,
                 )
 
+                print(f"🔍 DEBUG: AI enhanced result: {ai_enhanced is not None}")
                 if ai_enhanced:
+                    logger.info(f"AI_HOROSCOPE_SUCCESS: Enhanced horoscope generated")
+                    print(f"✅ DEBUG: Returning AI enhanced horoscope")
                     # Комбинируем традиционные данные с AI контентом
                     return self._merge_horoscope_data(base_horoscope, ai_enhanced)
+                else:
+                    logger.warning(f"AI_HOROSCOPE_EMPTY: AI returned empty result")
+                    print(f"⚠️ DEBUG: AI returned None, falling back")
 
             except Exception as e:
-                logger.error(f"AI generation failed, using fallback: {e}")
+                logger.error(f"AI_HOROSCOPE_ERROR: {e}", exc_info=True)
+                print(f"❌ DEBUG: AI exception: {e}")
+        else:
+            logger.info(f"AI_HOROSCOPE_DISABLED: use_ai={use_ai}, enabled={settings.ENABLE_AI_GENERATION}")
+            print(f"🚫 DEBUG: AI disabled, using traditional")
 
         # Fallback: возвращаем традиционный гороскоп
+        print(f"🔄 DEBUG: Using traditional fallback")
         return self._enhance_traditional_horoscope(base_horoscope)
 
     async def _generate_ai_content(
@@ -83,6 +104,7 @@ class AIHoroscopeService:
         period: HoroscopePeriod,
         birth_date: Optional[date],
         base_data: Dict[str, Any],
+        forecast_date: Optional[date] = None,
     ) -> Optional[Dict[str, Any]]:
         """Генерирует AI контент для гороскопа."""
 
@@ -98,14 +120,21 @@ class AIHoroscopeService:
         }
 
         # Генерируем основной гороскоп
+        logger.info(f"AI_GENERATE_CONTENT_START: Calling Yandex GPT for {zodiac_sign.value}")
+        logger.error(f"🔥 FORCE: About to call gpt_client.generate_horoscope")
+        print(f"🔥 DEBUG: Calling generate_horoscope with context: {context}")
         ai_horoscope = await self.gpt_client.generate_horoscope(
             zodiac_sign=zodiac_sign.value,
             period=period.value,
             birth_date=birth_date.isoformat() if birth_date else None,
+            forecast_date=forecast_date.strftime("%d %B %Y") if forecast_date else None,
             additional_context=context,
         )
+        logger.error(f"🔥 FORCE: generate_horoscope returned: {ai_horoscope is not None}")
+        print(f"🔥 DEBUG: AI horoscope result: {ai_horoscope[:100] if ai_horoscope else 'None'}")
 
         if not ai_horoscope:
+            logger.warning(f"AI_GENERATE_CONTENT_FAILED: Yandex GPT returned None for {zodiac_sign.value}")
             return None
 
         return {
@@ -130,6 +159,7 @@ class AIHoroscopeService:
         # Добавляем метаданные AI
         merged.update({
             "ai_enhanced": True,
+            "ai_generated": ai_data.get("ai_generated", True),
             "generation_method": ai_data.get("generation_method", "hybrid"),
             "ai_confidence": "high",
         })

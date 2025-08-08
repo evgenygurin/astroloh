@@ -2,9 +2,12 @@
 Сервис форматирования ответов для Яндекс.Диалогов.
 """
 
+import logging
 from typing import Any, Dict, List, Optional, Union
 
 from app.models.yandex_models import YandexButton, YandexResponse, YandexZodiacSign
+
+logger = logging.getLogger(__name__)
 
 
 class ResponseFormatter:
@@ -28,17 +31,24 @@ class ResponseFormatter:
         self, is_returning_user: bool = False
     ) -> YandexResponse:
         """Форматирует приветственное сообщение."""
+        logger.info(f"RESPONSE_FORMAT_WELCOME_START: is_returning_user={is_returning_user}")
+        
         if is_returning_user:
             text = "С возвращением! Что вас интересует сегодня?"
+            logger.debug("RESPONSE_FORMAT_WELCOME_TYPE: returning_user_message")
         else:
             text = self.welcome_messages[0]
+            logger.debug("RESPONSE_FORMAT_WELCOME_TYPE: new_user_message")
 
-        return YandexResponse(
+        response = YandexResponse(
             text=text,
             tts=self._add_tts_pauses(text),
             buttons=self.help_buttons,
             end_session=False,
         )
+        
+        logger.info(f"RESPONSE_FORMAT_WELCOME_SUCCESS: text_length={len(text)}, buttons_count={len(self.help_buttons)}")
+        return response
 
     def format_personalized_birth_date_request(
         self,
@@ -134,13 +144,16 @@ class ResponseFormatter:
         suggestions: Optional[List[str]] = None,
     ) -> YandexResponse:
         """Форматирует ответ для уточнения неясного запроса."""
+        logger.info(f"RESPONSE_FORMAT_CLARIFICATION_START: has_context={recent_context is not None}, suggestions_count={len(suggestions) if suggestions else 0}")
 
         if recent_context:
             text = (
                 "Я не совсем поняла ваш запрос. Возможно, вы хотели узнать что-то ещё?"
             )
+            logger.debug("RESPONSE_FORMAT_CLARIFICATION_TYPE: with_context")
         else:
             text = "Извините, я не поняла ваш вопрос. Можете переформулировать или выбрать из предложений?"
+            logger.debug("RESPONSE_FORMAT_CLARIFICATION_TYPE: standard")
 
         buttons = [
             YandexButton(title="Мой гороскоп", payload={"action": "horoscope"}),
@@ -151,18 +164,22 @@ class ResponseFormatter:
 
         if suggestions:
             # Заменяем стандартные кнопки на персонализированные предложения
+            logger.debug(f"RESPONSE_FORMAT_CLARIFICATION_SUGGESTIONS: replacing_buttons_with_{len(suggestions)}_suggestions")
             buttons = []
             for suggestion in suggestions[:4]:
                 buttons.append(
                     YandexButton(title=suggestion, payload={"action": "suggestion"})
                 )
 
-        return YandexResponse(
+        response = YandexResponse(
             text=text,
             tts=self._add_tts_pauses(text),
             buttons=buttons,
             end_session=False,
         )
+        
+        logger.info(f"RESPONSE_FORMAT_CLARIFICATION_SUCCESS: buttons_count={len(buttons)}")
+        return response
 
     def format_error_recovery_response(
         self, error_suggestions: List[str]
@@ -237,9 +254,12 @@ class ResponseFormatter:
         period: str = "день",
     ) -> YandexResponse:
         """Форматирует ответ с гороскопом."""
+        logger.info(f"RESPONSE_FORMAT_HOROSCOPE_START: period={period}, has_data={horoscope_data is not None}")
+        
         # Determine if first parameter is test data (dict) or zodiac sign
         if isinstance(horoscope_data_or_zodiac_sign, dict):
             # Test case: first parameter is horoscope_data dict
+            logger.debug("RESPONSE_FORMAT_HOROSCOPE_MODE: test_data_dict")
             test_horoscope_data = horoscope_data_or_zodiac_sign
             prediction = test_horoscope_data.get("prediction", "")
             text = f"Ваш гороскоп: {prediction}"
@@ -258,14 +278,20 @@ class ResponseFormatter:
                 text += f"\n🎨 Счастливый цвет: {test_horoscope_data['lucky_color']}"
             if "energy_level" in test_horoscope_data:
                 text += f"\n⚡ Энергия: {test_horoscope_data['energy_level']}%"
+                
+            logger.debug(f"RESPONSE_FORMAT_HOROSCOPE_TEST_FIELDS: {list(test_horoscope_data.keys())}")
+                
         elif horoscope_data and horoscope_data_or_zodiac_sign:
             # Production case: first parameter is zodiac_sign, second is horoscope_data
+            logger.debug("RESPONSE_FORMAT_HOROSCOPE_MODE: production_with_data")
             zodiac_sign = horoscope_data_or_zodiac_sign
             general_forecast = horoscope_data.get("general_forecast", "")
             spheres = horoscope_data.get("spheres", {})
             energy_level = horoscope_data.get("energy_level", {})
             lucky_numbers = horoscope_data.get("lucky_numbers", [])
             lucky_colors = horoscope_data.get("lucky_colors", [])
+
+            logger.debug(f"RESPONSE_FORMAT_HOROSCOPE_DATA: sign={zodiac_sign.value}, forecast_length={len(general_forecast)}, spheres_count={len(spheres)}")
 
             text = f"Персональный гороскоп для {zodiac_sign.value} на {period}:\n\n"
             text += f"{general_forecast}\n\n"
@@ -295,12 +321,16 @@ class ResponseFormatter:
 
             if lucky_colors:
                 text += f"🎨 Счастливые цвета: {', '.join(lucky_colors)}"
+                
         elif horoscope_data_or_zodiac_sign:
             # Basic horoscope with just zodiac sign
+            logger.debug("RESPONSE_FORMAT_HOROSCOPE_MODE: basic_zodiac_sign")
             zodiac_sign = horoscope_data_or_zodiac_sign
             horoscope_text = self._generate_horoscope_text(zodiac_sign, period)
             text = f"Гороскоп для {zodiac_sign.value} на {period}:\n\n{horoscope_text}"
+            logger.debug(f"RESPONSE_FORMAT_HOROSCOPE_BASIC: sign={zodiac_sign.value}, generated_length={len(horoscope_text)}")
         else:
+            logger.warning("RESPONSE_FORMAT_HOROSCOPE_ERROR: no_valid_input_data")
             text = "Для составления гороскопа нужно указать знак зодиака."
 
         buttons = [
@@ -309,12 +339,15 @@ class ResponseFormatter:
             YandexButton(title="Совет дня", payload={"action": "advice"}),
         ]
 
-        return YandexResponse(
+        response = YandexResponse(
             text=text,
             tts=self._add_tts_pauses(text),
             buttons=buttons,
             end_session=False,
         )
+        
+        logger.info(f"RESPONSE_FORMAT_HOROSCOPE_SUCCESS: text_length={len(text)}, tts_length={len(response.tts or '')}")
+        return response
 
     def format_compatibility_response(
         self,
@@ -325,9 +358,12 @@ class ResponseFormatter:
         compatibility_data: Optional[Dict[str, Any]] = None,
     ) -> YandexResponse:
         """Форматирует ответ о совместимости знаков."""
+        logger.info(f"RESPONSE_FORMAT_COMPATIBILITY_START: sign2={sign2.value if sign2 else None}, has_data={compatibility_data is not None}")
+        
         # Determine if first parameter is test data (dict) or zodiac sign
         if isinstance(compatibility_data_or_sign1, dict):
             # Test case: first parameter is compatibility_data dict
+            logger.debug("RESPONSE_FORMAT_COMPATIBILITY_MODE: test_data_dict")
             test_compatibility_data = compatibility_data_or_sign1
             score = test_compatibility_data.get("score", 50)
             description = test_compatibility_data.get(
@@ -335,6 +371,7 @@ class ResponseFormatter:
             )
 
             text = f"Совместимость: {score}%\n{description}"
+            logger.debug(f"RESPONSE_FORMAT_COMPATIBILITY_TEST: score={score}, fields={list(test_compatibility_data.keys())}")
 
             if "strengths" in test_compatibility_data:
                 strengths = ", ".join(test_compatibility_data["strengths"])
@@ -344,8 +381,10 @@ class ResponseFormatter:
                 text += f"\n⚠️ Вызовы: {challenges}"
             if "advice" in test_compatibility_data:
                 text += f"\n💡 Совет: {test_compatibility_data['advice']}"
+                
         elif compatibility_data and compatibility_data_or_sign1 and sign2:
             # Production case: first parameter is sign1, with compatibility_data
+            logger.debug("RESPONSE_FORMAT_COMPATIBILITY_MODE: production_with_data")
             sign1 = compatibility_data_or_sign1
             total_score = compatibility_data.get(
                 "total_score", compatibility_data.get("score", 50)
@@ -353,6 +392,8 @@ class ResponseFormatter:
             description = compatibility_data.get("description", "")
             element1 = compatibility_data.get("element1", "")
             element2 = compatibility_data.get("element2", "")
+
+            logger.debug(f"RESPONSE_FORMAT_COMPATIBILITY_DATA: sign1={sign1.value}, sign2={sign2.value}, score={total_score}")
 
             # Создаем визуальный рейтинг
             stars = "⭐" * min(5, max(1, round(total_score / 20)))
@@ -371,14 +412,18 @@ class ResponseFormatter:
                 text += "⚖️ Умеренная совместимость. Потребуется работа над отношениями."
             else:
                 text += "🔄 Сложная совместимость, но противоположности могут притягиваться."
+                
         elif compatibility_data_or_sign1 and sign2:
             # Basic compatibility with just zodiac signs
+            logger.debug("RESPONSE_FORMAT_COMPATIBILITY_MODE: basic_signs")
             sign1 = compatibility_data_or_sign1
             compatibility_text = self._generate_compatibility_text(sign1, sign2)
             text = (
                 f"Совместимость {sign1.value} и {sign2.value}:\n\n{compatibility_text}"
             )
+            logger.debug(f"RESPONSE_FORMAT_COMPATIBILITY_BASIC: sign1={sign1.value}, sign2={sign2.value}, generated_length={len(compatibility_text)}")
         else:
+            logger.warning("RESPONSE_FORMAT_COMPATIBILITY_ERROR: insufficient_data")
             text = "Для проверки совместимости нужно указать оба знака зодиака."
 
         buttons = [
@@ -387,12 +432,15 @@ class ResponseFormatter:
             YandexButton(title="Главное меню", payload={"action": "main_menu"}),
         ]
 
-        return YandexResponse(
+        response = YandexResponse(
             text=text,
             tts=self._add_tts_pauses(text),
             buttons=buttons,
             end_session=False,
         )
+        
+        logger.info(f"RESPONSE_FORMAT_COMPATIBILITY_SUCCESS: text_length={len(text)}")
+        return response
 
     def format_advice_response(self) -> YandexResponse:
         """Форматирует астрологический совет."""
@@ -433,6 +481,8 @@ class ResponseFormatter:
 
     def format_error_response(self, error_type: str = "general") -> YandexResponse:
         """Форматирует ответ об ошибке с учетом требований Алисы."""
+        logger.warning(f"RESPONSE_FORMAT_ERROR_START: error_type={error_type}")
+        
         error_messages = {
             "general": "Извините, произошла небольшая ошибка. Попробуйте еще раз или скажите 'помощь'.",
             "invalid_date": "Не удалось распознать дату. Попробуйте сказать в формате: 15 марта 1990 года.",
@@ -442,16 +492,20 @@ class ResponseFormatter:
         }
 
         text = error_messages.get(error_type, error_messages["general"])
+        logger.debug(f"RESPONSE_FORMAT_ERROR_MESSAGE: {text[:50]}...")
 
         # Ограничиваем количество кнопок для Алисы (max 5)
         buttons = self.help_buttons[:5] if self.help_buttons else None
 
-        return YandexResponse(
+        response = YandexResponse(
             text=text,
             tts=self._add_tts_pauses(text),
             buttons=buttons,
             end_session=False,
         )
+        
+        logger.info(f"RESPONSE_FORMAT_ERROR_SUCCESS: error_type={error_type}, buttons_count={len(buttons) if buttons else 0}")
+        return response
 
     def format_goodbye_response(
         self, personalized: bool = False, user_context: Any = None
@@ -602,6 +656,7 @@ class ResponseFormatter:
 
     def _add_tts_pauses(self, text: str) -> str:
         """Добавляет паузы в TTS для Алисы."""
+        logger.debug(f"RESPONSE_TTS_PROCESSING_START: text_length={len(text)}")
         import re
 
         # Очищаем текст от эмодзи для TTS
@@ -610,6 +665,7 @@ class ResponseFormatter:
             "",
             text,
         )
+        logger.debug(f"RESPONSE_TTS_EMOJI_REMOVED: length_after={len(tts)}")
 
         # Добавляем паузы после знаков препинания
         tts = tts.replace(".", ". - ")
@@ -625,6 +681,7 @@ class ResponseFormatter:
         # Убираем лишние пробелы
         tts = re.sub(r"\s+", " ", tts).strip()
 
+        logger.debug(f"RESPONSE_TTS_PROCESSING_COMPLETE: final_length={len(tts)}")
         return tts
 
     def _generate_horoscope_text(
@@ -701,12 +758,17 @@ class ResponseFormatter:
 
     def format_fallback_response(self, error, request, context=None) -> YandexResponse:
         """Форматирует резервный ответ при ошибке."""
+        logger.error(f"RESPONSE_FORMAT_FALLBACK: error={str(error)[:100]}, has_context={context is not None}")
+        
         text = "Произошла ошибка. Попробуйте что-то другое или скажите 'помощь'."
         buttons = [
             YandexButton(title="Помощь", payload={"action": "help"}),
             YandexButton(title="Начать сначала", payload={"action": "restart"}),
         ]
-        return YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        
+        response = YandexResponse(text=text, tts=text, buttons=buttons, end_session=False)
+        logger.info("RESPONSE_FORMAT_FALLBACK_SUCCESS: fallback_response_created")
+        return response
 
     def format_greeting_response(self, is_new_user: bool = True) -> YandexResponse:
         """Форматирует приветственный ответ для тестов."""

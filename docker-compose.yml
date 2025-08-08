@@ -23,6 +23,11 @@ services:
     environment:
       - DEBUG=true
       - DATABASE_URL=postgresql+asyncpg://astroloh_user:astroloh_password@db:5432/astroloh_db
+      - YANDEX_API_KEY=${YANDEX_API_KEY}
+      - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID}
+      - YANDEX_CATALOG_ID=${YANDEX_CATALOG_ID}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     depends_on:
       - db
     volumes:

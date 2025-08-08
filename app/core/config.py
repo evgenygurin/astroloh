@@ -32,8 +32,6 @@ class Settings(BaseSettings):
     YANDEX_API_KEY: Optional[str] = None
     YANDEX_FOLDER_ID: Optional[str] = None
     YANDEX_CATALOG_ID: Optional[str] = None
-    YANDEX_GPT_API_KEY: Optional[str] = None
-    YANDEX_GPT_FOLDER_ID: Optional[str] = None
 
     # Секретные ключи
     SECRET_KEY: str = "dev-secret-key-change-in-production"

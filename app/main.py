@@ -129,8 +129,19 @@ async def health_check() -> dict[str, str]:
 @app.on_event("startup")
 async def startup_event() -> None:
     """Инициализация при запуске приложения."""
-    logging.basicConfig(level=logging.INFO)
+    # Настройка логирования с принудительным INFO уровнем
+    logging.basicConfig(
+        level=logging.INFO,  # Принудительно INFO для всех логов
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        force=True  # Переопределить существующую конфигурацию
+    )
     logger = logging.getLogger(__name__)
+    
+    # Установить INFO уровень для всех логгеров приложения
+    for logger_name in ['app', 'app.api', 'app.services', 'app.api.yandex_dialogs']:
+        logging.getLogger(logger_name).setLevel(logging.INFO)
+    
+    logger.info("🚀 STARTUP: Logging configuration applied - INFO level enabled")
 
     try:
         if settings.DATABASE_URL:

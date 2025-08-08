@@ -70,11 +70,12 @@ class TestSettings:
         test_settings = Settings()
 
         # Should have default or environment values
-        assert hasattr(test_settings, "YANDEX_GPT_API_KEY")
-        assert hasattr(test_settings, "YANDEX_GPT_FOLDER_ID")
+        assert hasattr(test_settings, "YANDEX_API_KEY")
+        assert hasattr(test_settings, "YANDEX_FOLDER_ID")
+        assert hasattr(test_settings, "YANDEX_CATALOG_ID")
         # These can be None in test environment
-        assert test_settings.YANDEX_GPT_API_KEY is None or isinstance(
-            test_settings.YANDEX_GPT_API_KEY, str
+        assert test_settings.YANDEX_API_KEY is None or isinstance(
+            test_settings.YANDEX_API_KEY, str
         )
 
     def test_settings_validation(self):

@@ -2,6 +2,7 @@
 Сервис генерации персональных гороскопов.
 """
 
+import logging
 import random
 from datetime import date, datetime
 from enum import Enum
@@ -9,6 +10,8 @@ from typing import Any, Dict, List, Optional
 
 from app.models.yandex_models import YandexZodiacSign
 from app.services.astrology_calculator import AstrologyCalculator
+
+logger = logging.getLogger(__name__)
 
 
 class HoroscopePeriod(Enum):
@@ -214,34 +217,49 @@ class HoroscopeGenerator:
         target_date: Optional[datetime] = None,
     ) -> Dict[str, Any]:
         """Генерирует персональный гороскоп."""
+        logger.info(f"HOROSCOPE_GENERATION_START: sign={zodiac_sign.value}, period={period.value}, birth_date={birth_date}")
 
         if target_date is None:
             target_date = datetime.now()
+            logger.debug(f"HOROSCOPE_TARGET_DATE_DEFAULT: using_current_date={target_date.strftime('%Y-%m-%d')}")
+        else:
+            logger.debug(f"HOROSCOPE_TARGET_DATE_PROVIDED: target_date={target_date.strftime('%Y-%m-%d')}")
 
         # Базовые характеристики знака
         sign_info = self.sign_characteristics.get(zodiac_sign, {})
+        logger.debug(f"HOROSCOPE_SIGN_INFO: element={sign_info.get('element')}, ruling_planet={sign_info.get('ruling_planet')}")
 
         # Получаем текущие астрологические влияния
+        logger.debug("HOROSCOPE_INFLUENCES_START: calculating_astrological_influences")
         astrological_influences = self._get_current_influences(target_date, zodiac_sign)
+        logger.info(f"HOROSCOPE_INFLUENCES_CALCULATED: moon_phase={astrological_influences.get('moon_phase', {}).get('phase_name')}")
 
         # Генерируем прогноз по сферам
+        logger.debug("HOROSCOPE_SPHERES_START: generating_forecast_by_spheres")
         spheres_forecast = self._generate_spheres_forecast(
             zodiac_sign, astrological_influences, period
         )
+        logger.info(f"HOROSCOPE_SPHERES_GENERATED: spheres_count={len(spheres_forecast)}")
 
         # Вычисляем уровень энергии
+        logger.debug("HOROSCOPE_ENERGY_START: calculating_energy_level")
         energy_level = self._calculate_energy_level(
             zodiac_sign, target_date, astrological_influences
         )
+        logger.info(f"HOROSCOPE_ENERGY_CALCULATED: level={energy_level.get('level')}%, description='{energy_level.get('description')}'")
 
         # Генерируем счастливые числа и цвета
+        logger.debug("HOROSCOPE_LUCKY_START: generating_lucky_elements")
         lucky_elements = self._generate_lucky_elements(sign_info, target_date)
+        logger.debug(f"HOROSCOPE_LUCKY_GENERATED: numbers={lucky_elements['numbers']}, colors={lucky_elements['colors']}")
 
+        logger.debug("HOROSCOPE_GENERAL_START: generating_general_forecast")
         general_forecast = self._generate_general_forecast(
             zodiac_sign, astrological_influences, period
         )
+        logger.debug(f"HOROSCOPE_GENERAL_GENERATED: forecast_length={len(general_forecast)}")
 
-        return {
+        result = {
             "zodiac_sign": zodiac_sign.value,
             "period": period.value,
             "date": target_date.strftime("%Y-%m-%d"),
@@ -254,64 +272,91 @@ class HoroscopeGenerator:
             "advice": self._generate_advice(zodiac_sign, astrological_influences),
             "astrological_influences": astrological_influences,
         }
+        
+        logger.info(f"HOROSCOPE_GENERATION_SUCCESS: sign={zodiac_sign.value}, total_fields={len(result)}")
+        return result
 
     def _get_current_influences(
         self, target_date: datetime, zodiac_sign: YandexZodiacSign
     ) -> Dict[str, Any]:
         """Получает текущие астрологические влияния."""
+        logger.debug(f"INFLUENCES_CALCULATION_START: date={target_date.strftime('%Y-%m-%d')}, sign={zodiac_sign.value}")
 
         # Получаем фазу Луны
+        logger.debug("INFLUENCES_MOON_PHASE_START: calculating_moon_phase")
         moon_phase = self.astro_calc.calculate_moon_phase(target_date)
+        logger.debug(f"INFLUENCES_MOON_PHASE_RESULT: phase={moon_phase.get('phase_name')}, illumination={moon_phase.get('illumination_percent')}%")
 
         # Получаем планетные часы
+        logger.debug("INFLUENCES_PLANETARY_HOURS_START: calculating_planetary_hours")
         planetary_hours = self.astro_calc.get_planetary_hours(target_date)
+        logger.debug(f"INFLUENCES_PLANETARY_HOURS_RESULT: current_ruler={planetary_hours.get('current_ruler')}")
 
         # Упрощенное определение важных транзитов
+        logger.debug("INFLUENCES_TRANSITS_START: calculating_simplified_transits")
         important_transits = self._get_simplified_transits(target_date, zodiac_sign)
+        logger.debug(f"INFLUENCES_TRANSITS_RESULT: transits_count={len(important_transits)}")
 
-        return {
+        # Сезонные влияния
+        logger.debug("INFLUENCES_SEASONAL_START: calculating_seasonal_influence")
+        season_influence = self._get_seasonal_influence(target_date)
+        logger.debug(f"INFLUENCES_SEASONAL_RESULT: season={season_influence.get('season')}")
+
+        result = {
             "moon_phase": moon_phase,
             "planetary_hours": planetary_hours,
             "transits": important_transits,
-            "season_influence": self._get_seasonal_influence(target_date),
+            "season_influence": season_influence,
         }
+        
+        logger.info(f"INFLUENCES_CALCULATION_SUCCESS: calculated_all_influences for {zodiac_sign.value}")
+        return result
 
     def _get_simplified_transits(
         self, target_date: datetime, zodiac_sign: YandexZodiacSign
     ) -> List[Dict[str, str]]:
         """Упрощенное определение транзитов."""
+        logger.debug(f"TRANSITS_CALCULATION_START: date={target_date.strftime('%Y-%m-%d')}")
         transits = []
 
         # Примерные циклы планет для упрощения
         day_of_year = target_date.timetuple().tm_yday
+        logger.debug(f"TRANSITS_DAY_OF_YEAR: day={day_of_year}")
 
         # Меркурий (цикл ~88 дней)
         mercury_phase = (day_of_year % 88) / 88
+        logger.debug(f"TRANSITS_MERCURY_PHASE: phase={mercury_phase:.2f}")
         if mercury_phase < 0.33:
             transits.append({
                 "planet": "Меркурий",
                 "aspect": "благоприятный",
                 "description": "Отличное время для общения и обучения",
             })
+            logger.debug("TRANSITS_MERCURY_FAVORABLE: added_to_transits")
 
         # Венера (цикл ~225 дней)
         venus_phase = (day_of_year % 225) / 225
+        logger.debug(f"TRANSITS_VENUS_PHASE: phase={venus_phase:.2f}")
         if venus_phase < 0.4:
             transits.append({
                 "planet": "Венера",
                 "aspect": "гармоничный",
                 "description": "Благоприятно для любви и творчества",
             })
+            logger.debug("TRANSITS_VENUS_HARMONIOUS: added_to_transits")
 
         # Марс (цикл ~687 дней, упрощаем до 365)
         mars_phase = (day_of_year % 365) / 365
+        logger.debug(f"TRANSITS_MARS_PHASE: phase={mars_phase:.2f}")
         if 0.2 < mars_phase < 0.6:
             transits.append({
                 "planet": "Марс",
                 "aspect": "энергичный",
                 "description": "Время активных действий и инициатив",
             })
+            logger.debug("TRANSITS_MARS_ENERGETIC: added_to_transits")
 
+        logger.debug(f"TRANSITS_CALCULATION_RESULT: found_transits={len(transits)}")
         return transits
 
     def _get_seasonal_influence(self, target_date: datetime) -> Dict[str, str]:
@@ -340,30 +385,44 @@ class HoroscopeGenerator:
         period: HoroscopePeriod,
     ) -> Dict[str, Dict[str, Any]]:
         """Генерирует прогноз по жизненным сферам."""
+        logger.debug(f"SPHERES_FORECAST_START: sign={zodiac_sign.value}, period={period.value}")
 
         period_str = period.value
         moon_influence = influences["moon_phase"]["phase_name"]
+        logger.debug(f"SPHERES_MOON_INFLUENCE: phase={moon_influence}")
 
         spheres = {}
 
         for sphere in ["love", "career", "health", "finances"]:
+            logger.debug(f"SPHERES_PROCESSING: sphere={sphere}")
+            
             sphere_templates = self.horoscope_templates[sphere]
             base_text = random.choice(sphere_templates).format(period=period_str)
+            logger.debug(f"SPHERES_BASE_TEXT: sphere={sphere}, text_length={len(base_text)}")
 
             # Добавляем влияние Луны
             moon_modifier = self._get_moon_modifier(sphere, moon_influence)
             if moon_modifier:
                 base_text += f" {moon_modifier}"
+                logger.debug(f"SPHERES_MOON_MODIFIER: sphere={sphere}, added_modifier")
+            else:
+                logger.debug(f"SPHERES_MOON_MODIFIER: sphere={sphere}, no_modifier_applied")
 
             # Рассчитываем рейтинг сферы (1-5 звезд)
             rating = self._calculate_sphere_rating(sphere, zodiac_sign, influences)
+            logger.debug(f"SPHERES_RATING: sphere={sphere}, rating={rating}")
+
+            # Получаем совет для сферы
+            advice = self._get_sphere_advice(sphere, rating, zodiac_sign)
+            logger.debug(f"SPHERES_ADVICE: sphere={sphere}, advice_length={len(advice)}")
 
             spheres[sphere] = {
                 "forecast": base_text,
                 "rating": rating,
-                "advice": self._get_sphere_advice(sphere, rating, zodiac_sign),
+                "advice": advice,
             }
 
+        logger.info(f"SPHERES_FORECAST_SUCCESS: generated_spheres={list(spheres.keys())}")
         return spheres
 
     def _get_moon_modifier(self, sphere: str, moon_phase: str) -> Optional[str]:
@@ -548,33 +607,44 @@ class HoroscopeGenerator:
         influences: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Рассчитывает уровень энергии."""
+        logger.debug(f"ENERGY_CALCULATION_START: sign={zodiac_sign.value}, date={target_date.strftime('%Y-%m-%d')}")
 
         base_energy = 60  # Базовый уровень энергии
+        logger.debug(f"ENERGY_BASE: level={base_energy}")
 
         # Влияние фазы Луны
         moon_illumination = influences["moon_phase"]["illumination_percent"]
         moon_bonus = (moon_illumination - 50) / 5  # От -10 до +10
+        logger.debug(f"ENERGY_MOON_BONUS: illumination={moon_illumination}%, bonus={moon_bonus:.1f}")
 
         # Влияние сезона
         month = target_date.month
         if 3 <= month <= 5:  # Весна
             seasonal_bonus = 15
+            season = "spring"
         elif 6 <= month <= 8:  # Лето
             seasonal_bonus = 20
+            season = "summer"
         elif 9 <= month <= 11:  # Осень
             seasonal_bonus = 5
+            season = "autumn"
         else:  # Зима
             seasonal_bonus = -5
+            season = "winter"
+        logger.debug(f"ENERGY_SEASONAL_BONUS: season={season}, bonus={seasonal_bonus}")
 
         # Влияние элемента знака
         sign_info = self.sign_characteristics.get(zodiac_sign, {})
         element = sign_info.get("element", "earth")
         element_bonuses = {"fire": 15, "air": 10, "earth": 5, "water": 0}
         element_bonus = element_bonuses.get(element, 5)
+        logger.debug(f"ENERGY_ELEMENT_BONUS: element={element}, bonus={element_bonus}")
 
         # Рассчитываем итоговый уровень
         total_energy = base_energy + moon_bonus + seasonal_bonus + element_bonus
+        raw_energy = total_energy
         total_energy = max(10, min(100, total_energy))  # Ограничиваем 10-100%
+        logger.debug(f"ENERGY_CALCULATION: raw={raw_energy:.1f}, clamped={total_energy}")
 
         # Определяем описание уровня энергии
         if total_energy >= 80:
@@ -586,11 +656,16 @@ class HoroscopeGenerator:
         else:
             description = "Низкий уровень энергии"
 
-        return {
+        logger.debug(f"ENERGY_DESCRIPTION: level={total_energy}, description='{description}'")
+
+        result = {
             "level": round(total_energy),
             "description": description,
             "advice": self._get_energy_advice(total_energy),
         }
+        
+        logger.info(f"ENERGY_CALCULATION_SUCCESS: final_level={result['level']}%")
+        return result
 
     def _get_energy_advice(self, energy_level: float) -> str:
         """Получает совет по уровню энергии."""
@@ -628,9 +703,11 @@ class HoroscopeGenerator:
         self, zodiac_sign: YandexZodiacSign, influences: Dict[str, Any]
     ) -> str:
         """Генерирует персональный совет."""
+        logger.debug(f"ADVICE_GENERATION_START: sign={zodiac_sign.value}")
 
         sign_info = self.sign_characteristics.get(zodiac_sign, {})
         keywords = sign_info.get("keywords", ["гармония"])
+        logger.debug(f"ADVICE_KEYWORDS: sign={zodiac_sign.value}, keywords={keywords}")
 
         advice_templates = [
             f"Сегодня особенно важно проявить вашу природную {random.choice(keywords)}.",
@@ -640,9 +717,12 @@ class HoroscopeGenerator:
         ]
 
         base_advice = random.choice(advice_templates)
+        logger.debug(f"ADVICE_BASE_TEMPLATE: length={len(base_advice)}")
 
         # Добавляем совет на основе фазы Луны
         moon_phase = influences["moon_phase"]["phase_name"]
+        logger.debug(f"ADVICE_MOON_PHASE: phase={moon_phase}")
+        
         moon_advice = {
             "Новолуние": "Загадайте желание и начните воплощать его в жизнь.",
             "Растущая Луна": "Наращивайте усилия для достижения целей.",
@@ -653,5 +733,9 @@ class HoroscopeGenerator:
         additional_advice = moon_advice.get(moon_phase, "")
         if additional_advice:
             base_advice += f" {additional_advice}"
+            logger.debug(f"ADVICE_MOON_ADDED: moon_advice='{additional_advice}'")
+        else:
+            logger.debug("ADVICE_MOON_SKIPPED: no_specific_advice_for_phase")
 
+        logger.info(f"ADVICE_GENERATION_SUCCESS: final_length={len(base_advice)}")
         return base_advice

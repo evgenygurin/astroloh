@@ -18,8 +18,31 @@ class DateValidator:
         """Парсит строку даты в объект date."""
         date_str = date_str.strip().lower()
 
-        # Удаляем лишние символы
-        date_str = re.sub(r"[^\d\.\-\/\s]", "", date_str)
+        # Обрабатываем месяцы на русском языке
+        month_map = {
+            "января": 1, "февраля": 2, "марта": 3, "апреля": 4,
+            "мая": 5, "июня": 6, "июля": 7, "августа": 8,
+            "сентября": 9, "октября": 10, "ноября": 11, "декабря": 12
+        }
+        
+        # Проверяем формат "DD месяца YYYY" или "DD месяца"
+        month_pattern = r"(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?"
+        month_match = re.match(month_pattern, date_str)
+        if month_match:
+            day = int(month_match.group(1))
+            month_name = month_match.group(2)
+            year_group = month_match.group(3)
+            
+            month = month_map[month_name]
+            year = int(year_group) if year_group else date.today().year
+            
+            try:
+                return date(year, month, day)
+            except ValueError:
+                return None
+
+        # Удаляем буквы для числовых форматов
+        date_str_numeric = re.sub(r"[^\d\.\-\/\s]", "", date_str)
 
         patterns = [
             (r"^(\d{1,2})[\.\/\-\s](\d{1,2})[\.\/\-\s](\d{4})$", "%d.%m.%Y"),
@@ -29,7 +52,7 @@ class DateValidator:
         ]
 
         for pattern, date_format in patterns:
-            match = re.match(pattern, date_str)
+            match = re.match(pattern, date_str_numeric)
             if match:
                 try:
                     if date_format in ["%d.%m.%Y", "%d %m %Y"]:

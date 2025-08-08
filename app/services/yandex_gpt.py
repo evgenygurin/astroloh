@@ -87,18 +87,26 @@ class YandexGPTClient:
         Returns:
             Сгенерированный текст или None при ошибке
         """
+        request_id = f"ygpt_{int(asyncio.get_event_loop().time() * 1000)}"
+        logger.info(f"[{request_id}] YANDEX_GPT_GENERATION_START: model={model}, temp={temperature}, tokens={max_tokens}")
+        logger.debug(f"[{request_id}] YANDEX_GPT_PROMPT_LENGTH: {len(prompt)} chars")
+        logger.debug(f"[{request_id}] YANDEX_GPT_PROMPT: {prompt[:200]}{'...' if len(prompt) > 200 else ''}")
+        logger.debug(f"[{request_id}] YANDEX_GPT_CONFIG: api_key_exists={bool(self.api_key)}, folder_id={self.folder_id}")
+        
         try:
             # Подготавливаем сообщения
             messages = []
 
             if system_prompt:
                 messages.append(YandexGPTMessage(role="system", text=system_prompt))
+                logger.debug(f"[{request_id}] YANDEX_GPT_SYSTEM_PROMPT: {system_prompt[:200]}{'...' if len(system_prompt) > 200 else ''}")
 
             messages.append(YandexGPTMessage(role="user", text=prompt))
 
             # Подготавливаем запрос
+            model_uri = f"gpt://{self.folder_id}/{model}/latest"
             request_data = YandexGPTRequest(
-                modelUri=f"gpt://{self.folder_id}/{model}/latest",
+                modelUri=model_uri,
                 completionOptions={
                     "stream": False,
                     "temperature": temperature,
@@ -107,38 +115,44 @@ class YandexGPTClient:
                 messages=messages,
             )
 
+            logger.info(f"[{request_id}] YANDEX_GPT_API_CALL: uri={model_uri}, folder={self.folder_id}")
+
             # Отправляем запрос
             session = await self._get_session()
 
             async with session.post(
                 self.completion_url, json=request_data.dict()
             ) as response:
+                logger.info(f"[{request_id}] YANDEX_GPT_HTTP_STATUS: {response.status}")
+                
                 if response.status != 200:
                     error_text = await response.text()
-                    logger.error(
-                        f"Yandex GPT API error {response.status}: {error_text}"
-                    )
+                    logger.error(f"[{request_id}] YANDEX_GPT_ERROR {response.status}: {error_text}")
                     return None
 
                 result = await response.json()
+                logger.debug(f"[{request_id}] YANDEX_GPT_RAW_RESPONSE: {str(result)[:500]}{'...' if len(str(result)) > 500 else ''}")
 
                 # Извлекаем текст ответа
                 if "result" in result and "alternatives" in result["result"]:
                     alternatives = result["result"]["alternatives"]
                     if alternatives and "message" in alternatives[0]:
-                        return alternatives[0]["message"]["text"]
+                        generated_text = alternatives[0]["message"]["text"]
+                        logger.info(f"[{request_id}] YANDEX_GPT_SUCCESS: generated {len(generated_text)} chars")
+                        logger.debug(f"[{request_id}] YANDEX_GPT_TEXT: {generated_text[:200]}{'...' if len(generated_text) > 200 else ''}")
+                        return generated_text
 
-                logger.warning(f"Unexpected Yandex GPT response format: {result}")
+                logger.warning(f"[{request_id}] YANDEX_GPT_UNEXPECTED_FORMAT: {result}")
                 return None
 
         except asyncio.TimeoutError:
-            logger.error("Yandex GPT API timeout")
+            logger.error(f"[{request_id}] YANDEX_GPT_TIMEOUT")
             return None
         except aiohttp.ClientError as e:
-            logger.error(f"Yandex GPT API client error: {e}")
+            logger.error(f"[{request_id}] YANDEX_GPT_CLIENT_ERROR: {e}")
             return None
         except Exception as e:
-            logger.error(f"Yandex GPT API error: {e}")
+            logger.error(f"[{request_id}] YANDEX_GPT_EXCEPTION: {e}")
             return None
 
     async def generate_horoscope(
@@ -146,6 +160,7 @@ class YandexGPTClient:
         zodiac_sign: str,
         period: str = "день",
         birth_date: Optional[str] = None,
+        forecast_date: Optional[str] = None,
         additional_context: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """
@@ -172,8 +187,12 @@ class YandexGPTClient:
 Используй русский язык. Избегай слишком сложных терминов."""
 
         # Подготавливаем промпт
+        date_text = period
+        if forecast_date:
+            date_text = f"{forecast_date}"
+        
         prompt_parts = [
-            f"Составь персональный гороскоп для знака {zodiac_sign} на {period}."
+            f"Составь персональный гороскоп для знака {zodiac_sign} на {date_text}."
         ]
 
         if birth_date:
