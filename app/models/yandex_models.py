@@ -41,6 +41,13 @@ class YandexIntent(str, Enum):
     AI_TRANSIT_FORECAST = "ai_transit_forecast"
     AI_SERVICE_STATUS = "ai_service_status"
     
+    # New Russian Localization Intents - Issue #68
+    SIGN_DESCRIPTION = "sign_description"
+    PLANET_IN_SIGN = "planet_in_sign"
+    HOUSE_CHARACTERISTICS = "house_characteristics"
+    ENHANCED_COMPATIBILITY = "enhanced_compatibility"
+    RETROGRADE_INFLUENCE = "retrograde_influence"
+    
     HELP = "help"
     EXIT = "exit"
     UNKNOWN = "unknown"
