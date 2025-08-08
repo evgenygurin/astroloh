@@ -21,6 +21,7 @@ class YandexIntent(str, Enum):
     GREET = "greet"
     HOROSCOPE = "horoscope"
     COMPATIBILITY = "compatibility"
+    SYNASTRY = "synastry"
     NATAL_CHART = "natal_chart"
     LUNAR_CALENDAR = "lunar_calendar"
     TRANSITS = "transits"
@@ -178,6 +179,11 @@ class UserContext(BaseModel):
     birth_place: Optional[str] = None
     zodiac_sign: Optional[YandexZodiacSign] = None
     partner_sign: Optional[YandexZodiacSign] = None
+    # Данные партнера для синастрии
+    partner_name: Optional[str] = None
+    partner_birth_date: Optional[str] = None
+    partner_birth_time: Optional[str] = None
+    partner_birth_place: Optional[str] = None
     conversation_step: int = 0
     last_request: Optional[str] = None
 
