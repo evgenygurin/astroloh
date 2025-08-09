@@ -505,14 +505,22 @@ class UserManager:
         now = datetime.now(timezone.utc)
 
         # Calculate days since registration
-        days_since_registration = (
-            (now - user.created_at).days if user.created_at else 0
-        )
+        if user.created_at:
+            created_at = user.created_at
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            days_since_registration = (now - created_at).days
+        else:
+            days_since_registration = 0
 
         # Calculate days since last access
-        days_since_last_access = (
-            (now - user.last_accessed).days if user.last_accessed else 0
-        )
+        if user.last_accessed:
+            last_accessed = user.last_accessed
+            if last_accessed.tzinfo is None:
+                last_accessed = last_accessed.replace(tzinfo=timezone.utc)
+            days_since_last_access = (now - last_accessed).days
+        else:
+            days_since_last_access = 0
 
         # Get total sessions count
         result = await self.db.execute(
@@ -545,7 +553,13 @@ class UserManager:
         cutoff_date = datetime.now(timezone.utc) - timedelta(
             days=days_threshold
         )
-        return user.last_accessed > cutoff_date
+
+        # Ensure last_accessed is timezone-aware
+        last_accessed = user.last_accessed
+        if last_accessed.tzinfo is None:
+            last_accessed = last_accessed.replace(tzinfo=timezone.utc)
+
+        return last_accessed > cutoff_date
 
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """

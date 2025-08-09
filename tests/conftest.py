@@ -18,6 +18,10 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 # Generate secure random keys for testing
 os.environ["SECRET_KEY"] = secrets.token_urlsafe(32)
 os.environ["ENCRYPTION_KEY"] = secrets.token_urlsafe(32)
+# Disable background tasks and precomputation for tests
+os.environ["DISABLE_BACKGROUND_TASKS"] = "true"
+os.environ["DISABLE_PRECOMPUTATION"] = "true"
+os.environ["DISABLE_PERFORMANCE_MONITORING"] = "true"
 
 
 @pytest.fixture

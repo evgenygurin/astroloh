@@ -411,14 +411,22 @@ Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         """Get current memory usage in MB."""
         try:
             return psutil.Process().memory_info().rss / 1024 / 1024
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        except (
+            psutil.NoSuchProcess,
+            psutil.AccessDenied,
+            psutil.ZombieProcess,
+        ):
             return 0.0
 
     def _get_cpu_usage(self) -> float:
         """Get current CPU usage percentage."""
         try:
             return psutil.cpu_percent()
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        except (
+            psutil.NoSuchProcess,
+            psutil.AccessDenied,
+            psutil.ZombieProcess,
+        ):
             return 0.0
 
     def _percentile(self, data: List[float], percentile: float) -> float:

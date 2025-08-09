@@ -780,5 +780,6 @@ class TestRussianAstrologyAdapterSecurity:
         # Should remove or escape dangerous content
         assert "<script>" not in formatted
         assert "alert" not in formatted or formatted.count("alert") == 0
-        assert "Солнце" in formatted  # Valid content preserved
-        assert "Льве" in formatted
+        # Valid content preserved (may have stress marks applied)
+        assert "солнце" in formatted.lower() or "со́лнце" in formatted.lower()
+        assert "льве" in formatted.lower() or "льве" in formatted.lower()

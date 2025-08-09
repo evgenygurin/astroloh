@@ -7,12 +7,18 @@ from datetime import date, datetime, time
 
 import pytest
 
-from app.services.astrology_calculator import AstrologyCalculator, SWISSEPH_AVAILABLE, SKYFIELD_AVAILABLE
+from app.services.astrology_calculator import (
+    SKYFIELD_AVAILABLE,
+    SWISSEPH_AVAILABLE,
+    AstrologyCalculator,
+)
 from app.services.kerykeion_service import KERYKEION_AVAILABLE, KerykeionService
 from app.services.natal_chart import NatalChartCalculator
 
 # Check if we have accurate astronomical libraries
-HAS_ACCURATE_ASTRONOMY = KERYKEION_AVAILABLE or SWISSEPH_AVAILABLE or SKYFIELD_AVAILABLE
+HAS_ACCURATE_ASTRONOMY = (
+    KERYKEION_AVAILABLE or SWISSEPH_AVAILABLE or SKYFIELD_AVAILABLE
+)
 
 
 class KnownAstronomicalData:
@@ -368,7 +374,10 @@ class TestMoonPhaseAccuracy:
     def calculator(self):
         return AstrologyCalculator()
 
-    @pytest.mark.skipif(not HAS_ACCURATE_ASTRONOMY, reason="Accurate astronomical library not available")
+    @pytest.mark.skipif(
+        not HAS_ACCURATE_ASTRONOMY,
+        reason="Accurate astronomical library not available",
+    )
     def test_known_new_moon_accuracy(self, calculator):
         """Test accuracy of new moon calculations"""
         for new_moon_date in KnownAstronomicalData.KNOWN_MOON_PHASES[
@@ -389,7 +398,10 @@ class TestMoonPhaseAccuracy:
                 "new" in phase_name or illumination < 5
             ), f"New moon {new_moon_date} has phase '{phase_name}'"
 
-    @pytest.mark.skipif(not HAS_ACCURATE_ASTRONOMY, reason="Accurate astronomical library not available")
+    @pytest.mark.skipif(
+        not HAS_ACCURATE_ASTRONOMY,
+        reason="Accurate astronomical library not available",
+    )
     def test_known_full_moon_accuracy(self, calculator):
         """Test accuracy of full moon calculations"""
         for full_moon_date in KnownAstronomicalData.KNOWN_MOON_PHASES[
@@ -430,7 +442,6 @@ class TestMoonPhaseAccuracy:
             assert (
                 0 <= illumination <= 100
             ), f"Invalid illumination {illumination}% on {test_date}"
-
 
         # Should see variation over 30 days (moon cycle ~29.5 days)
         illumination_range = max(illuminations) - min(illuminations)
