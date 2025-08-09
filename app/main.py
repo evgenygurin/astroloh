@@ -13,6 +13,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.astrology import router as astrology_router
 from app.api.auth import router as auth_router
+from app.api.deployment import router as deployment_router
 from app.api.google_assistant import router as google_router
 from app.api.iot_api import router as iot_router
 from app.api.lunar import router as lunar_router
@@ -101,6 +102,7 @@ app.include_router(telegram_router, prefix="/api/v1")
 app.include_router(google_router, prefix="/api/v1")
 app.include_router(security_router, prefix="/api/v1")
 app.include_router(recommendations_router, prefix="/api/v1")
+app.include_router(deployment_router)  # Deployment management API
 app.include_router(iot_router)
 app.include_router(auth_router)
 app.include_router(astrology_router)
@@ -157,12 +159,55 @@ async def startup_event() -> None:
             )
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
+    
+    # Initialize deployment and performance monitoring systems
+    try:
+        from app.services.startup_manager import startup_manager
+        
+        logger.info("Initializing deployment and performance systems...")
+        init_result = await startup_manager.initialize_performance_systems(
+            enable_cache_warmup=True,
+            enable_background_monitoring=True,
+            enable_precomputation=True,
+        )
+        
+        if init_result["success"]:
+            logger.info(f"Performance systems initialized: {len(init_result['initialization_results'])} services")
+        else:
+            logger.warning(f"Performance systems initialization had errors: {init_result.get('errors', [])}")
+            
+    except Exception as e:
+        logger.error(f"Failed to initialize performance systems: {e}")
+        # Continue startup even if performance systems fail
 
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
     """Очистка при завершении приложения."""
     logger = logging.getLogger(__name__)
+
+    # Shutdown performance systems
+    try:
+        from app.services.startup_manager import startup_manager
+        from app.services.deployment_monitor import deployment_monitor
+        from app.services.performance_monitor import performance_monitor
+        
+        logger.info("Shutting down performance systems...")
+        
+        # Stop monitoring services
+        await deployment_monitor.stop_monitoring()
+        await performance_monitor.stop_monitoring()
+        
+        # Shutdown all performance systems
+        shutdown_result = await startup_manager.shutdown_performance_systems()
+        
+        if shutdown_result["success"]:
+            logger.info("Performance systems shutdown successfully")
+        else:
+            logger.warning(f"Performance systems shutdown had errors: {shutdown_result.get('error', 'Unknown error')}")
+            
+    except Exception as e:
+        logger.error(f"Error shutting down performance systems: {e}")
 
     try:
         await close_database()
