@@ -108,6 +108,51 @@ class AstroCacheService(CacheService):
         timezone: str = "Europe/Moscow",
         house_system: str = "Placidus",
     ) -> bool:
+        """Cache natal chart data with extended TTL."""
+        birth_dt_str = (
+            birth_datetime.isoformat()
+            if isinstance(birth_datetime, datetime)
+            else birth_datetime
+        )
+
+        cache_key = self._generate_cache_key(
+            "natal_chart",
+            birth_dt=birth_dt_str,
+            lat=round(latitude, 6),
+            lng=round(longitude, 6),
+            tz=timezone,
+            house_system=house_system,
+        )
+
+        # Add caching metadata
+        enriched_data = {
+            **chart_data,
+            "_cache_metadata": {
+                "cached_at": datetime.now().isoformat(),
+                "ttl": self.astro_ttl["natal_chart"],
+                "data_type": "natal_chart",
+                "kerykeion_enhanced": chart_data.get("service_info", {}).get("method") == "Kerykeion Enhanced"
+            }
+        }
+
+        success = await self.set(cache_key, enriched_data, ttl=self.astro_ttl["natal_chart"])
+        
+        if success:
+            logger.debug(f"ASTRO_CACHE_SET: Natal chart cached {cache_key}")
+        else:
+            logger.warning(f"ASTRO_CACHE_SET_FAILED: {cache_key}")
+
+        return success
+
+    async def set_natal_chart(
+        self,
+        birth_datetime: Union[datetime, str],
+        latitude: float,
+        longitude: float,
+        chart_data: Dict[str, Any],
+        timezone: str = "Europe/Moscow",
+        house_system: str = "Placidus",
+    ) -> bool:
         """Cache natal chart data."""
         birth_dt_str = (
             birth_datetime.isoformat()

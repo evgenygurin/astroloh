@@ -29,7 +29,7 @@ except (ImportError, ModuleNotFoundError) as e:
 
 
 class HouseSystem(Enum):
-    """Extended house systems supported by Kerykeion"""
+    """Extended house systems supported by Kerykeion 4.x"""
 
     PLACIDUS = "Placidus"
     KOCH = "Koch"
@@ -41,6 +41,11 @@ class HouseSystem(Enum):
     ALCABITUS = "Alcabitus"
     MORINUS = "Morinus"
     PORPHYRIUS = "Porphyrius"
+    VEHLOW = "Vehlow Equal"
+    MERIDIAN = "Meridian"
+    AZIMUTHAL = "Azimuthal"
+    POLICH_PAGE = "Polich Page"
+    NATURAL_GRADUATION = "Natural Graduation"
 
 
 class ZodiacType(Enum):
@@ -103,6 +108,8 @@ class KerykeionService:
         timezone: str = "Europe/Moscow",
         house_system: HouseSystem = HouseSystem.PLACIDUS,
         zodiac_type: ZodiacType = ZodiacType.TROPICAL,
+        city: str = "Unknown",
+        nation: str = "Russia",
     ) -> Optional[Any]:
         """Create Kerykeion AstrologicalSubject with full configuration"""
         if not self.available:
@@ -140,8 +147,8 @@ class KerykeionService:
                 lat=latitude,
                 lng=longitude,
                 tz_str=str(birth_datetime.tzinfo),
-                city="Unknown",
-                nation="Unknown",
+                city=city,
+                nation=nation,
                 zodiac_type=zodiac_type.value,
                 sidereal_mode="FAGAN_BRADLEY",  # Default sidereal mode
                 house_system=house_system.value,
@@ -163,6 +170,8 @@ class KerykeionService:
         timezone: str = "Europe/Moscow",
         house_system: HouseSystem = HouseSystem.PLACIDUS,
         zodiac_type: ZodiacType = ZodiacType.TROPICAL,
+        city: str = "Unknown",
+        nation: str = "Russia",
     ) -> Dict[str, Any]:
         """Get comprehensive natal chart data using Kerykeion"""
         if not self.available:
@@ -178,13 +187,15 @@ class KerykeionService:
             timezone,
             house_system,
             zodiac_type,
+            city,
+            nation,
         )
 
         if not subject:
             return {"error": "Failed to create astrological subject"}
 
         try:
-            # Extract all planetary data
+            # Extract all planetary data including modern bodies and asteroids
             planets_data = {}
             for planet in [
                 "sun",
@@ -202,6 +213,11 @@ class KerykeionService:
                 "mean_apog",
                 "osculating_apog",
                 "chiron",
+                "lilith",
+                "ceres",
+                "pallas",
+                "juno",
+                "vesta",
             ]:
                 if hasattr(subject, planet):
                     planet_info = getattr(subject, planet)
@@ -975,6 +991,214 @@ class KerykeionService:
         }
         return scores.get(aspect, 0)
 
+    def calculate_secondary_progressions(
+        self,
+        name: str,
+        birth_datetime: datetime,
+        current_date: datetime,
+        latitude: float,
+        longitude: float,
+        timezone: str = "Europe/Moscow",
+        house_system: HouseSystem = HouseSystem.PLACIDUS,
+    ) -> Dict[str, Any]:
+        """Calculate secondary progressions for given date"""
+        if not self.available:
+            return {"error": "Kerykeion not available"}
+
+        try:
+            # Calculate progressed date (1 day = 1 year)
+            birth_date = birth_datetime.date()
+            years_elapsed = (current_date.date() - birth_date).days / 365.25
+            progressed_date = birth_date + timedelta(days=years_elapsed)
+            
+            # Create progressed datetime maintaining birth time
+            progressed_datetime = datetime.combine(
+                progressed_date, birth_datetime.time()
+            ).replace(tzinfo=birth_datetime.tzinfo)
+
+            # Calculate natal chart
+            natal_subject = self.create_astrological_subject(
+                name, birth_datetime, latitude, longitude, timezone, house_system
+            )
+            
+            # Calculate progressed chart
+            progressed_subject = self.create_astrological_subject(
+                f"{name} Progressed",
+                progressed_datetime,
+                latitude,
+                longitude,
+                timezone,
+                house_system,
+            )
+
+            if not natal_subject or not progressed_subject:
+                return {"error": "Failed to create chart subjects"}
+
+            # Extract progressed planetary positions
+            progressed_planets = {}
+            for planet in ["sun", "moon", "mercury", "venus", "mars"]:
+                natal_planet = getattr(natal_subject, planet, {})
+                prog_planet = getattr(progressed_subject, planet, {})
+                
+                if natal_planet and prog_planet:
+                    natal_pos = natal_planet.get("pos", [0])[0]
+                    prog_pos = prog_planet.get("pos", [0])[0]
+                    
+                    progressed_planets[planet] = {
+                        "natal_longitude": natal_pos,
+                        "progressed_longitude": prog_pos,
+                        "movement": (prog_pos - natal_pos) % 360,
+                        "progressed_sign": prog_planet.get("sign", "Unknown"),
+                        "natal_sign": natal_planet.get("sign", "Unknown"),
+                    }
+
+            logger.info(f"KERYKEION_SERVICE_PROGRESSIONS_SUCCESS: {name}")
+            return {
+                "birth_date": birth_datetime.isoformat(),
+                "current_date": current_date.isoformat(),
+                "progressed_date": progressed_datetime.isoformat(),
+                "years_elapsed": round(years_elapsed, 2),
+                "progressed_planets": progressed_planets,
+            }
+
+        except Exception as e:
+            logger.error(f"KERYKEION_SERVICE_PROGRESSIONS_ERROR: {e}")
+            return {"error": f"Progressions calculation failed: {str(e)}"}
+
+    def calculate_solar_return(
+        self,
+        name: str,
+        birth_datetime: datetime,
+        return_year: int,
+        latitude: float,
+        longitude: float,
+        timezone: str = "Europe/Moscow",
+    ) -> Dict[str, Any]:
+        """Calculate solar return chart for given year"""
+        if not self.available:
+            return {"error": "Kerykeion not available"}
+
+        try:
+            # Get natal Sun position
+            natal_subject = self.create_astrological_subject(
+                name, birth_datetime, latitude, longitude, timezone
+            )
+            
+            if not natal_subject:
+                return {"error": "Failed to create natal subject"}
+
+            natal_sun = getattr(natal_subject, "sun", {})
+            if not natal_sun:
+                return {"error": "Failed to get natal Sun position"}
+
+            natal_sun_longitude = natal_sun.get("pos", [0])[0]
+
+            # Calculate approximate return date (Sun's position at birth)
+            return_date = datetime(return_year, birth_datetime.month, birth_datetime.day)
+            
+            # Fine-tune to exact Sun return (this is simplified)
+            # In production, you'd iterate to find exact longitude match
+            return_datetime = return_date.replace(
+                hour=birth_datetime.hour,
+                minute=birth_datetime.minute,
+                tzinfo=birth_datetime.tzinfo,
+            )
+
+            # Calculate solar return chart
+            return_subject = self.create_astrological_subject(
+                f"{name} Solar Return {return_year}",
+                return_datetime,
+                latitude,
+                longitude,
+                timezone,
+            )
+
+            if not return_subject:
+                return {"error": "Failed to create solar return subject"}
+
+            # Get full chart data for solar return
+            return_chart = self.get_full_natal_chart_data(
+                f"{name} Solar Return {return_year}",
+                return_datetime,
+                latitude,
+                longitude,
+                timezone,
+            )
+
+            logger.info(f"KERYKEION_SERVICE_SOLAR_RETURN_SUCCESS: {name} {return_year}")
+            return {
+                "natal_sun_longitude": natal_sun_longitude,
+                "return_year": return_year,
+                "return_date": return_datetime.isoformat(),
+                "return_chart": return_chart,
+                "interpretation": f"Солнечное возвращение на {return_year} год",
+            }
+
+        except Exception as e:
+            logger.error(f"KERYKEION_SERVICE_SOLAR_RETURN_ERROR: {e}")
+            return {"error": f"Solar return calculation failed: {str(e)}"}
+
+    def calculate_lunar_return(
+        self,
+        name: str,
+        birth_datetime: datetime,
+        return_date: datetime,
+        latitude: float,
+        longitude: float,
+        timezone: str = "Europe/Moscow",
+    ) -> Dict[str, Any]:
+        """Calculate lunar return chart for given date"""
+        if not self.available:
+            return {"error": "Kerykeion not available"}
+
+        try:
+            # Get natal Moon position
+            natal_subject = self.create_astrological_subject(
+                name, birth_datetime, latitude, longitude, timezone
+            )
+            
+            if not natal_subject:
+                return {"error": "Failed to create natal subject"}
+
+            natal_moon = getattr(natal_subject, "moon", {})
+            if not natal_moon:
+                return {"error": "Failed to get natal Moon position"}
+
+            natal_moon_longitude = natal_moon.get("pos", [0])[0]
+
+            # Calculate lunar return chart (simplified - would need iteration for exact match)
+            return_subject = self.create_astrological_subject(
+                f"{name} Lunar Return",
+                return_date,
+                latitude,
+                longitude,
+                timezone,
+            )
+
+            if not return_subject:
+                return {"error": "Failed to create lunar return subject"}
+
+            # Get full chart data for lunar return
+            return_chart = self.get_full_natal_chart_data(
+                f"{name} Lunar Return",
+                return_date,
+                latitude,
+                longitude,
+                timezone,
+            )
+
+            logger.info(f"KERYKEION_SERVICE_LUNAR_RETURN_SUCCESS: {name}")
+            return {
+                "natal_moon_longitude": natal_moon_longitude,
+                "return_date": return_date.isoformat(),
+                "return_chart": return_chart,
+                "interpretation": "Лунное возвращение",
+            }
+
+        except Exception as e:
+            logger.error(f"KERYKEION_SERVICE_LUNAR_RETURN_ERROR: {e}")
+            return {"error": f"Lunar return calculation failed: {str(e)}"}
+
     def get_service_capabilities(self) -> Dict[str, Any]:
         """Get detailed information about service capabilities"""
         return {
@@ -986,6 +1210,9 @@ class KerykeionService:
                 "chart_shapes": self.available,
                 "svg_generation": self.available
                 and KerykeionChartSVG is not None,
+                "secondary_progressions": self.available,
+                "solar_returns": self.available,
+                "lunar_returns": self.available,
                 "house_systems": [system.value for system in HouseSystem]
                 if self.available
                 else [],
@@ -996,6 +1223,7 @@ class KerykeionService:
                 "detailed_compatibility": self.available,
                 "element_analysis": True,
                 "quality_analysis": True,
+                "asteroid_support": True,
             },
             "limitations": []
             if self.available
