@@ -3,6 +3,7 @@
 """
 
 import logging
+import os
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -159,26 +160,39 @@ async def startup_event() -> None:
             )
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
-    
+
     # Initialize deployment and performance monitoring systems
-    try:
-        from app.services.startup_manager import startup_manager
-        
-        logger.info("Initializing deployment and performance systems...")
-        init_result = await startup_manager.initialize_performance_systems(
-            enable_cache_warmup=True,
-            enable_background_monitoring=True,
-            enable_precomputation=True,
-        )
-        
-        if init_result["success"]:
-            logger.info(f"Performance systems initialized: {len(init_result['initialization_results'])} services")
-        else:
-            logger.warning(f"Performance systems initialization had errors: {init_result.get('errors', [])}")
-            
-    except Exception as e:
-        logger.error(f"Failed to initialize performance systems: {e}")
-        # Continue startup even if performance systems fail
+    # Skip in test environment to avoid hanging
+    if os.getenv("DISABLE_BACKGROUND_TASKS") != "true":
+        try:
+            from app.services.startup_manager import startup_manager
+
+            logger.info("Initializing deployment and performance systems...")
+            init_result = await startup_manager.initialize_performance_systems(
+                enable_cache_warmup=os.getenv("DISABLE_BACKGROUND_TASKS")
+                != "true",
+                enable_background_monitoring=os.getenv(
+                    "DISABLE_PERFORMANCE_MONITORING"
+                )
+                != "true",
+                enable_precomputation=os.getenv("DISABLE_PRECOMPUTATION")
+                != "true",
+            )
+
+            if init_result["success"]:
+                logger.info(
+                    f"Performance systems initialized: {len(init_result['initialization_results'])} services"
+                )
+            else:
+                logger.warning(
+                    f"Performance systems initialization had errors: {init_result.get('errors', [])}"
+                )
+
+        except Exception as e:
+            logger.error(f"Failed to initialize performance systems: {e}")
+            # Continue startup even if performance systems fail
+    else:
+        logger.info("Background tasks disabled for testing environment")
 
 
 @app.on_event("shutdown")
@@ -188,24 +202,26 @@ async def shutdown_event() -> None:
 
     # Shutdown performance systems
     try:
-        from app.services.startup_manager import startup_manager
         from app.services.deployment_monitor import deployment_monitor
         from app.services.performance_monitor import performance_monitor
-        
+        from app.services.startup_manager import startup_manager
+
         logger.info("Shutting down performance systems...")
-        
+
         # Stop monitoring services
         await deployment_monitor.stop_monitoring()
         await performance_monitor.stop_monitoring()
-        
+
         # Shutdown all performance systems
         shutdown_result = await startup_manager.shutdown_performance_systems()
-        
+
         if shutdown_result["success"]:
             logger.info("Performance systems shutdown successfully")
         else:
-            logger.warning(f"Performance systems shutdown had errors: {shutdown_result.get('error', 'Unknown error')}")
-            
+            logger.warning(
+                f"Performance systems shutdown had errors: {shutdown_result.get('error', 'Unknown error')}"
+            )
+
     except Exception as e:
         logger.error(f"Error shutting down performance systems: {e}")
 

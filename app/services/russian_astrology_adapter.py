@@ -6,8 +6,7 @@
 import logging
 from datetime import date, datetime, time
 from enum import Enum
-from typing import Any, Dict, Optional
-
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -960,9 +959,22 @@ class RussianAstrologyAdapter:
 
         # Apply stress marks if requested
         if add_stress_marks:
-            result = result.lower()
+            # Store the original case pattern
+            result.lower()
             for word, stressed in stress_map.items():
-                result = result.replace(word, stressed)
+                # Find case-insensitive occurrences and replace them
+                import re
+
+                pattern = re.compile(re.escape(word), re.IGNORECASE)
+
+                def replace_with_case(match):
+                    original = match.group()
+                    if original[0].isupper():
+                        # If original was capitalized, capitalize the stressed version
+                        return stressed.capitalize()
+                    return stressed
+
+                result = pattern.sub(replace_with_case, result)
 
         # Insert pauses if requested
         if insert_pauses:
@@ -977,7 +989,16 @@ class RussianAstrologyAdapter:
             result = result[: max_length - 3] + "..."
 
         # Sanitize for voice output (remove script tags and dangerous content)
+        import re
+
+        # Remove script tags
         result = result.replace("<script>", "").replace("</script>", "")
+        # Remove JavaScript functions that could be dangerous
+        result = re.sub(r"alert\s*\([^)]*\)", "", result)
+        result = re.sub(r"eval\s*\([^)]*\)", "", result)
+        result = re.sub(r"document\.[^;\s]*", "", result)
+        # Remove any remaining HTML tags
+        result = re.sub(r"<[^>]*>", "", result)
 
         return result
 
@@ -1227,31 +1248,120 @@ class RussianAstrologyAdapter:
     ) -> Dict[str, Any]:
         """Localize Kerykeion planet data to Russian."""
         try:
-            if "name" in planet_data:
-                russian_planet = self.get_russian_planet_description(
-                    planet_data["name"]
-                )
-                planet_data["russian_name"] = russian_planet.get(
-                    "name", planet_data["name"]
-                )
-                planet_data["russian_keywords"] = russian_planet.get(
-                    "keywords", []
-                )
-            return planet_data
+            localized_data = planet_data.copy()
+
+            # Check if this is a dictionary of planets or a single planet's data
+            # If it has planet names as keys (sun, moon, etc.)
+            if any(
+                key in localized_data
+                for key in [
+                    "sun",
+                    "moon",
+                    "mercury",
+                    "venus",
+                    "mars",
+                    "jupiter",
+                    "saturn",
+                ]
+            ):
+                # Process each planet
+                for planet_key, planet_info in localized_data.items():
+                    if isinstance(planet_info, dict):
+                        # Translate planet name if exists
+                        if "name" in planet_info:
+                            planet_name = planet_info["name"].lower()
+                            russian_planet = (
+                                self.get_russian_planet_description(
+                                    planet_name
+                                )
+                            )
+                            planet_info["name"] = russian_planet.get(
+                                "name", planet_info["name"]
+                            )
+
+                        # Translate zodiac sign if exists
+                        if "sign" in planet_info:
+                            sign_name = planet_info["sign"].lower()
+                            russian_sign = self.get_russian_sign_description(
+                                sign_name
+                            )
+                            planet_info["sign"] = russian_sign.get(
+                                "name", planet_info["sign"]
+                            )
+            else:
+                # Handle single planet data
+                # Translate planet name
+                if "name" in localized_data:
+                    planet_name = localized_data["name"].lower()
+                    russian_planet = self.get_russian_planet_description(
+                        planet_name
+                    )
+                    localized_data["name"] = russian_planet.get(
+                        "name", localized_data["name"]
+                    )
+
+                # Translate zodiac sign
+                if "sign" in localized_data:
+                    sign_name = localized_data["sign"].lower()
+                    russian_sign = self.get_russian_sign_description(sign_name)
+                    localized_data["sign"] = russian_sign.get(
+                        "name", localized_data["sign"]
+                    )
+
+            return localized_data
         except Exception as e:
             logger.error(f"RUSSIAN_ADAPTER_PLANET_LOCALIZE_ERROR: {e}")
             return planet_data
 
     def localize_kerykeion_aspect_data(
-        self, aspect_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, aspect_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Localize Kerykeion aspect data to Russian."""
         try:
-            if "aspect" in aspect_data:
-                aspect_data["russian_aspect"] = aspect_data[
-                    "aspect"
-                ]  # Stub implementation
-            return aspect_data
+            localized_aspects = []
+
+            # Russian aspect translations
+            aspect_translations = {
+                "conjunction": "Соединение",
+                "sextile": "Секстиль",
+                "square": "Квадрат",
+                "trine": "Тригон",
+                "opposition": "Оппозиция",
+                "quincunx": "Квинконс",
+                "semisextile": "Полусекстиль",
+                "semisquare": "Полуквадрат",
+                "sesquiquadrate": "Полутораквадрат",
+            }
+
+            for aspect in aspect_data:
+                localized_aspect = aspect.copy()
+
+                # Translate planet names
+                if "planet1" in aspect:
+                    planet1_desc = self.get_russian_planet_description(
+                        aspect["planet1"]
+                    )
+                    if planet1_desc:
+                        localized_aspect["planet1"] = planet1_desc["name"]
+
+                if "planet2" in aspect:
+                    planet2_desc = self.get_russian_planet_description(
+                        aspect["planet2"]
+                    )
+                    if planet2_desc:
+                        localized_aspect["planet2"] = planet2_desc["name"]
+
+                # Translate aspect type
+                if "aspect" in aspect:
+                    aspect_name = aspect["aspect"].lower()
+                    if aspect_name in aspect_translations:
+                        localized_aspect["aspect"] = aspect_translations[
+                            aspect_name
+                        ]
+
+                localized_aspects.append(localized_aspect)
+
+            return localized_aspects
         except Exception as e:
             logger.error(f"RUSSIAN_ADAPTER_ASPECT_LOCALIZE_ERROR: {e}")
             return aspect_data
@@ -1262,11 +1372,86 @@ class RussianAstrologyAdapter:
         """Localize complete astrological data to Russian."""
         try:
             localized_data = data.copy()
-            if "planets" in data:
-                localized_data["planets"] = {
-                    planet: self.localize_kerykeion_planet_data(planet_data)
-                    for planet, planet_data in data["planets"].items()
-                }
+
+            # Handle nested chart structure
+            if "natal_chart" in data:
+                natal_chart = data["natal_chart"].copy()
+
+                # Localize planets
+                if "planets" in natal_chart:
+                    natal_chart[
+                        "planets"
+                    ] = self.localize_kerykeion_planet_data(
+                        natal_chart["planets"]
+                    )
+
+                # Localize aspects
+                if "aspects" in natal_chart:
+                    natal_chart[
+                        "aspects"
+                    ] = self.localize_kerykeion_aspect_data(
+                        natal_chart["aspects"]
+                    )
+
+                localized_data["natal_chart"] = natal_chart
+
+            # Handle transit data
+            if (
+                "transit_data" in data
+                and "current_transits" in data["transit_data"]
+            ):
+                transit_data = data["transit_data"].copy()
+                current_transits = []
+
+                for transit in data["transit_data"]["current_transits"]:
+                    localized_transit = transit.copy()
+
+                    # Translate transit planet
+                    if "transit_planet" in transit:
+                        planet_desc = self.get_russian_planet_description(
+                            transit["transit_planet"]
+                        )
+                        if planet_desc:
+                            localized_transit["transit_planet"] = planet_desc[
+                                "name"
+                            ]
+
+                    # Translate natal planet
+                    if "natal_planet" in transit:
+                        planet_desc = self.get_russian_planet_description(
+                            transit["natal_planet"]
+                        )
+                        if planet_desc:
+                            localized_transit["natal_planet"] = planet_desc[
+                                "name"
+                            ]
+
+                    # Translate aspect
+                    if "aspect" in transit:
+                        aspect_translations = {
+                            "conjunction": "Соединение",
+                            "sextile": "Секстиль",
+                            "square": "Квадрат",
+                            "trine": "Тригон",
+                            "opposition": "Оппозиция",
+                        }
+                        aspect_name = transit["aspect"].lower()
+                        if aspect_name in aspect_translations:
+                            localized_transit["aspect"] = aspect_translations[
+                                aspect_name
+                            ]
+
+                    current_transits.append(localized_transit)
+
+                transit_data["current_transits"] = current_transits
+                localized_data["transit_data"] = transit_data
+
+            # Direct planets localization for simpler structures
+            elif "planets" in data:
+                localized_data[
+                    "planets"
+                ] = self.localize_kerykeion_planet_data(data["planets"])
+
             return localized_data
         except Exception as e:
             logger.error(f"RUSSIAN_ADAPTER_COMPLETE_LOCALIZE_ERROR: {e}")
@@ -1277,33 +1462,52 @@ class RussianAstrologyAdapter:
     ) -> str:
         """Generate voice-optimized interpretation."""
         try:
-            base_interpretation = self.generate_russian_interpretation()
+            # Generate basic interpretation based on provided data
+            if "name" in data and "sign" in data:
+                # Planet interpretation
+                planet_desc = self.get_russian_planet_description(data["name"])
+                sign_desc = self.get_russian_sign_description(data["sign"])
+
+                if planet_desc and sign_desc:
+                    base_interpretation = (
+                        f"{planet_desc['name']} в знаке {sign_desc['name']}"
+                    )
+                    if planet_desc.get("description"):
+                        base_interpretation += (
+                            f". {planet_desc['description'][:100]}..."
+                        )
+                else:
+                    base_interpretation = f"{data.get('name', 'планета')} в знаке {data.get('sign', 'неизвестном')}"
+            else:
+                # Fallback interpretation
+                base_interpretation = self.generate_russian_interpretation()
+
             return self.format_for_voice(
                 base_interpretation, add_stress_marks=True
             )
         except Exception as e:
             logger.error(f"RUSSIAN_ADAPTER_VOICE_INTERPRETATION_ERROR: {e}")
-            return "Астрологическая интерпретация временно недоступна."
+            return "Для интерпретации необходимы астрологические данные"
 
     def get_stress_marks_dictionary(self) -> Dict[str, str]:
         """Get stress marks dictionary for astrological terms."""
         return {
-            "овен": "овéн",
-            "телец": "телéц",
+            "овен": "ове́н",
+            "телец": "теле́ц",
             "близнецы": "близнецы́",
             "рак": "рак",
             "лев": "лев",
-            "дева": "дéва",
+            "дева": "де́ва",
             "весы": "весы́",
             "скорпион": "скорпио́н",
-            "стрелец": "стрелéц",
+            "стрелец": "стреле́ц",
             "козерог": "козеро́г",
-            "водолей": "водолéй",
+            "водолей": "водоле́й",
             "рыбы": "ры́бы",
             "солнце": "со́лнце",
             "луна": "луна́",
             "меркурий": "мерку́рий",
-            "венера": "венéра",
+            "венера": "вене́ра",
             "марс": "марс",
             "юпитер": "юпи́тер",
             "сатурн": "сату́рн",

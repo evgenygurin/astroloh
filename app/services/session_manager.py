@@ -283,6 +283,10 @@ class SessionManager:
             last_activity = datetime.fromisoformat(
                 session_data["last_activity"]
             )
+            # Ensure last_activity is timezone-aware
+            if last_activity.tzinfo is None:
+                last_activity = last_activity.replace(tzinfo=timezone.utc)
+
             return (
                 datetime.now(timezone.utc) - last_activity
                 > self._session_timeout

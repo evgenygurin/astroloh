@@ -10,9 +10,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.api.yandex_dialogs import yandex_webhook
-from app.models.yandex_models import (
-    YandexZodiacSign,
-)
+from app.models.yandex_models import YandexZodiacSign
 from app.services.ai_horoscope_service import AIHoroscopeService
 from app.services.intent_recognition import IntentRecognizer, YandexIntent
 from app.services.yandex_gpt import YandexGPTClient

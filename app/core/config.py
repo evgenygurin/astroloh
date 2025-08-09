@@ -64,24 +64,24 @@ class Settings(BaseSettings):
     LOG_FILE_PATH: str = "logs/astroloh.log"
     LOG_MAX_SIZE: int = 10  # MB
     LOG_BACKUP_COUNT: int = 5
-    
+
     # Production deployment settings
     ENABLE_DEPLOYMENT_MONITORING: bool = True
     ENABLE_FEATURE_FLAGS: bool = True
     ENABLE_ROLLBACK_AUTOMATION: bool = True
     REDIS_URL: Optional[str] = None  # For caching and feature flags
-    
+
     # Deployment phase settings
-    DEPLOYMENT_PHASE_1_PERCENTAGE: float = 5.0   # 5% rollout
+    DEPLOYMENT_PHASE_1_PERCENTAGE: float = 5.0  # 5% rollout
     DEPLOYMENT_PHASE_2_PERCENTAGE: float = 20.0  # 20% rollout
     DEPLOYMENT_PHASE_3_PERCENTAGE: float = 50.0  # 50% rollout
-    DEPLOYMENT_FULL_PERCENTAGE: float = 100.0    # Full rollout
-    
+    DEPLOYMENT_FULL_PERCENTAGE: float = 100.0  # Full rollout
+
     # Monitoring thresholds
-    ALERT_RESPONSE_TIME_MS: int = 3000      # Max response time for Alice
-    ALERT_ERROR_RATE_PERCENT: float = 5.0   # Max error rate
+    ALERT_RESPONSE_TIME_MS: int = 3000  # Max response time for Alice
+    ALERT_ERROR_RATE_PERCENT: float = 5.0  # Max error rate
     ALERT_FALLBACK_RATE_PERCENT: float = 25.0  # Max fallback usage
-    ALERT_USER_SATISFACTION_MIN: float = 7.0   # Min satisfaction score
+    ALERT_USER_SATISFACTION_MIN: float = 7.0  # Min satisfaction score
 
     @model_validator(mode="before")
     @classmethod

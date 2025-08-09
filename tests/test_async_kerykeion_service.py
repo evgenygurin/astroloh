@@ -5,7 +5,7 @@ Tests async operations, caching, performance monitoring, and batch processing.
 
 import asyncio
 from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -134,7 +134,7 @@ class TestAsyncKerykeionServiceAsync:
                 latitude=sample_birth_data["latitude"],
                 longitude=sample_birth_data["longitude"],
                 timezone=sample_birth_data["timezone"],
-                use_cache=False
+                use_cache=False,
             )
 
             assert result is not None
@@ -161,13 +161,12 @@ class TestAsyncKerykeionServiceAsync:
         with patch.object(
             service, "get_full_natal_chart_data", return_value=cached_result
         ) as mock_get_chart:
-            
             result = await service.calculate_natal_chart_async(
                 birth_datetime=sample_birth_data["birth_datetime"],
                 latitude=sample_birth_data["latitude"],
                 longitude=sample_birth_data["longitude"],
                 timezone=sample_birth_data["timezone"],
-                use_cache=False  # Disable cache to test direct calculation
+                use_cache=False,  # Disable cache to test direct calculation
             )
 
             assert result == cached_result
@@ -191,13 +190,12 @@ class TestAsyncKerykeionServiceAsync:
         with patch.object(
             service, "get_full_natal_chart_data", return_value=fresh_result
         ) as mock_get_chart:
-            
             result = await service.calculate_natal_chart_async(
                 birth_datetime=sample_birth_data["birth_datetime"],
                 latitude=sample_birth_data["latitude"],
                 longitude=sample_birth_data["longitude"],
                 timezone=sample_birth_data["timezone"],
-                use_cache=False  # Disable cache to test direct calculation
+                use_cache=False,  # Disable cache to test direct calculation
             )
 
             assert result == fresh_result
@@ -267,7 +265,7 @@ class TestAsyncKerykeionServiceAsync:
                 latitude=sample_birth_data["latitude"],
                 longitude=sample_birth_data["longitude"],
                 timezone=sample_birth_data["timezone"],
-                use_cache=False
+                use_cache=False,
             )
 
             # Performance stats should be updated
@@ -303,7 +301,7 @@ class TestAsyncKerykeionServiceAsync:
                 birth_datetime=sample_birth_data["birth_datetime"],
                 latitude=sample_birth_data["latitude"],
                 longitude=sample_birth_data["longitude"],
-                timezone=sample_birth_data["timezone"]
+                timezone=sample_birth_data["timezone"],
             )
 
             # Should detect slow calculation (>0.05s threshold if implemented)
@@ -323,7 +321,7 @@ class TestAsyncKerykeionServiceAsync:
                 birth_datetime=sample_birth_data["birth_datetime"],
                 latitude=sample_birth_data["latitude"],
                 longitude=sample_birth_data["longitude"],
-                timezone=sample_birth_data["timezone"]
+                timezone=sample_birth_data["timezone"],
             )
 
             # Should return error result or None depending on implementation
@@ -359,7 +357,7 @@ class TestAsyncKerykeionServiceAsync:
                     latitude=birth_data["latitude"],
                     longitude=birth_data["longitude"],
                     timezone=birth_data["timezone"],
-                    use_cache=False
+                    use_cache=False,
                 )
                 for birth_data in birth_data_sets
             ]
@@ -389,7 +387,7 @@ class TestAsyncKerykeionServicePerformanceStats:
 
         assert isinstance(stats, dict)
         assert "async_kerykeion_stats" in stats
-        
+
         service_stats = stats["async_kerykeion_stats"]
         assert "total_operations" in service_stats
         assert "cached_operations" in service_stats
@@ -430,13 +428,13 @@ class TestAsyncKerykeionServiceWithoutKerykeion:
         """Test that calculations return error when Kerykeion unavailable"""
         # Use unique birth data to avoid cache hit
         unique_datetime = datetime(1955, 3, 3, 8, 45)
-        
+
         result = await service_without_kerykeion.calculate_natal_chart_async(
             birth_datetime=unique_datetime,
             latitude=45.5017,  # Milan
             longitude=9.1967,
             timezone="Europe/Rome",
-            use_cache=False  # Disable cache to ensure error occurs
+            use_cache=False,  # Disable cache to ensure error occurs
         )
 
         # Should return error indication

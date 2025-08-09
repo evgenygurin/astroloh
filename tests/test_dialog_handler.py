@@ -228,7 +228,7 @@ class TestDialogHandler:
     async def test_handle_request_error_handling(self):
         """Test error handling in request processing."""
         request = self.create_mock_request("test command")
-        
+
         # Mock error response
         mock_error_response = YandexResponse(
             text="Произошла ошибка, попробуйте еще раз"
@@ -236,19 +236,32 @@ class TestDialogHandler:
 
         # Create mock services
         mock_intent_recognizer = Mock()
-        mock_intent_recognizer.recognize_intent.side_effect = Exception("Test error")
-        
+        mock_intent_recognizer.recognize_intent.side_effect = Exception(
+            "Test error"
+        )
+
         mock_conversation_manager = AsyncMock()
-        mock_conversation_manager.process_conversation.return_value = (None, {})
-        
+        mock_conversation_manager.process_conversation.return_value = (
+            None,
+            {},
+        )
+
         mock_response_formatter = Mock()
-        mock_response_formatter.format_error_response.return_value = mock_error_response
-        mock_response_formatter.format_clarification_response.return_value = mock_error_response
-        mock_response_formatter.format_fallback_response.return_value = mock_error_response
-        
+        mock_response_formatter.format_error_response.return_value = (
+            mock_error_response
+        )
+        mock_response_formatter.format_clarification_response.return_value = (
+            mock_error_response
+        )
+        mock_response_formatter.format_fallback_response.return_value = (
+            mock_error_response
+        )
+
         mock_dialog_flow_manager = AsyncMock()
         mock_error_recovery_manager = AsyncMock()
-        mock_error_recovery_manager.handle_error.return_value = mock_error_response
+        mock_error_recovery_manager.handle_error.return_value = (
+            mock_error_response
+        )
 
         with patch.multiple(
             self.dialog_handler,
@@ -257,7 +270,10 @@ class TestDialogHandler:
             response_formatter=mock_response_formatter,
             dialog_flow_manager=mock_dialog_flow_manager,
             error_recovery_manager=mock_error_recovery_manager,
-        ), patch('app.services.error_recovery.ResponseFormatter', return_value=mock_response_formatter):
+        ), patch(
+            "app.services.error_recovery.ResponseFormatter",
+            return_value=mock_response_formatter,
+        ):
             # Mock response generation
             self.dialog_handler._generate_contextual_response = AsyncMock(
                 return_value=mock_error_response
@@ -401,16 +417,25 @@ class TestDialogHandler:
         mock_processed_request.intent = YandexIntent.HELP
         mock_processed_request.confidence = 0.9
         mock_processed_request.entities = {}
-        mock_intent_recognizer.recognize_intent.return_value = mock_processed_request
-        
+        mock_intent_recognizer.recognize_intent.return_value = (
+            mock_processed_request
+        )
+
         mock_conversation_manager = AsyncMock()
-        mock_conversation_manager.process_conversation.return_value = (DialogState.EXPLORING_COMPATIBILITY, {})
-        
+        mock_conversation_manager.process_conversation.return_value = (
+            DialogState.EXPLORING_COMPATIBILITY,
+            {},
+        )
+
         mock_response_formatter = Mock()
-        mock_response_formatter.format_error_response.return_value = mock_response
-        
+        mock_response_formatter.format_error_response.return_value = (
+            mock_response
+        )
+
         mock_dialog_flow_manager = AsyncMock()
-        mock_dialog_flow_manager.get_current_state.return_value = DialogState.INITIAL
+        mock_dialog_flow_manager.get_current_state.return_value = (
+            DialogState.INITIAL
+        )
 
         with patch.multiple(
             self.dialog_handler,
