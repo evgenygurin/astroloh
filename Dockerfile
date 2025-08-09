@@ -26,7 +26,7 @@ COPY README.md ./
 COPY app/ ./app/
 
 # Install Python dependencies with uv (full dependencies for Linux)
-RUN uv venv && uv pip install -e ".[full,dev]"
+RUN uv venv && uv pip install -e "file:///app[full,dev]"
 
 # Production stage
 FROM python:3.12-slim AS production
