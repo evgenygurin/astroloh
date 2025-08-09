@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
+# Set working directory for build context
+WORKDIR /app
+
 # Copy dependency files first for better layer caching
 COPY pyproject.toml ./
 # Include README for project metadata and source package for editable install
@@ -47,7 +50,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install uv in production stage and copy virtual environment from builder stage
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-COPY --from=builder /.venv /opt/venv
+COPY --from=builder /app/.venv /opt/venv
 
 # Create non-root user with specific UID/GID for security
 RUN groupadd --gid 1001 astroloh && \
