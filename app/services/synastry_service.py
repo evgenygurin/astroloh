@@ -47,6 +47,20 @@ class SynastryResult:
         self.strengths: List[str] = []
         self.advice: List[str] = []
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "aspects": self.aspects,
+            "compatibility_score": self.compatibility_score,
+            "element_compatibility": self.element_compatibility,
+            "quality_compatibility": self.quality_compatibility,
+            "house_overlays": self.house_overlays,
+            "composite_midpoints": self.composite_midpoints,
+            "relationship_highlights": self.relationship_highlights,
+            "challenges": self.challenges,
+            "strengths": self.strengths,
+            "advice": self.advice,
+        }
+
 
 class SynastryService:
     """Сервис для расчета синастрии и анализа совместимости"""
@@ -151,7 +165,31 @@ class SynastryService:
         try:
             if not self.kerykeion_service.is_available():
                 logger.warning("SYNASTRY_ADVANCED: Fallback to basic calculator")
-                return await self.calculate_synastry(person1, person2).__dict__
+                basic = await self.calculate_synastry(person1, person2)
+                return {
+                    "partner1": {"name": person1.name},
+                    "partner2": {"name": person2.name},
+                    "compatibility": {
+                        "overall_score": basic.compatibility_score,
+                        "element_compatibility": basic.element_compatibility,
+                        "quality_compatibility": basic.quality_compatibility,
+                        "aspects": basic.aspects,
+                        "strengths": basic.strengths,
+                        "challenges": basic.challenges,
+                        "advice": basic.advice,
+                        "highlights": basic.relationship_highlights,
+                    },
+                    "house_overlays": basic.house_overlays or {},
+                    "composite_chart": {"midpoints": basic.composite_midpoints or {}},
+                    "karmic_connections": {"connections": [], "strength": "unknown"},
+                    "interpretation": self._generate_synastry_interpretation({
+                        "overall_score": basic.compatibility_score
+                    }),
+                    "service_info": {
+                        "method": "Basic Calculator Fallback",
+                        "timestamp": datetime.now().isoformat(),
+                    },
+                }
 
             # Создаем полные натальные карты через Kerykeion
             birth_time1 = person1.birth_time or person1.birth_date.replace(hour=12, minute=0)
