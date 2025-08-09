@@ -99,6 +99,456 @@ class AstroAIService:
                 logger.warning(
                     f"ASTRO_AI_NATAL_FALLBACK: Kerykeion error - {chart_data['error']}"
                 )
+                # Fallback to basic calculator
+                chart_data = await self._get_fallback_chart_data(
+                    name, birth_time, birth_place, timezone_str
+                )
+
+            # Enhance chart data with additional AI-friendly context
+            enhanced_chart = await self._enhance_chart_for_ai(chart_data, consultation_focus)
+
+            # Generate AI interpretation using enhanced data
+            ai_interpretation = await self._generate_ai_natal_reading(
+                name, enhanced_chart, consultation_focus
+            )
+
+            # Combine technical data with AI interpretation
+            result = {
+                "person_info": {
+                    "name": name,
+                    "birth_date": birth_date.isoformat(),
+                    "birth_time": birth_time.isoformat(),
+                    "birth_place": birth_place,
+                    "timezone": timezone_str
+                },
+                "chart_data": chart_data,
+                "enhanced_analysis": enhanced_chart,
+                "ai_interpretation": ai_interpretation,
+                "consultation_type": ConsultationType.NATAL_CHART.value,
+                "service_info": {
+                    "kerykeion_used": "error" not in chart_data,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }
+
+            logger.info(f"ASTRO_AI_NATAL_SUCCESS: {name}")
+            return result
+
+        except Exception as e:
+            logger.error(f"ASTRO_AI_NATAL_ERROR: {e}")
+            return {"error": f"Natal interpretation failed: {str(e)}"}
+
+    async def _enhance_chart_for_ai(
+        self, chart_data: Dict[str, Any], focus: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Enhances chart data with AI-friendly analysis"""
+        try:
+            enhanced = {
+                "planetary_strengths": self._analyze_planetary_strengths(chart_data),
+                "dominant_elements": self._get_dominant_elements(chart_data),
+                "key_aspects": self._identify_key_aspects(chart_data),
+                "house_emphasis": self._analyze_house_emphasis(chart_data),
+                "chart_patterns": self._identify_chart_patterns(chart_data),
+                "life_themes": self._extract_life_themes(chart_data, focus)
+            }
+
+            # Add Arabic Parts analysis if available
+            if self.kerykeion_service.is_available():
+                subject = self._get_subject_from_chart_data(chart_data)
+                if subject:
+                    enhanced["arabic_parts"] = self.kerykeion_service.calculate_arabic_parts_extended(subject)
+
+            return enhanced
+
+        except Exception as e:
+            logger.error(f"ASTRO_AI_ENHANCE_ERROR: {e}")
+            return {}
+
+    def _analyze_planetary_strengths(self, chart_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyzes planetary strengths and dignities"""
+        strengths = {}
+        planets = chart_data.get("planets", {})
+
+        dignity_scores = {
+            # Traditional dignity scores for planets in signs
+            "sun": {"Leo": 5, "Aries": 4, "Sagittarius": 3, "Libra": -2, "Aquarius": -2},
+            "moon": {"Cancer": 5, "Taurus": 4, "Pisces": 3, "Capricorn": -2, "Scorpio": -2},
+            "mercury": {"Gemini": 5, "Virgo": 5, "Aquarius": 3, "Pisces": -2, "Sagittarius": -2},
+            "venus": {"Taurus": 5, "Libra": 5, "Pisces": 4, "Virgo": -2, "Aries": -2},
+            "mars": {"Aries": 5, "Scorpio": 5, "Leo": 3, "Libra": -2, "Cancer": -2},
+            "jupiter": {"Sagittarius": 5, "Pisces": 5, "Cancer": 4, "Gemini": -2, "Virgo": -2},
+            "saturn": {"Capricorn": 5, "Aquarius": 5, "Libra": 4, "Cancer": -2, "Leo": -2}
+        }
+
+        for planet_name, planet_data in planets.items():
+            if planet_name in dignity_scores:
+                sign = planet_data.get("sign", "")
+                # Convert English sign names to Russian for lookup
+                sign_russian = self._get_russian_sign(sign)
+                dignity_score = dignity_scores[planet_name].get(sign_russian, 0)
+                
+                # Factor in aspects and house position
+                house = planet_data.get("house")
+                house_strength = self._get_house_strength(planet_name, house)
+                
+                total_strength = dignity_score + house_strength
+                strength_level = "weak"
+                if total_strength >= 4:
+                    strength_level = "very_strong"
+                elif total_strength >= 2:
+                    strength_level = "strong"
+                elif total_strength >= 0:
+                    strength_level = "moderate"
+
+                strengths[planet_name] = {
+                    "dignity_score": dignity_score,
+                    "house_strength": house_strength,
+                    "total_strength": total_strength,
+                    "level": strength_level,
+                    "sign": sign,
+                    "house": house
+                }
+
+        return strengths
+
+    def _get_house_strength(self, planet: str, house: Optional[int]) -> int:
+        """Gets house strength for planet"""
+        if not house:
+            return 0
+            
+        # Traditional house strengths for planets
+        house_strengths = {
+            "sun": {1: 2, 5: 2, 9: 2, 10: 3, 11: 1},
+            "moon": {1: 1, 4: 3, 7: 1, 10: 1},
+            "mercury": {1: 1, 3: 2, 6: 1, 10: 2},
+            "venus": {2: 2, 5: 2, 7: 2, 11: 1},
+            "mars": {1: 2, 3: 1, 6: 1, 10: 2},
+            "jupiter": {1: 1, 4: 1, 9: 3, 11: 2},
+            "saturn": {6: 2, 8: 1, 10: 3, 12: 1}
+        }
+        
+        return house_strengths.get(planet, {}).get(house, 0)
+
+    def _get_dominant_elements(self, chart_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyzes elemental balance"""
+        element_dist = chart_data.get("element_distribution", {})
+        quality_dist = chart_data.get("quality_distribution", {})
+        
+        total_planets = sum(element_dist.values()) if element_dist else 0
+        if total_planets == 0:
+            return {}
+
+        # Calculate percentages and find dominant element/quality
+        element_percentages = {elem: count/total_planets*100 for elem, count in element_dist.items()}
+        quality_percentages = {qual: count/total_planets*100 for qual, count in quality_dist.items()}
+
+        dominant_element = max(element_percentages, key=element_percentages.get) if element_percentages else None
+        dominant_quality = max(quality_percentages, key=quality_percentages.get) if quality_percentages else None
+
+        return {
+            "element_distribution": element_percentages,
+            "quality_distribution": quality_percentages,
+            "dominant_element": dominant_element,
+            "dominant_quality": dominant_quality,
+            "element_balance": self._assess_elemental_balance(element_percentages)
+        }
+
+    def _assess_elemental_balance(self, element_percentages: Dict[str, float]) -> str:
+        """Assesses the balance of elements"""
+        if not element_percentages:
+            return "unknown"
+            
+        values = list(element_percentages.values())
+        max_val = max(values)
+        min_val = min(values)
+        
+        if max_val > 60:
+            return "heavily_imbalanced"
+        elif max_val > 40:
+            return "moderately_imbalanced"  
+        elif max_val - min_val < 20:
+            return "well_balanced"
+        else:
+            return "slightly_imbalanced"
+
+    def _identify_key_aspects(self, chart_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Identifies the most important aspects"""
+        aspects = chart_data.get("aspects", [])
+        if not aspects:
+            return []
+
+        # Sort by strength and select top aspects
+        key_aspects = []
+        for aspect in aspects[:10]:  # Top 10 aspects
+            if aspect.get("orb", 10) <= 6:  # Only tight aspects
+                key_aspects.append({
+                    "planets": f"{aspect.get('planet1', '')} - {aspect.get('planet2', '')}",
+                    "aspect": aspect.get("aspect", ""),
+                    "orb": aspect.get("orb", 0),
+                    "strength": aspect.get("strength", ""),
+                    "interpretation": aspect.get("interpretation", "")
+                })
+
+        return key_aspects
+
+    def _analyze_house_emphasis(self, chart_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyzes which houses are emphasized"""
+        planets = chart_data.get("planets", {})
+        house_counts = {}
+        
+        for planet_data in planets.values():
+            house = planet_data.get("house")
+            if house:
+                house_counts[house] = house_counts.get(house, 0) + 1
+
+        # Find emphasized houses (3+ planets)
+        emphasized_houses = {house: count for house, count in house_counts.items() if count >= 2}
+        
+        return {
+            "house_distribution": house_counts,
+            "emphasized_houses": emphasized_houses,
+            "most_emphasized": max(house_counts, key=house_counts.get) if house_counts else None
+        }
+
+    def _identify_chart_patterns(self, chart_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Identifies chart patterns"""
+        # Use existing chart shape analysis
+        chart_shape = chart_data.get("chart_shape", {})
+        
+        patterns = {
+            "chart_shape": chart_shape.get("shape", "Unknown"),
+            "shape_description": chart_shape.get("description", ""),
+        }
+        
+        # Add stellium detection
+        planets = chart_data.get("planets", {})
+        patterns["stelliums"] = self._detect_stelliums(planets)
+        
+        return patterns
+
+    def _detect_stelliums(self, planets: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Detects stelliums (3+ planets in same sign or house)"""
+        sign_groups = {}
+        house_groups = {}
+        
+        for planet_name, planet_data in planets.items():
+            sign = planet_data.get("sign")
+            house = planet_data.get("house")
+            
+            if sign:
+                if sign not in sign_groups:
+                    sign_groups[sign] = []
+                sign_groups[sign].append(planet_name)
+                
+            if house:
+                if house not in house_groups:
+                    house_groups[house] = []
+                house_groups[house].append(planet_name)
+
+        stelliums = []
+        
+        # Sign stelliums
+        for sign, planets_list in sign_groups.items():
+            if len(planets_list) >= 3:
+                stelliums.append({
+                    "type": "sign",
+                    "location": sign,
+                    "planets": planets_list,
+                    "count": len(planets_list)
+                })
+                
+        # House stelliums
+        for house, planets_list in house_groups.items():
+            if len(planets_list) >= 3:
+                stelliums.append({
+                    "type": "house",
+                    "location": f"House {house}",
+                    "planets": planets_list,
+                    "count": len(planets_list)
+                })
+                
+        return stelliums
+
+    def _extract_life_themes(self, chart_data: Dict[str, Any], focus: Optional[str]) -> List[str]:
+        """Extracts major life themes from chart"""
+        themes = []
+        
+        # Based on dominant planets
+        dominant_planets = chart_data.get("dominant_planets", [])
+        for planet in dominant_planets[:2]:  # Top 2 dominant planets
+            planet_themes = {
+                "Sun": "самовыражение и лидерство",
+                "Moon": "эмоции и интуиция", 
+                "Mercury": "коммуникация и обучение",
+                "Venus": "любовь и красота",
+                "Mars": "действие и энергия",
+                "Jupiter": "расширение и философия",
+                "Saturn": "дисциплина и структура"
+            }
+            
+            if planet in planet_themes:
+                themes.append(planet_themes[planet])
+        
+        # Add focus-specific themes
+        if focus:
+            focus_themes = {
+                "career": "профессиональная реализация",
+                "love": "любовные отношения",
+                "health": "здоровье и благополучие",
+                "money": "финансовая стабильность",
+                "spiritual": "духовное развитие"
+            }
+            if focus in focus_themes:
+                themes.append(focus_themes[focus])
+                
+        return themes
+
+    def _get_russian_sign(self, english_sign: str) -> str:
+        """Converts English sign name to Russian"""
+        sign_map = {
+            "Aries": "Овен", "Taurus": "Телец", "Gemini": "Близнецы",
+            "Cancer": "Рак", "Leo": "Лев", "Virgo": "Дева",
+            "Libra": "Весы", "Scorpio": "Скорпион", "Sagittarius": "Стрелец",
+            "Capricorn": "Козерог", "Aquarius": "Водолей", "Pisces": "Рыбы"
+        }
+        return sign_map.get(english_sign, english_sign)
+
+    async def _generate_ai_natal_reading(
+        self, name: str, enhanced_chart: Dict[str, Any], focus: Optional[str]
+    ) -> Dict[str, Any]:
+        """Generates AI interpretation using enhanced chart data"""
+        try:
+            # Create comprehensive prompt for Yandex GPT
+            prompt = self._build_natal_prompt(name, enhanced_chart, focus)
+            
+            # Generate AI response
+            ai_response = await self.gpt_client.generate_completion(
+                prompt=prompt,
+                max_tokens=1500,
+                temperature=0.7
+            )
+            
+            if not ai_response or "error" in ai_response:
+                logger.error("ASTRO_AI_GPT_ERROR: Failed to generate AI response")
+                return {"error": "AI generation failed"}
+
+            # Process and structure the response
+            interpretation = {
+                "summary": ai_response.get("text", "")[:800],  # Limit for Alice
+                "key_insights": self._extract_key_insights(ai_response.get("text", "")),
+                "recommendations": self._extract_recommendations(ai_response.get("text", "")),
+                "focus_area": focus,
+                "ai_confidence": ai_response.get("confidence", 0.8)
+            }
+            
+            # Apply content filtering
+            filtered_content = await ai_content_filter.filter_astrological_content(
+                interpretation["summary"], ContentSafetyLevel.MODERATE
+            )
+            
+            if filtered_content.get("is_safe", True):
+                interpretation["summary"] = filtered_content.get("filtered_text", interpretation["summary"])
+            else:
+                logger.warning("ASTRO_AI_CONTENT_FILTERED: Unsafe content detected")
+                interpretation["summary"] = "Астрологический анализ требует дополнительной проверки"
+
+            return interpretation
+            
+        except Exception as e:
+            logger.error(f"ASTRO_AI_READING_ERROR: {e}")
+            return {"error": f"AI reading generation failed: {str(e)}"}
+
+    def _build_natal_prompt(
+        self, name: str, enhanced_chart: Dict[str, Any], focus: Optional[str]
+    ) -> str:
+        """Builds comprehensive prompt for natal chart AI interpretation"""
+        prompt_parts = [
+            f"Создай персональную астрологическую консультацию для {name}.",
+            "Используй профессиональный, но дружелюбный тон.",
+            ""
+        ]
+        
+        # Add planetary strengths
+        if "planetary_strengths" in enhanced_chart:
+            strong_planets = [p for p, data in enhanced_chart["planetary_strengths"].items() 
+                           if data.get("level") in ["strong", "very_strong"]]
+            if strong_planets:
+                prompt_parts.append(f"Сильные планеты в карте: {', '.join(strong_planets)}")
+        
+        # Add dominant elements
+        if "dominant_elements" in enhanced_chart:
+            dom_elem = enhanced_chart["dominant_elements"]
+            if dom_elem.get("dominant_element"):
+                prompt_parts.append(f"Доминирующий элемент: {dom_elem['dominant_element']}")
+        
+        # Add key aspects
+        if "key_aspects" in enhanced_chart:
+            key_aspects = enhanced_chart["key_aspects"][:3]  # Top 3
+            if key_aspects:
+                aspects_text = "; ".join([f"{asp['planets']} {asp['aspect']}" for asp in key_aspects])
+                prompt_parts.append(f"Ключевые аспекты: {aspects_text}")
+        
+        # Add life themes
+        if "life_themes" in enhanced_chart:
+            themes = enhanced_chart["life_themes"][:3]  # Top 3
+            if themes:
+                prompt_parts.append(f"Основные темы жизни: {', '.join(themes)}")
+                
+        # Add focus area if specified
+        if focus:
+            focus_prompts = {
+                "career": "Сосредоточься на карьере и профессиональной реализации.",
+                "love": "Сделай акцент на любовных отношениях и партнерстве.",
+                "health": "Обрати внимание на здоровье и жизненную энергию.",
+                "money": "Проанализируй финансовые перспективы.",
+                "spiritual": "Рассмотри духовный путь и личностный рост."
+            }
+            prompt_parts.append(focus_prompts.get(focus, ""))
+            
+        prompt_parts.extend([
+            "",
+            "Структура ответа:",
+            "1. Краткая характеристика личности (2-3 предложения)",
+            "2. Основные сильные стороны",
+            "3. Области для развития", 
+            "4. Рекомендации и советы",
+            "",
+            "Ограничь ответ 800 символами для голосового интерфейса."
+        ])
+        
+        return "\n".join(prompt_parts)
+
+    def _extract_key_insights(self, text: str) -> List[str]:
+        """Extracts key insights from AI response"""
+        # Simple extraction - could be enhanced with NLP
+        sentences = text.split(".")
+        insights = []
+        
+        for sentence in sentences[:5]:  # First 5 sentences
+            sentence = sentence.strip()
+            if len(sentence) > 20 and ("сильный" in sentence.lower() or "особенность" in sentence.lower()):
+                insights.append(sentence + ".")
+                
+        return insights[:3]  # Top 3 insights
+
+    def _extract_recommendations(self, text: str) -> List[str]:
+        """Extracts recommendations from AI response"""
+        sentences = text.split(".")
+        recommendations = []
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if ("рекомендует" in sentence.lower() or "совет" in sentence.lower() or 
+                "стоит" in sentence.lower() or "полезно" in sentence.lower()):
+                recommendations.append(sentence + ".")
+                
+        return recommendations[:3]  # Top 3 recommendations
+
+    async def _get_fallback_chart_data(
+        self, name: str, birth_time: datetime, birth_place: Dict[str, float], timezone: str
+    ) -> Dict[str, Any]:
+        """Gets basic chart data when Kerykeion fails"""
+                )
                 return await self._generate_basic_natal_interpretation(
                     name, birth_date, consultation_focus
                 )

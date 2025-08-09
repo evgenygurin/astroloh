@@ -102,6 +102,140 @@ class TransitService:
             "performance_monitoring": True,
         }
 
+    async def get_current_transits_kerykeion(
+        self,
+        name: str,
+        birth_datetime: datetime,
+        latitude: float,
+        longitude: float,
+        transit_date: Optional[datetime] = None,
+        timezone: str = "Europe/Moscow",
+        include_minor_aspects: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Получает текущие транзиты используя Kerykeion с полными возможностями.
+        """
+        if transit_date is None:
+            transit_date = datetime.now(pytz.timezone(timezone))
+
+        logger.info(f"ENHANCED_TRANSIT_KERYKEION_START: {name} for {transit_date}")
+
+        try:
+            # Создаем натальную карту
+            natal_data = self.kerykeion_service.get_full_natal_chart_data(
+                name, birth_datetime, latitude, longitude, timezone
+            )
+
+            if "error" in natal_data:
+                logger.error("ENHANCED_TRANSIT_NATAL_ERROR")
+                return {"error": "Failed to create natal chart"}
+
+            # Создаем транзитную карту на указанную дату
+            transit_subject = self.kerykeion_service.create_astrological_subject(
+                f"{name} Transits",
+                transit_date,
+                latitude,
+                longitude,
+                timezone,
+            )
+
+            if not transit_subject:
+                return {"error": "Failed to create transit chart"}
+
+            # Получаем позиции транзитных планет
+            transit_planets = {}
+            for planet in ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"]:
+                transit_planet = getattr(transit_subject, planet, {})
+                if transit_planet:
+                    transit_planets[planet] = {
+                        "longitude": transit_planet.get("pos", [0])[0],
+                        "sign": transit_planet.get("sign", "Unknown"),
+                        "house": transit_planet.get("house", None),
+                        "retrograde": transit_planet.get("retrograde", False),
+                        "speed": transit_planet.get("speed", 0)
+                    }
+
+            # Анализируем транзитные аспекты к натальным планетам
+            transits = []
+            natal_planets = natal_data.get("planets", {})
+
+            for transit_planet, transit_data in transit_planets.items():
+                for natal_planet, natal_data_planet in natal_planets.items():
+                    aspect = self._calculate_transit_aspect(
+                        transit_data["longitude"],
+                        natal_data_planet.get("longitude", 0),
+                        include_minor_aspects
+                    )
+
+                    if aspect:
+                        # Определяем точность и применимость аспекта
+                        is_applying = self._is_transit_applying(
+                            transit_data["longitude"],
+                            natal_data_planet.get("longitude", 0),
+                            transit_data["speed"],
+                            aspect["angle"]
+                        )
+
+                        transit_entry = {
+                            "transit_planet": transit_planet,
+                            "natal_planet": natal_planet,
+                            "aspect": aspect,
+                            "transit_sign": transit_data["sign"],
+                            "natal_sign": natal_data_planet.get("sign", "Unknown"),
+                            "applying": is_applying,
+                            "retrograde": transit_data["retrograde"],
+                            "interpretation": self._get_transit_interpretation(
+                                transit_planet, natal_planet, aspect["name"], is_applying
+                            ),
+                            "strength": self._calculate_transit_strength(
+                                aspect["orb"], aspect["max_orb"], is_applying
+                            )
+                        }
+                        
+                        transits.append(transit_entry)
+
+            # Сортируем по силе аспекта
+            transits.sort(key=lambda x: x["aspect"]["orb"])
+
+            # Анализируем транзиты по домам
+            house_transits = self._analyze_house_transits(transit_planets, natal_data.get("houses", {}))
+
+            # Находим важные транзиты
+            important_transits = [t for t in transits if t["aspect"]["orb"] <= 3]
+
+            result = {
+                "natal_info": {
+                    "name": name,
+                    "birth_datetime": birth_datetime.isoformat(),
+                    "location": f"{latitude}, {longitude}"
+                },
+                "transit_info": {
+                    "date": transit_date.isoformat(),
+                    "timezone": timezone
+                },
+                "transits": transits[:20],  # Топ-20 транзитов
+                "important_transits": important_transits,
+                "house_transits": house_transits,
+                "transit_planets": transit_planets,
+                "summary": {
+                    "total_aspects": len(transits),
+                    "important_aspects": len(important_transits),
+                    "applying_aspects": len([t for t in transits if t["applying"]]),
+                    "separating_aspects": len([t for t in transits if not t["applying"]])
+                },
+                "service_info": {
+                    "method": "Kerykeion Enhanced",
+                    "timestamp": datetime.now().isoformat()
+                }
+            }
+
+            logger.info(f"ENHANCED_TRANSIT_KERYKEION_SUCCESS: Found {len(transits)} transits")
+            return result
+
+        except Exception as e:
+            logger.error(f"ENHANCED_TRANSIT_KERYKEION_ERROR: {e}")
+            return {"error": f"Transit calculation failed: {str(e)}"}
+
     async def get_current_transits(
         self,
         natal_chart: Dict[str, Any],
@@ -479,6 +613,147 @@ class TransitService:
                 )
 
         return aspects
+
+    def _calculate_transit_aspect(
+        self, transit_longitude: float, natal_longitude: float, include_minor: bool
+    ) -> Optional[Dict[str, Any]]:
+        """Вычисляет аспект между транзитной и натальной планетой"""
+        angle = abs(transit_longitude - natal_longitude)
+        if angle > 180:
+            angle = 360 - angle
+
+        # Определяем доступные аспекты
+        aspect_definitions = self.transit_orbs
+        if not include_minor:
+            # Только мажорные аспекты
+            aspect_definitions = {angle: orb for angle, orb in self.transit_orbs.items() 
+                                if angle in [0, 60, 90, 120, 180]}
+
+        for aspect_angle, max_orb in aspect_definitions.items():
+            orb = abs(angle - aspect_angle)
+            if orb <= max_orb:
+                return {
+                    "angle": aspect_angle,
+                    "name": self._get_aspect_name(aspect_angle),
+                    "orb": orb,
+                    "max_orb": max_orb,
+                    "exact_angle": angle
+                }
+        return None
+
+    def _is_transit_applying(
+        self, transit_longitude: float, natal_longitude: float, 
+        transit_speed: float, aspect_angle: float
+    ) -> bool:
+        """Определяет, приближается ли транзитный аспект"""
+        current_angle = abs(transit_longitude - natal_longitude)
+        if current_angle > 180:
+            current_angle = 360 - current_angle
+
+        # Простая проверка: если планета движется быстро и аспект близок к точности
+        if transit_speed > 0 and abs(current_angle - aspect_angle) <= 5:
+            return True
+        return False
+
+    def _calculate_transit_strength(
+        self, orb: float, max_orb: float, is_applying: bool
+    ) -> str:
+        """Рассчитывает силу транзита"""
+        orb_percent = orb / max_orb
+        
+        if orb <= 1:
+            strength = "Very Strong"
+        elif orb_percent <= 0.3:
+            strength = "Strong"
+        elif orb_percent <= 0.6:
+            strength = "Moderate"
+        else:
+            strength = "Weak"
+            
+        if is_applying:
+            strength += " (Applying)"
+        else:
+            strength += " (Separating)"
+            
+        return strength
+
+    def _get_transit_interpretation(
+        self, transit_planet: str, natal_planet: str, aspect: str, is_applying: bool
+    ) -> str:
+        """Получает интерпретацию транзита"""
+        base_interpretations = {
+            ("jupiter", "sun", "Trine"): "Период роста и расширения возможностей",
+            ("saturn", "sun", "Square"): "Испытания и ограничения в самовыражении", 
+            ("uranus", "moon", "Opposition"): "Эмоциональная нестабильность и перемены",
+            ("neptune", "venus", "Conjunction"): "Иллюзии в любви и творчестве",
+            ("pluto", "mars", "Square"): "Интенсивная трансформация энергии"
+        }
+        
+        key = (transit_planet, natal_planet, aspect)
+        interpretation = base_interpretations.get(key, 
+            f"{aspect} транзит {transit_planet.capitalize()} к натальному {natal_planet.capitalize()}")
+        
+        if is_applying:
+            interpretation += " (нарастает)"
+        else:
+            interpretation += " (ослабевает)"
+            
+        return interpretation
+
+    def _analyze_house_transits(
+        self, transit_planets: Dict[str, Any], natal_houses: Dict[int, Any]
+    ) -> Dict[str, Any]:
+        """Анализирует транзиты по домам"""
+        house_transits = {}
+        
+        for planet_name, planet_data in transit_planets.items():
+            planet_longitude = planet_data["longitude"]
+            
+            # Находим дом для транзитной планеты
+            for house_num in range(1, 13):
+                if house_num in natal_houses:
+                    house_start = natal_houses[house_num].get("cusp_longitude", 0)
+                    next_house = house_num + 1 if house_num < 12 else 1
+                    house_end = natal_houses.get(next_house, {}).get("cusp_longitude", 0)
+                    
+                    # Обработка перехода через 0°
+                    if house_end < house_start:
+                        house_end += 360
+                        if planet_longitude < house_start:
+                            planet_longitude += 360
+                    
+                    if house_start <= planet_longitude < house_end:
+                        if house_num not in house_transits:
+                            house_transits[house_num] = []
+                        house_transits[house_num].append({
+                            "planet": planet_name,
+                            "longitude": planet_data["longitude"],
+                            "sign": planet_data["sign"],
+                            "interpretation": self._get_house_transit_meaning(planet_name, house_num)
+                        })
+                        break
+                        
+        return house_transits
+
+    def _get_house_transit_meaning(self, planet: str, house_num: int) -> str:
+        """Получает значение транзита планеты по дому"""
+        house_meanings = {
+            1: "влияет на личность и первое впечатление",
+            2: "влияет на финансы и ценности",
+            3: "влияет на общение и ближнее окружение",
+            4: "влияет на дом и семью",
+            5: "влияет на творчество и романтику",
+            6: "влияет на здоровье и работу",
+            7: "влияет на партнерства",
+            8: "влияет на трансформацию и скрытые ресурсы",
+            9: "влияет на философию и дальние путешествия",
+            10: "влияет на карьеру и репутацию",
+            11: "влияет на дружбу и надежды",
+            12: "влияет на подсознание и духовность"
+        }
+        
+        meaning = house_meanings.get(house_num, "неизвестное влияние")
+        return f"{planet.capitalize()} {meaning}"
 
     async def get_period_forecast(
         self,
