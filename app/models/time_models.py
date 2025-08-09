@@ -53,7 +53,9 @@ class CoordinateModel(BaseModel):
     def validate_longitude(cls, v: float) -> float:
         """Validate longitude bounds."""
         if not -180.0 <= v <= 180.0:
-            raise ValueError(f"Longitude must be between -180 and 180, got {v}")
+            raise ValueError(
+                f"Longitude must be between -180 and 180, got {v}"
+            )
         return v
 
     def to_coordinate_info(self) -> CoordinateInfo:
@@ -65,7 +67,9 @@ class CoordinateModel(BaseModel):
         )
 
     @classmethod
-    def from_coordinate_info(cls, coord_info: CoordinateInfo) -> "CoordinateModel":
+    def from_coordinate_info(
+        cls, coord_info: CoordinateInfo
+    ) -> "CoordinateModel":
         """Create from CoordinateInfo object."""
         return cls(
             latitude=coord_info.latitude,
@@ -212,7 +216,9 @@ class TimePrecisionModel(BaseModel):
     has_seconds: bool = Field(
         ..., description="Whether the time includes seconds precision"
     )
-    has_coordinates: bool = Field(..., description="Whether coordinates are available")
+    has_coordinates: bool = Field(
+        ..., description="Whether coordinates are available"
+    )
     timezone_source: str = Field(
         ..., description="Source of timezone (coordinates, explicit, default)"
     )
@@ -263,11 +269,15 @@ class AstroDateTimeModel(BaseModel):
         """Create from AstroDateTime object."""
         coordinates = None
         if astro_dt.coordinates:
-            coordinates = CoordinateModel.from_coordinate_info(astro_dt.coordinates)
+            coordinates = CoordinateModel.from_coordinate_info(
+                astro_dt.coordinates
+            )
 
         precision = None
         if include_precision:
-            precision_data = astro_time.calculate_birth_time_precision(astro_dt)
+            precision_data = astro_time.calculate_birth_time_precision(
+                astro_dt
+            )
             precision = TimePrecisionModel(**precision_data)
 
         return cls(
@@ -384,7 +394,9 @@ class BatchTimeInputModel(BaseModel):
 
     @field_validator("time_inputs")
     @classmethod
-    def validate_batch_size(cls, v: List[TimeInputModel]) -> List[TimeInputModel]:
+    def validate_batch_size(
+        cls, v: List[TimeInputModel]
+    ) -> List[TimeInputModel]:
         """Validate batch size limits."""
         if len(v) < 1:
             raise ValueError("Batch must contain at least 1 item")
@@ -466,15 +478,21 @@ class TimezoneDetectionModel(BaseModel):
         """Pydantic configuration."""
 
         json_schema_extra = {
-            "example": {"coordinates": {"latitude": 55.7558, "longitude": 37.6176}}
+            "example": {
+                "coordinates": {"latitude": 55.7558, "longitude": 37.6176}
+            }
         }
 
 
 class TimezoneDetectionResponseModel(BaseModel):
     """Response model for timezone detection."""
 
-    detected_timezone: str = Field(..., description="Detected timezone identifier")
-    confidence: str = Field(..., description="Confidence level (high, medium, low)")
+    detected_timezone: str = Field(
+        ..., description="Detected timezone identifier"
+    )
+    confidence: str = Field(
+        ..., description="Confidence level (high, medium, low)"
+    )
     alternative_timezones: List[str] = Field(
         default_factory=list, description="Alternative timezone options"
     )

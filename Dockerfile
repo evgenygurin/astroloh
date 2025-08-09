@@ -58,7 +58,7 @@ RUN groupadd --gid 1001 astroloh && \
 
 # Create application directory with proper permissions
 WORKDIR /app
-RUN chown -R astroloh:astroloh /app
+RUN chown -R astroloh:astroloh /app /opt/venv
 
 # Switch to non-root user early for security
 USER astroloh
@@ -79,8 +79,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose port
 EXPOSE 8000
 
-# Production-ready startup command with uv and uvicorn
-CMD ["uv", "run", "uvicorn", "app.main:app", \
+# Production-ready startup command using python -m to avoid shebang issues
+CMD ["python", "-m", "uvicorn", "app.main:app", \
      "--host", "0.0.0.0", \
      "--port", "8000", \
      "--workers", "4"]

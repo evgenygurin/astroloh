@@ -3,6 +3,7 @@ Comprehensive tests for astro_time_utils module.
 Tests all aspects of time handling including edge cases, security, and performance.
 """
 
+import time
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 

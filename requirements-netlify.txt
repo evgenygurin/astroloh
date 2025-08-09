@@ -1,0 +1,31 @@
+# Netlify-compatible requirements with binary wheels only
+# Use this file if main requirements.txt fails
+
+# FastAPI и веб-сервер  
+fastapi==0.110.0
+uvicorn==0.27.0
+pydantic==2.8.2
+pydantic-settings==2.4.0
+mangum==0.17.0
+starlette==0.36.3
+
+# Минимальные зависимости для базовой функциональности
+python-dateutil==2.8.2
+pytz==2023.3
+httpx==0.25.2
+loguru==0.7.2
+python-dotenv==1.0.0
+
+# Безопасность (только с pre-compiled wheels)
+passlib==1.7.4
+python-jose==3.3.0
+
+# Email validation
+email-validator==2.2.0
+
+# OAuth2 forms  
+python-multipart==0.0.20
+
+# Астрологические вычисления (только базовые)
+numpy
+python-dateutil==2.8.2

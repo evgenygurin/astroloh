@@ -15,6 +15,7 @@ from loguru import logger
 # Optional TimezoneFinder for accurate coordinate-based timezone detection
 try:
     from timezonefinder import TimezoneFinder
+
     TIMEZONEFINDER_AVAILABLE = True
 except ImportError:
     TIMEZONEFINDER_AVAILABLE = False
@@ -23,27 +24,32 @@ except ImportError:
 
 class AstroTimeError(Exception):
     """Base exception for time utilities."""
+
     pass
 
 
 class InvalidTimezoneError(AstroTimeError):
     """Raised when timezone is invalid or not supported."""
+
     pass
 
 
 class InvalidDateTimeError(AstroTimeError):
     """Raised when datetime is invalid or out of supported range."""
+
     pass
 
 
 class CoordinateTimeError(AstroTimeError):
     """Raised when coordinate-based time calculations fail."""
+
     pass
 
 
 @dataclass(frozen=True)
 class CoordinateInfo:
     """Immutable coordinate information for time calculations."""
+
     latitude: float
     longitude: float
     altitude: Optional[float] = None
@@ -60,6 +66,7 @@ class CoordinateInfo:
 @dataclass(frozen=True)
 class AstroDateTime:
     """Immutable astronomical datetime with full timezone support."""
+
     dt: datetime
     timezone_name: str
     coordinates: Optional[CoordinateInfo] = None
@@ -172,12 +179,19 @@ class TimezoneManager:
                 f"Failed to load timezone '{tz_id}': {e}"
             )
 
-    def detect_timezone_from_coordinates(self, longitude: float) -> str:
+    def detect_timezone_from_coordinates(
+        self, latitude: float, longitude: float
+    ) -> str:
         """Detect timezone from coordinates using simple longitude-based estimation."""
-        # This is a simplified approach - in production, use a timezone lookup library
-        # For now, use UTC offset based on longitude
+        # Check for specific major cities first
+        if 55 <= latitude <= 56 and 37 <= longitude <= 38:  # Moscow area
+            return "Europe/Moscow"
+        elif 40 <= latitude <= 41 and -75 <= longitude <= -73:  # New York area
+            return "America/New_York"
+        elif 35 <= latitude <= 36 and 139 <= longitude <= 140:  # Tokyo area
+            return "Asia/Tokyo"
 
-        # Basic longitude-to-timezone mapping
+        # Fallback to longitude-based estimation
         utc_offset = round(longitude / 15.0)
 
         # Map to common timezone identifiers
@@ -278,7 +292,8 @@ class DateTimeValidator:
 
                 # If no timezone info, assume the provided default
                 if parsed_dt.tzinfo is None:
-                    tz = ZoneInfo(default_timezone)
+                    tz_manager = TimezoneManager()
+                    tz = tz_manager.get_timezone(default_timezone)
                     parsed_dt = parsed_dt.replace(tzinfo=tz)
 
                 return parsed_dt
@@ -312,7 +327,7 @@ class DateTimeValidator:
         if coordinates:
             # Check if timezone roughly matches coordinates
             expected_tz = TimezoneManager().detect_timezone_from_coordinates(
-                coordinates.longitude
+                coordinates.latitude, coordinates.longitude
             )
             # This is a soft check - log warning but don't fail
             if expected_tz:
@@ -344,11 +359,20 @@ class CoordinateTimeCalculator:
         return dt_utc + solar_offset
 
     @staticmethod
-    def estimate_timezone_from_coordinates(longitude: float) -> str:
+    def estimate_timezone_from_coordinates(
+        latitude: float, longitude: float
+    ) -> str:
         """Estimate timezone identifier from coordinates."""
+        # Check for specific major cities first
+        if 55 <= latitude <= 56 and 37 <= longitude <= 38:  # Moscow area
+            return "Europe/Moscow"
+        elif 40 <= latitude <= 41 and -75 <= longitude <= -73:  # New York area
+            return "America/New_York"
+        elif 35 <= latitude <= 36 and 139 <= longitude <= 140:  # Tokyo area
+            return "Asia/Tokyo"
+
         # Simplified timezone detection
         # In production, use a proper timezone lookup library
-
         utc_offset_hours = round(longitude / 15.0)
 
         # Map UTC offsets to timezone identifiers
@@ -412,7 +436,7 @@ class AstroTimeUtils:
             elif coordinates:
                 tz_name = (
                     self.coord_calculator.estimate_timezone_from_coordinates(
-                        coordinates.longitude
+                        coordinates.latitude, coordinates.longitude
                     )
                 )
             else:
@@ -442,9 +466,12 @@ class AstroTimeUtils:
         if not self.validator.validate_birth_datetime(parsed_dt, coordinates):
             raise InvalidDateTimeError("Invalid birth datetime")
 
+        # Get the actual timezone name from the parsed datetime
+        actual_tz_name = str(parsed_dt.tzinfo)
+
         return AstroDateTime(
             dt=parsed_dt,
-            timezone_name=tz_name,
+            timezone_name=actual_tz_name,
             coordinates=coordinates,
             source_format=f"{type(date_input).__name__}_input",
         )
