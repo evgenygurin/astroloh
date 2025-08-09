@@ -278,11 +278,32 @@ class TestRollbackSystem:
         assert plan.rollback_id in rollback_system.active_rollbacks
 
     @patch("app.services.rollback_system.feature_flags")
+    @patch("app.services.rollback_system.asyncio.sleep")
+    @patch("app.services.rollback_system.deployment_monitor")
+    @patch("app.services.rollback_system.astro_cache")
     async def test_manual_rollback(
-        self, mock_feature_flags, clean_rollback_system
+        self,
+        mock_cache,
+        mock_deployment_monitor,
+        mock_sleep,
+        mock_feature_flags,
+        clean_rollback_system,
     ):
         """Test manual rollback execution."""
         mock_feature_flags.emergency_rollback.return_value = True
+        mock_sleep.return_value = None  # Skip all sleep delays
+
+        # Mock deployment monitor dashboard calls
+        mock_deployment_monitor.get_deployment_dashboard.return_value = {
+            "overall_health": {"score": 80, "status": "good"},
+            "health_checks": {},
+        }
+        mock_deployment_monitor.stop_monitoring.return_value = None
+        mock_deployment_monitor.start_monitoring.return_value = None
+
+        # Mock cache operations
+        mock_cache.set = AsyncMock(return_value=True)
+        mock_cache.clear_all_caches = AsyncMock(return_value=True)
 
         features_to_rollback = ["kerykeion_natal_charts", "kerykeion_synastry"]
 
