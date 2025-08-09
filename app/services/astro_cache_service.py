@@ -7,7 +7,7 @@ import hashlib
 import importlib.util
 import json
 import time
-from datetime import date, datetime, timedelta
+from datetime import date as date_type, datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
 from loguru import logger
@@ -173,12 +173,12 @@ class AstroCacheService(CacheService):
     # Removed duplicate simpler implementation of set_natal_chart to ensure enhanced caching with metadata is used.
 
     async def get_daily_ephemeris(
-        self, date: Union[date, str]
+        self, date: Union[date_type, str]
     ) -> Optional[Dict[str, Any]]:
         """Get cached daily ephemeris data."""
         start_time = time.time()
 
-        date_str = date.isoformat() if isinstance(date, date) else date
+        date_str = date.isoformat() if isinstance(date, date_type) else date
         cache_key = f"ephemeris:daily:{date_str}"
 
         result = await self.get(cache_key)
@@ -192,10 +192,10 @@ class AstroCacheService(CacheService):
         return result
 
     async def set_daily_ephemeris(
-        self, date: Union[date, str], ephemeris_data: Dict[str, Any]
+        self, date: Union[date_type, str], ephemeris_data: Dict[str, Any]
     ) -> bool:
         """Cache daily ephemeris data."""
-        date_str = date.isoformat() if isinstance(date, date) else date
+        date_str = date.isoformat() if isinstance(date, date_type) else date
         cache_key = f"ephemeris:daily:{date_str}"
 
         return await self.set(
@@ -258,14 +258,14 @@ class AstroCacheService(CacheService):
         )
 
     async def get_period_forecast(
-        self, natal_chart_id: str, start_date: Union[date, str], days: int
+        self, natal_chart_id: str, start_date: Union[date_type, str], days: int
     ) -> Optional[Dict[str, Any]]:
         """Get cached period forecast."""
         start_time = time.time()
 
         start_dt_str = (
             start_date.isoformat()
-            if isinstance(start_date, date)
+            if isinstance(start_date, date_type)
             else start_date
         )
         cache_key = self._generate_cache_key(
@@ -283,14 +283,14 @@ class AstroCacheService(CacheService):
     async def set_period_forecast(
         self,
         natal_chart_id: str,
-        start_date: Union[date, str],
+        start_date: Union[date_type, str],
         days: int,
         forecast_data: Dict[str, Any],
     ) -> bool:
         """Cache period forecast."""
         start_dt_str = (
             start_date.isoformat()
-            if isinstance(start_date, date)
+            if isinstance(start_date, date_type)
             else start_date
         )
         cache_key = self._generate_cache_key(

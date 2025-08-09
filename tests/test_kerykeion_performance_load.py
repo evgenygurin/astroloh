@@ -501,7 +501,7 @@ class TestSystemLoadTesting:
                     "aspects": [],
                 }
                 tasks.append(
-                    services["async_kerykeion"].calculate_natal_chart_async(
+                    services["async_kerykeion"].get_full_natal_chart_data(
                         **birth_data
                     )
                 )
@@ -579,7 +579,7 @@ class TestSystemLoadTesting:
 
                         result = await services[
                             "async_kerykeion"
-                        ].calculate_natal_chart_async(**birth_data)
+                        ].get_full_natal_chart_data(**birth_data)
 
                         if result:
                             completed_operations += 1
@@ -902,7 +902,7 @@ class TestStressAndReliabilityTesting:
                             "aspects": [],
                         }
                         tasks.append(
-                            service.calculate_natal_chart_async(**birth_data)
+                            service.get_full_natal_chart_data(**birth_data)
                         )
 
                 results = await asyncio.gather(*tasks, return_exceptions=True)

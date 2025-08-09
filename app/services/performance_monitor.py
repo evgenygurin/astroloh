@@ -56,7 +56,7 @@ class PerformanceMonitor:
         self.system_metrics: Deque[Dict[str, Any]] = deque(maxlen=100)
         self.alert_thresholds = {
             "slow_operation_ms": 2000,  # Operations slower than 2 seconds
-            "high_memory_mb": 500,  # Memory usage above 500MB
+            "high_memory_mb": 1000,  # Memory usage above 1000MB (1GB)
             "high_cpu_percent": 80,  # CPU usage above 80%
             "error_rate_percent": 10,  # Error rate above 10%
         }
