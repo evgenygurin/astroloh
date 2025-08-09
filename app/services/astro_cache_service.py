@@ -4,6 +4,8 @@ Extends the basic cache service with specific methods for Kerykeion data.
 """
 
 import hashlib
+import importlib.util
+import json
 import time
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
@@ -11,8 +13,6 @@ from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 
 from app.services.cache_service import CacheService
-
-import importlib.util
 
 # Check Redis availability without importing it
 REDIS_AVAILABLE = importlib.util.find_spec("redis.asyncio") is not None
@@ -46,6 +46,32 @@ class AstroCacheService(CacheService):
         logger.info(
             "ASTRO_CACHE_SERVICE_INIT: Enhanced astrological caching initialized"
         )
+
+    async def cache_data(
+        self, key: str, data: Any, ttl_hours: int = 24
+    ) -> bool:
+        """
+        Cache data with TTL in hours.
+        Compatibility method for tests and general caching.
+        """
+        try:
+            ttl_seconds = ttl_hours * 3600
+            await self.set(key, data, ttl=ttl_seconds)
+            return True
+        except Exception as e:
+            logger.error(f"ASTRO_CACHE_ERROR: Failed to cache data: {e}")
+            return False
+
+    async def get_cached_data(self, key: str) -> Optional[Any]:
+        """
+        Retrieve cached data.
+        Compatibility method for tests and general caching.
+        """
+        try:
+            return await self.get(key)
+        except Exception as e:
+            logger.error(f"ASTRO_CACHE_ERROR: Failed to get cached data: {e}")
+            return None
 
     def _generate_cache_key(self, prefix: str, **kwargs) -> str:
         """Generate deterministic cache key for astrological data."""
@@ -580,6 +606,78 @@ class AstroCacheService(CacheService):
             f"ASTRO_CACHE_INVALIDATE_COMPLETE: {invalidated_count} keys invalidated"
         )
         return invalidated_count
+
+    async def get(self, key: str) -> Optional[Any]:
+        """Get a value from cache."""
+        try:
+            # Check Redis cache
+            if self.redis_client:
+                redis_data = await self.redis_client.get(key)
+                if redis_data:
+                    return json.loads(redis_data)
+
+            # Check memory cache fallback
+            if key in self.memory_cache:
+                data, timestamp, ttl = self.memory_cache[key]
+
+                # Check if expired
+                if ttl is not None and (time.time() - timestamp) > ttl:
+                    del self.memory_cache[key]
+                    return None
+
+                return data
+
+            return None
+        except Exception as e:
+            logger.error(f"ASTRO_CACHE_GET_ERROR: {e}")
+            return None
+
+    async def set(
+        self, key: str, value: Any, ttl: Optional[int] = None
+    ) -> bool:
+        """Set a value in cache."""
+        try:
+            # Set in Redis cache
+            if self.redis_client:
+                json_data = json.dumps(value, default=str)
+                if ttl:
+                    await self.redis_client.setex(key, ttl, json_data)
+                else:
+                    await self.redis_client.set(key, json_data)
+
+            # Set in memory cache as fallback
+            timestamp = time.time()
+            self.memory_cache[key] = (value, timestamp, ttl)
+
+            # Enforce memory cache size limit
+            if len(self.memory_cache) > self.max_memory_items:
+                # Remove oldest item
+                oldest_key = min(
+                    self.memory_cache.keys(),
+                    key=lambda k: self.memory_cache[k][1],  # timestamp
+                )
+                del self.memory_cache[oldest_key]
+
+            return True
+        except Exception as e:
+            logger.error(f"ASTRO_CACHE_SET_ERROR: {e}")
+            return False
+
+    async def delete(self, key: str) -> bool:
+        """Delete a value from cache."""
+        try:
+            # Remove from memory cache
+            if key in self.memory_cache:
+                del self.memory_cache[key]
+
+            # Remove from Redis cache
+            if self.redis_client:
+                await self.redis_client.delete(key)
+
+            return True
+        except Exception as e:
+            logger.error(f"ASTRO_CACHE_DELETE_ERROR: {e}")
+            return False
 
     async def clear_expired_cache(self) -> int:
         """Manually clear expired cache entries."""

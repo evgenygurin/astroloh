@@ -201,7 +201,13 @@ class TestAPIIntegration:
         text = data["response"]["text"].lower()
         assert any(
             word in text
-            for word in ["гороскоп", "прогноз", "звёзды", "астрологи"]
+            for word in [
+                "гороскоп",
+                "прогноз",
+                "звёзды",
+                "астрологи",
+                "астрология",
+            ]
         )
 
     def test_yandex_webhook_compatibility_request(self):

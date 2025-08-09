@@ -851,7 +851,7 @@ class IntentRecognizer:
             matches = re.finditer(pattern, text, re.IGNORECASE)
             for match in matches:
                 name = match.group(1).strip().title()
-                # Фильтруем слишком короткие имена и служебные слова
+                # Фильтруем слишком короткие имена, служебные слова и астрологические термины
                 if len(name) >= 3 and name.lower() not in [
                     "для",
                     "при",
@@ -864,6 +864,15 @@ class IntentRecognizer:
                     "все",
                     "что",
                     "как",
+                    "гороскоп",
+                    "прогноз",
+                    "совет",
+                    "астрология",
+                    "звезды",
+                    "планеты",
+                    "транзиты",
+                    "натальная",
+                    "карта",
                 ]:
                     partner_names.append(name)
                     logger.debug(

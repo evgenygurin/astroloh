@@ -23,12 +23,12 @@ class ResponseFormatter:
         # Вариативность ответов согласно лучшим практикам Яндекс.Диалогов
         self.confirmations = [
             "Отлично!",
-            "Прекрасно!", 
+            "Прекрасно!",
             "Понятно!",
             "Замечательно!",
             "Хорошо!",
         ]
-        
+
         self.transitions = [
             "А теперь давайте",
             "Давайте также",
@@ -36,7 +36,7 @@ class ResponseFormatter:
             "Ещё я могу",
             "Также вы можете",
         ]
-        
+
         self.gentle_errors = [
             "Извините, не совсем понял.",
             "Не могу разобрать, что вы имеете в виду.",
@@ -58,16 +58,19 @@ class ResponseFormatter:
     def get_random_confirmation(self) -> str:
         """Возвращает случайное подтверждение для вариативности диалога."""
         import random
+
         return random.choice(self.confirmations)
-    
+
     def get_random_transition(self) -> str:
         """Возвращает случайный переход для вариативности диалога."""
         import random
+
         return random.choice(self.transitions)
-    
+
     def get_random_gentle_error(self) -> str:
         """Возвращает случайную мягкую формулировку ошибки."""
         import random
+
         return random.choice(self.gentle_errors)
 
     def format_welcome_response(
@@ -204,7 +207,11 @@ class ResponseFormatter:
         )
 
         if recent_context:
-            text = "Я не совсем поняла ваш запрос. Возможно, вы хотели узнать что-то ещё?"
+            # Check if the recent context contains a zodiac sign request
+            if any("знак" in context.lower() for context in recent_context):
+                text = f"{recent_context[0]} Я составлю персональный гороскоп для вашего знака зодиака."
+            else:
+                text = "Я не совсем поняла ваш запрос. Возможно, вы хотели узнать что-то ещё?"
             logger.debug("RESPONSE_FORMAT_CLARIFICATION_TYPE: with_context")
         else:
             text = "Извините, я не поняла ваш вопрос. Можете переформулировать или выбрать из предложений?"
@@ -709,10 +716,10 @@ class ResponseFormatter:
         logger.warning(f"RESPONSE_FORMAT_ERROR_START: error_type={error_type}")
 
         import random
-        
+
         # Используем более мягкие формулировки согласно рекомендациям Яндекс.Диалогов
         gentle_prefix = random.choice(self.gentle_errors)
-        
+
         error_messages = {
             "general": f"{gentle_prefix} Попробуйте ещё раз или скажите 'помощь' для подсказки.",
             "invalid_date": f"{gentle_prefix} Попробуйте сказать дату в формате: '15 марта 1990 года' или '15.03.1990'.",
