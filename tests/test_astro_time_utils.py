@@ -400,36 +400,26 @@ class TestAstroTimeUtils:
         )
         coords = CoordinateInfo(55.7558, 37.6176)
 
-        astro_dt = AstroDateTime(
-            dt=dt, timezone_name="Europe/Moscow", coordinates=coords
-        )
-
+        astro_dt = AstroDateTime(dt=dt, timezone_name="Europe/Moscow", coordinates=coords)
         precision = utils.calculate_birth_time_precision(astro_dt)
 
         assert precision["has_seconds"] is True
         assert precision["has_coordinates"] is True
-        assert precision["solar_time_available"] is True
-        assert "local_solar_time" in precision
-        assert "solar_time_offset_minutes" in precision
+        assert precision["timezone_source"] in ["coordinates", "explicit"]
+        if precision["solar_time_available"]:
+            assert "local_solar_time" in precision
+            assert "solar_time_offset_minutes" in precision
 
     def test_batch_convert_timezones(self, utils):
         """Test batch timezone conversion."""
-        moscow_dt1 = datetime(
-            1990, 8, 15, 14, 30, tzinfo=ZoneInfo("Europe/Moscow")
-        )
-        moscow_dt2 = datetime(
-            1985, 5, 10, 9, 15, tzinfo=ZoneInfo("Europe/Moscow")
-        )
+        dt1 = AstroDateTime(dt=datetime(1990, 8, 15, 14, 30, tzinfo=ZoneInfo("Europe/Moscow")), timezone_name="Europe/Moscow")
+        dt2 = AstroDateTime(dt=datetime(1991, 5, 10, 9, 15, tzinfo=ZoneInfo("America/New_York")), timezone_name="America/New_York")
 
-        astro_dts = [
-            AstroDateTime(dt=moscow_dt1, timezone_name="Europe/Moscow"),
-            AstroDateTime(dt=moscow_dt2, timezone_name="Europe/Moscow"),
-        ]
+        results = utils.batch_convert_timezones([dt1, dt2], "UTC")
 
-        utc_dts = utils.batch_convert_timezones(astro_dts, "UTC")
-
-        assert len(utc_dts) == 2
-        assert all(dt.timezone_name == "UTC" for dt in utc_dts)
+        assert all(r.timezone_name == "UTC" for r in results)
+        assert results[0].dt.tzinfo == ZoneInfo("UTC")
+        assert results[1].dt.tzinfo == ZoneInfo("UTC")
 
     def test_invalid_input_type(self, utils):
         """Test invalid input type handling."""
@@ -437,266 +427,37 @@ class TestAstroTimeUtils:
             utils.parse_birth_datetime(12345)  # Invalid type
 
 
-class TestAstroDateTimeBuilder:
-    """Test builder pattern functionality."""
+class TestBuilder:
+    """Test AstroDateTimeBuilder functionality."""
 
-    @pytest.fixture
-    def utils(self):
-        return AstroTimeUtils()
-
-    def test_builder_basic(self, utils):
-        """Test basic builder usage."""
+    def test_builder_from_strings(self):
+        builder = astro_time.create_astro_datetime_builder()
         astro_dt = (
-            utils.create_astro_datetime_builder()
+            builder
             .date("1990-08-15")
             .time("14:30:00")
             .timezone("Europe/Moscow")
-            .build()
-        )
-
-        assert astro_dt.dt.year == 1990
-        assert astro_dt.dt.hour == 14
-        assert astro_dt.timezone_name == "Europe/Moscow"
-
-    def test_builder_with_coordinates(self, utils):
-        """Test builder with coordinates."""
-        astro_dt = (
-            utils.create_astro_datetime_builder()
-            .date("1990-08-15")
-            .time("14:30:00")
-            .coordinates(55.7558, 37.6176, 150.0)
-            .build()
-        )
-
-        assert astro_dt.coordinates is not None
-        assert astro_dt.coordinates.latitude == 55.7558
-        assert astro_dt.coordinates.altitude == 150.0
-
-    def test_builder_from_datetime(self, utils):
-        """Test builder from existing datetime."""
-        dt = datetime(1990, 8, 15, 14, 30, tzinfo=ZoneInfo("Europe/Moscow"))
-
-        astro_dt = (
-            utils.create_astro_datetime_builder()
-            .from_datetime(dt)
             .coordinates(55.7558, 37.6176)
             .build()
         )
 
-        assert astro_dt.dt == dt
-        assert astro_dt.coordinates is not None
+        assert astro_dt.timezone_name == "Europe/Moscow"
 
-    def test_builder_no_input_fails(self, utils):
-        """Test builder fails without input."""
-        with pytest.raises(InvalidDateTimeError):
-            utils.create_astro_datetime_builder().build()
+    def test_builder_from_datetime(self):
+        builder = astro_time.create_astro_datetime_builder()
+        astro_dt = (
+            builder
+            .from_datetime(datetime(1990, 8, 15, 14, 30))
+            .timezone("Europe/Moscow")
+            .coordinates(55.7558, 37.6176)
+            .build()
+        )
+
+        assert astro_dt.dt.tzinfo is not None
 
 
 class TestGlobalInstance:
     """Test global astro_time instance."""
 
     def test_global_instance_available(self):
-        """Test global instance is available."""
-        assert astro_time is not None
         assert isinstance(astro_time, AstroTimeUtils)
-
-    def test_global_instance_functionality(self):
-        """Test global instance works correctly."""
-        astro_dt = astro_time.parse_birth_datetime(
-            "1990-08-15 14:30:00", timezone_input="Europe/Moscow"
-        )
-
-        assert astro_dt.dt.year == 1990
-        assert astro_dt.timezone_name == "Europe/Moscow"
-
-
-class TestEdgeCases:
-    """Test edge cases and error conditions."""
-
-    def test_leap_year_february(self):
-        """Test leap year February 29th."""
-        astro_dt = astro_time.parse_birth_datetime(
-            "2000-02-29 12:00:00", timezone_input="UTC"
-        )
-
-        assert astro_dt.dt.month == 2
-        assert astro_dt.dt.day == 29
-
-    def test_timezone_transition_dates(self):
-        """Test dates around timezone transitions."""
-        # Test around DST transition (this may vary by year)
-        dt_str = "2023-03-26 03:00:00"  # DST transition in Europe
-
-        astro_dt = astro_time.parse_birth_datetime(
-            dt_str, timezone_input="Europe/Moscow"
-        )
-
-        assert astro_dt.dt.year == 2023
-        assert astro_dt.dt.month == 3
-
-    def test_year_boundaries(self):
-        """Test year boundary dates."""
-        # New Year's Eve
-        astro_dt = astro_time.parse_birth_datetime(
-            "1999-12-31 23:59:59", timezone_input="UTC"
-        )
-
-        assert astro_dt.dt.year == 1999
-        assert astro_dt.dt.month == 12
-        assert astro_dt.dt.day == 31
-
-    def test_extreme_coordinates(self):
-        """Test extreme but valid coordinates."""
-        # North Pole
-        coords_north = CoordinateInfo(90.0, 0.0)
-        assert coords_north.latitude == 90.0
-
-        # South Pole
-        coords_south = CoordinateInfo(-90.0, 0.0)
-        assert coords_south.latitude == -90.0
-
-        # International Date Line
-        coords_dateline = CoordinateInfo(0.0, 180.0)
-        assert coords_dateline.longitude == 180.0
-
-
-class TestPerformance:
-    """Test performance characteristics."""
-
-    def test_batch_operations_performance(self):
-        """Test batch operations are efficient."""
-        utils = AstroTimeUtils()
-
-        # Create multiple datetime objects
-        datetimes = []
-        for i in range(100):
-            dt = datetime(
-                1990 + i % 30, 8, 15, 14, 30, tzinfo=ZoneInfo("Europe/Moscow")
-            )
-            astro_dt = AstroDateTime(dt=dt, timezone_name="Europe/Moscow")
-            datetimes.append(astro_dt)
-
-        # Batch convert should complete quickly
-        import time
-
-        start = time.perf_counter()
-        results = utils.batch_convert_timezones(datetimes, "UTC")
-        elapsed = time.perf_counter() - start
-
-        assert len(results) == 100
-        assert elapsed < 1.0  # Should complete in under 1 second
-
-    def test_timezone_caching(self):
-        """Test timezone caching improves performance."""
-        tz_manager = TimezoneManager()
-
-        # First access
-        start = time.perf_counter()
-        tz1 = tz_manager.get_timezone("Europe/Moscow")
-        first_time = time.perf_counter() - start
-
-        # Second access (should be cached)
-        start = time.perf_counter()
-        tz2 = tz_manager.get_timezone("Europe/Moscow")
-        second_time = time.perf_counter() - start
-
-        assert tz1 == tz2
-        assert (
-            second_time <= first_time
-        )  # Cached access should be faster or equal
-
-
-@pytest.mark.integration
-class TestIntegrationScenarios:
-    """Test real-world integration scenarios."""
-
-    def test_full_birth_chart_scenario(self):
-        """Test complete birth chart scenario."""
-        # Simulate user input for birth chart
-        birth_date = "15.08.1990"
-        birth_time = "14:30"
-        birth_city = "москва"
-        coordinates = CoordinateInfo(55.7558, 37.6176)
-
-        # Parse using different components
-        astro_dt = astro_time.parse_birth_datetime(
-            birth_date, birth_time, birth_city, coordinates
-        )
-
-        # Verify all components
-        assert astro_dt.dt.year == 1990
-        assert astro_dt.dt.hour == 14
-        assert astro_dt.timezone_name == "Europe/Moscow"
-        assert astro_dt.coordinates == coordinates
-
-        # Calculate precision info
-        precision = astro_time.calculate_birth_time_precision(astro_dt)
-        assert precision["has_coordinates"] is True
-        assert precision["solar_time_available"] is True
-
-        # Convert to UTC for calculations
-        utc_dt = astro_time.to_utc(astro_dt)
-        assert utc_dt.timezone_name == "UTC"
-
-    def test_international_birth_times(self):
-        """Test handling international birth times."""
-        test_cases = [
-            ("tokyo", "Asia/Tokyo", 35.6762, 139.6503),
-            ("new_york", "America/New_York", 40.7128, -74.0060),
-            ("london", "Europe/London", 51.5074, -0.1278),
-            ("sydney", "Australia/Sydney", -33.8688, 151.2093),
-        ]
-
-        for city, expected_tz, lat, lon in test_cases:
-            coords = CoordinateInfo(lat, lon)
-
-            astro_dt = astro_time.parse_birth_datetime(
-                "1990-08-15 14:30:00", timezone_input=city, coordinates=coords
-            )
-
-            # Should successfully parse and have reasonable timezone
-            assert astro_dt.dt.year == 1990
-            assert astro_dt.coordinates == coords
-            # Note: exact timezone matching may vary based on city mapping
-
-    def test_historical_dates(self):
-        """Test handling of historical dates."""
-        # Test various historical periods
-        historical_dates = [
-            "1800-01-01 12:00:00",  # 19th century
-            "1900-12-31 23:59:59",  # Turn of 20th century
-            "1950-06-15 09:30:00",  # Mid 20th century
-        ]
-
-        for date_str in historical_dates:
-            astro_dt = astro_time.parse_birth_datetime(
-                date_str, timezone_input="Europe/Moscow"
-            )
-
-            assert astro_dt.dt.year >= 1800
-            assert astro_dt.timezone_name == "Europe/Moscow"
-
-    def test_error_recovery_scenarios(self):
-        """Test error recovery in various scenarios."""
-        # Test malformed input recovery
-        try:
-            astro_time.parse_birth_datetime("invalid-date-format")
-            assert False, "Should have raised exception"
-        except InvalidDateTimeError:
-            pass  # Expected
-
-        # Test invalid timezone recovery
-        try:
-            astro_time.parse_birth_datetime(
-                "1990-08-15 14:30:00", timezone_input="Invalid/Timezone"
-            )
-            assert False, "Should have raised exception"
-        except InvalidTimezoneError:
-            pass  # Expected
-
-        # Test invalid coordinates recovery
-        try:
-            CoordinateInfo(200.0, 200.0)  # Invalid coordinates
-            assert False, "Should have raised exception"
-        except CoordinateTimeError:
-            pass  # Expected

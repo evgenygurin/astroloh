@@ -20,6 +20,14 @@ except ImportError:
     TIMEZONEFINDER_AVAILABLE = False
     TimezoneFinder = None
 
+# Optional geonamescache for city/country/timezone lookups
+try:
+    import geonamescache
+    GEONAMESCACHE_AVAILABLE = True
+except ImportError:
+    GEONAMESCACHE_AVAILABLE = False
+    geonamescache = None
+
 
 class AstroTimeError(Exception):
     """Base exception for time utilities."""
@@ -143,6 +151,30 @@ class TimezoneManager:
 
         self._city_timezone_mapping.update(city_mappings)
 
+    def _lookup_timezone_by_city_name(self, city_name: str) -> Optional[str]:
+        """Lookup timezone using geonamescache if available."""
+        if not GEONAMESCACHE_AVAILABLE:
+            return None
+        try:
+            gc = geonamescache.GeonamesCache()
+            cities = gc.get_cities()
+            normalized = city_name.strip().lower()
+            normalized_us = normalized.replace(" ", "_")
+            for city in cities.values():
+                names_to_check = [
+                    str(city.get("name", "")).lower(),
+                    str(city.get("ascii", "")).lower(),
+                ]
+                names_to_check.extend([n.replace(" ", "_") for n in names_to_check])
+                if normalized in names_to_check or normalized_us in names_to_check:
+                    tz = city.get("timezone") or city.get("tz")
+                    if tz and tz in available_timezones():
+                        return tz
+            return None
+        except Exception as e:
+            logger.debug(f"geonamescache lookup failed: {e}")
+            return None
+
     @lru_cache(maxsize=256)
     def get_timezone(self, tz_identifier: str) -> ZoneInfo:
         """Get timezone with caching and validation."""
@@ -159,6 +191,12 @@ class TimezoneManager:
             # Try original identifier for standard IANA names
             tz_id = tz_identifier.strip()
 
+        # Try geonamescache for city lookup if not a known timezone
+        if tz_id not in available_timezones():
+            looked_up = self._lookup_timezone_by_city_name(tz_id)
+            if looked_up:
+                tz_id = looked_up
+
         # Validate timezone exists
         if tz_id not in available_timezones():
             raise InvalidTimezoneError(
@@ -172,12 +210,21 @@ class TimezoneManager:
                 f"Failed to load timezone '{tz_id}': {e}"
             )
 
-    def detect_timezone_from_coordinates(self, longitude: float) -> str:
-        """Detect timezone from coordinates using simple longitude-based estimation."""
-        # This is a simplified approach - in production, use a timezone lookup library
-        # For now, use UTC offset based on longitude
+    def detect_timezone_from_coordinates(self, latitude: float, longitude: float) -> str:
+        """Detect timezone from coordinates using library-backed lookup with fallback."""
+        # Prefer precise detection if library is available
+        if TIMEZONEFINDER_AVAILABLE:
+            try:
+                tf = TimezoneFinder()
+                tz = tf.timezone_at(lat=latitude, lng=longitude) or tf.closest_timezone_at(
+                    lat=latitude, lng=longitude
+                )
+                if tz and tz in available_timezones():
+                    return tz
+            except Exception as e:
+                logger.debug(f"TimezoneFinder detection failed: {e}")
 
-        # Basic longitude-to-timezone mapping
+        # Fallback: simple longitude-based estimation
         utc_offset = round(longitude / 15.0)
 
         # Map to common timezone identifiers
@@ -312,7 +359,7 @@ class DateTimeValidator:
         if coordinates:
             # Check if timezone roughly matches coordinates
             expected_tz = TimezoneManager().detect_timezone_from_coordinates(
-                coordinates.longitude
+                coordinates.latitude, coordinates.longitude
             )
             # This is a soft check - log warning but don't fail
             if expected_tz:
@@ -344,43 +391,9 @@ class CoordinateTimeCalculator:
         return dt_utc + solar_offset
 
     @staticmethod
-    def estimate_timezone_from_coordinates(longitude: float) -> str:
-        """Estimate timezone identifier from coordinates."""
-        # Simplified timezone detection
-        # In production, use a proper timezone lookup library
-
-        utc_offset_hours = round(longitude / 15.0)
-
-        # Map UTC offsets to timezone identifiers
-        offset_to_tz = {
-            -12: "Pacific/Majuro",
-            -11: "Pacific/Midway",
-            -10: "Pacific/Honolulu",
-            -9: "America/Anchorage",
-            -8: "America/Los_Angeles",
-            -7: "America/Denver",
-            -6: "America/Chicago",
-            -5: "America/New_York",
-            -4: "America/Halifax",
-            -3: "America/Sao_Paulo",
-            -2: "Atlantic/South_Georgia",
-            -1: "Atlantic/Azores",
-            0: "Europe/London",
-            1: "Europe/Paris",
-            2: "Europe/Berlin",
-            3: "Europe/Moscow",
-            4: "Asia/Dubai",
-            5: "Asia/Karachi",
-            6: "Asia/Dhaka",
-            7: "Asia/Bangkok",
-            8: "Asia/Shanghai",
-            9: "Asia/Tokyo",
-            10: "Australia/Sydney",
-            11: "Pacific/Norfolk",
-            12: "Pacific/Auckland",
-        }
-
-        return offset_to_tz.get(utc_offset_hours, "UTC")
+    def estimate_timezone_from_coordinates(latitude: float, longitude: float) -> str:
+        """Estimate timezone identifier from coordinates using TimezoneManager."""
+        return TimezoneManager().detect_timezone_from_coordinates(latitude, longitude)
 
 
 class AstroTimeUtils:
@@ -412,7 +425,7 @@ class AstroTimeUtils:
             elif coordinates:
                 tz_name = (
                     self.coord_calculator.estimate_timezone_from_coordinates(
-                        coordinates.longitude
+                        coordinates.latitude, coordinates.longitude
                     )
                 )
             else:

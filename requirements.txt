@@ -66,3 +66,7 @@ pytest-xdist==3.5.0
 
 psutil
 redis
+
+# Timezone and geodata
+timezonefinder==6.5.2
+geonamescache==2.0.0
