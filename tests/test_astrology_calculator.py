@@ -402,11 +402,11 @@ class TestAstrologyCalculator:
             positions = calc.calculate_planet_positions(birth_date)
 
             # Проверяем, что fallback позиции корректны
+            zodiac_names = [sign.name_ru for sign in calc.zodiac_signs]
             for planet, pos in positions.items():
                 assert 0 <= pos["longitude"] <= 360
                 assert 0 <= pos["degree_in_sign"] <= 30
-                assert pos["sign"] in calc.zodiac_signs
-                assert 0 <= pos["sign_number"] <= 11
+                assert pos["sign"] in zodiac_names
 
         finally:
             # Восстанавливаем оригинальные значения

@@ -368,8 +368,8 @@ class DialogHandler:
                     intent=YandexIntent.UNKNOWN,
                     confidence=0.0,
                     entities={},
-                    user_input=request.request.original_utterance or "",
-                    context_data={},
+                    raw_text=request.request.original_utterance or "",
+                    user_context=UserContext(),
                 )
 
             response = await self._handle_error_gracefully(

@@ -396,6 +396,12 @@ class AsyncKerykeionService:
             theme=theme,
         )
 
+    async def batch_calculate_natal_charts(
+        self, chart_requests: List[Dict[str, Any]], use_cache: bool = True
+    ) -> List[Dict[str, Any]]:
+        """Calculate multiple natal charts in parallel."""
+        return await self.batch_calculate_charts(chart_requests, use_cache)
+
     async def batch_calculate_charts(
         self, chart_requests: List[Dict[str, Any]], use_cache: bool = True
     ) -> List[Dict[str, Any]]:
@@ -473,8 +479,9 @@ class AsyncKerykeionService:
         current_avg = self.performance_stats["average_calculation_time"]
         total_ops = self.performance_stats["total_operations"]
 
-        new_avg = ((current_avg * (total_ops - 1)) + elapsed_time) / total_ops
-        self.performance_stats["average_calculation_time"] = new_avg
+        if total_ops > 0:
+            new_avg = ((current_avg * (total_ops - 1)) + elapsed_time) / total_ops
+            self.performance_stats["average_calculation_time"] = new_avg
 
     async def calculate_natal_chart_async(
         self,
@@ -503,7 +510,12 @@ class AsyncKerykeionService:
 
         # Check cache if enabled
         if use_cache:
-            cached_result = await astro_cache.get_cached_data(chart_id)
+            cached_result = await astro_cache.get_natal_chart(
+                birth_datetime=birth_datetime,
+                latitude=latitude,
+                longitude=longitude,
+                timezone=timezone
+            )
             if cached_result:
                 self.performance_stats["cached_operations"] += 1
                 self.performance_stats["total_operations"] += 1
@@ -512,6 +524,7 @@ class AsyncKerykeionService:
         # Calculate asynchronously
         start_time = time.time()
         result = await self.get_full_natal_chart_data(
+            name="AsyncChart",
             birth_datetime=birth_datetime,
             latitude=latitude,
             longitude=longitude,
@@ -528,10 +541,14 @@ class AsyncKerykeionService:
         self.performance_stats["total_operations"] += 1
 
         # Cache result if enabled
-        if use_cache:
-            await astro_cache.cache_data(
-                chart_id, result, ttl=86400
-            )  # 24 hours
+        if use_cache and not result.get("error"):
+            await astro_cache.set_natal_chart(
+                birth_datetime=birth_datetime,
+                latitude=latitude,
+                longitude=longitude,
+                chart_data=result,
+                timezone=timezone
+            )
 
         return result
 

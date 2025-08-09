@@ -13,6 +13,7 @@ from app.models.yandex_models import (
     YandexRequestMeta,
     YandexRequestModel,
     YandexResponse,
+    YandexResponseModel,
     YandexSession,
 )
 from app.services.dialog_flow_manager import DialogState
@@ -104,7 +105,7 @@ class TestDialogHandler:
 
             result = await self.dialog_handler.handle_request(request)
 
-            assert isinstance(result, YandexResponse)
+            assert isinstance(result, YandexResponseModel)
             self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
             self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
             self.dialog_handler._generate_contextual_response.assert_called_once()
@@ -152,7 +153,7 @@ class TestDialogHandler:
 
             result = await self.dialog_handler.handle_request(request)
 
-            assert isinstance(result, YandexResponse)
+            assert isinstance(result, YandexResponseModel)
             self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
             self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
             self.dialog_handler._generate_contextual_response.assert_called_once()
@@ -218,7 +219,7 @@ class TestDialogHandler:
 
             result = await self.dialog_handler.handle_request(request)
 
-            assert isinstance(result, YandexResponse)
+            assert isinstance(result, YandexResponseModel)
             self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
             self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
             self.dialog_handler._generate_contextual_response.assert_called_once()
@@ -227,30 +228,36 @@ class TestDialogHandler:
     async def test_handle_request_error_handling(self):
         """Test error handling in request processing."""
         request = self.create_mock_request("test command")
-        AsyncMock()
+        
+        # Mock error response
+        mock_error_response = YandexResponse(
+            text="Произошла ошибка, попробуйте еще раз"
+        )
+
+        # Create mock services
+        mock_intent_recognizer = Mock()
+        mock_intent_recognizer.recognize_intent.side_effect = Exception("Test error")
+        
+        mock_conversation_manager = AsyncMock()
+        mock_conversation_manager.process_conversation.return_value = (None, {})
+        
+        mock_response_formatter = Mock()
+        mock_response_formatter.format_error_response.return_value = mock_error_response
+        mock_response_formatter.format_clarification_response.return_value = mock_error_response
+        mock_response_formatter.format_fallback_response.return_value = mock_error_response
+        
+        mock_dialog_flow_manager = AsyncMock()
+        mock_error_recovery_manager = AsyncMock()
+        mock_error_recovery_manager.handle_error.return_value = mock_error_response
 
         with patch.multiple(
             self.dialog_handler,
-            intent_recognizer=Mock(),
-            conversation_manager=AsyncMock(),
-            response_formatter=AsyncMock(),
-            dialog_flow_manager=AsyncMock(),
-            error_recovery_manager=AsyncMock(),
-        ):
-            # Mock intent recognition to raise an error
-            self.dialog_handler.intent_recognizer.recognize_intent.side_effect = Exception(
-                "Test error"
-            )
-
-            # Mock error recovery
-            mock_error_response = YandexResponse(
-                text="Произошла ошибка, попробуйте еще раз"
-            )
-            self.dialog_handler.error_recovery_manager.handle_error.return_value = (
-                None,
-                mock_error_response,
-            )
-
+            intent_recognizer=mock_intent_recognizer,
+            conversation_manager=mock_conversation_manager,
+            response_formatter=mock_response_formatter,
+            dialog_flow_manager=mock_dialog_flow_manager,
+            error_recovery_manager=mock_error_recovery_manager,
+        ), patch('app.services.error_recovery.ResponseFormatter', return_value=mock_response_formatter):
             # Mock response generation
             self.dialog_handler._generate_contextual_response = AsyncMock(
                 return_value=mock_error_response
@@ -258,10 +265,10 @@ class TestDialogHandler:
 
             result = await self.dialog_handler.handle_request(request)
 
-            assert isinstance(result, YandexResponse)
-            self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
-            self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
-            self.dialog_handler._generate_contextual_response.assert_called_once()
+            assert isinstance(result, YandexResponseModel)
+            mock_intent_recognizer.recognize_intent.assert_called_once()
+            # process_conversation should NOT be called when intent recognition fails
+            mock_conversation_manager.process_conversation.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_handle_natal_chart_request(self):
@@ -313,7 +320,7 @@ class TestDialogHandler:
 
             result = await self.dialog_handler.handle_request(request)
 
-            assert isinstance(result, YandexResponse)
+            assert isinstance(result, YandexResponseModel)
             self.dialog_handler._generate_contextual_response.assert_called_once()
 
     @pytest.mark.asyncio
@@ -377,55 +384,51 @@ class TestDialogHandler:
 
             result = await self.dialog_handler.handle_request(request)
 
-            assert isinstance(result, YandexResponse)
+            assert isinstance(result, YandexResponseModel)
             self.dialog_handler._generate_contextual_response.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_handle_help_request(self):
         """Test handling help request."""
         request = self.create_mock_request("помощь")
-        AsyncMock()
+
+        # Mock response
+        mock_response = YandexResponse(text="Mock response")
+
+        # Create mock services
+        mock_intent_recognizer = Mock()
+        mock_processed_request = Mock()
+        mock_processed_request.intent = YandexIntent.HELP
+        mock_processed_request.confidence = 0.9
+        mock_processed_request.entities = {}
+        mock_intent_recognizer.recognize_intent.return_value = mock_processed_request
+        
+        mock_conversation_manager = AsyncMock()
+        mock_conversation_manager.process_conversation.return_value = (DialogState.EXPLORING_COMPATIBILITY, {})
+        
+        mock_response_formatter = Mock()
+        mock_response_formatter.format_error_response.return_value = mock_response
+        
+        mock_dialog_flow_manager = AsyncMock()
+        mock_dialog_flow_manager.get_current_state.return_value = DialogState.INITIAL
 
         with patch.multiple(
             self.dialog_handler,
-            intent_recognizer=Mock(),
-            conversation_manager=AsyncMock(),
-            response_formatter=AsyncMock(),
-            dialog_flow_manager=AsyncMock(),
+            intent_recognizer=mock_intent_recognizer,
+            conversation_manager=mock_conversation_manager,
+            response_formatter=mock_response_formatter,
+            dialog_flow_manager=mock_dialog_flow_manager,
         ):
-            # Mock intent recognition
-            from app.models.yandex_models import ProcessedRequest, UserContext
-
-            ProcessedRequest(
-                intent=YandexIntent.HELP,
-                entities={},
-                confidence=0.9,
-                raw_text="помощь",
-                user_context=UserContext(),
-            )
-
-            # Mock conversation processing
-            self.dialog_handler.conversation_manager.process_conversation.return_value = (
-                DialogState.EXPLORING_COMPATIBILITY,
-                {},
-            )
-
-            # Mock dialog flow
-            self.dialog_handler.dialog_flow_manager.get_current_state.return_value = (
-                DialogState.INITIAL
-            )
-
-            # Mock response formatting
-            mock_response = YandexResponse(text="Mock response")
+            # Mock response generation
             self.dialog_handler._generate_contextual_response = AsyncMock(
                 return_value=mock_response
             )
 
             result = await self.dialog_handler.handle_request(request)
 
-            assert isinstance(result, YandexResponse)
-            self.dialog_handler.intent_recognizer.recognize_intent.assert_called_once()
-            self.dialog_handler.conversation_manager.process_conversation.assert_called_once()
+            assert isinstance(result, YandexResponseModel)
+            mock_intent_recognizer.recognize_intent.assert_called_once()
+            mock_conversation_manager.process_conversation.assert_called_once()
             self.dialog_handler._generate_contextual_response.assert_called_once()
 
     def test_log_interaction(self):

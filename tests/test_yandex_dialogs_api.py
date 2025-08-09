@@ -70,10 +70,9 @@ class TestYandexDialogsAPI:
             assert response.status_code == 500
 
     @patch("app.api.yandex_dialogs.get_database")
-    @patch("app.api.yandex_dialogs.UserManager")
     @patch("app.api.yandex_dialogs.dialog_handler")
     def test_yandex_webhook_success(
-        self, mock_handler, mock_user_manager_class, mock_get_db
+        self, mock_handler, mock_get_db
     ):
         """Test successful webhook request processing."""
         # Setup mocks
@@ -83,9 +82,6 @@ class TestYandexDialogsAPI:
             yield mock_db
 
         mock_get_db.side_effect = mock_get_database
-
-        mock_user_manager = AsyncMock()
-        mock_user_manager_class.return_value = mock_user_manager
 
         mock_response = YandexResponseModel(
             response=YandexResponse(text="Test response", end_session=False),
@@ -133,10 +129,9 @@ class TestYandexDialogsAPI:
         assert "session" in data
 
     @patch("app.api.yandex_dialogs.get_database")
-    @patch("app.api.yandex_dialogs.UserManager")
     @patch("app.api.yandex_dialogs.dialog_handler")
     def test_yandex_webhook_error_handling(
-        self, mock_handler, mock_user_manager_class, mock_get_db
+        self, mock_handler, mock_get_db
     ):
         """Test webhook error handling."""
         # Setup mocks to raise an exception
@@ -146,9 +141,6 @@ class TestYandexDialogsAPI:
             yield mock_db
 
         mock_get_db.side_effect = mock_get_database
-
-        mock_user_manager = AsyncMock()
-        mock_user_manager_class.return_value = mock_user_manager
 
         mock_handler.handle_request = AsyncMock(
             side_effect=Exception("Processing error")

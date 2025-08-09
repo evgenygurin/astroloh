@@ -1,4 +1,4 @@
-# Multi-stage build for optimized production image
+# Multi-stage build for optimized production image with uv
 FROM python:3.12-slim AS builder
 
 # Install system dependencies for building Python packages
@@ -8,19 +8,19 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libffi-dev \
     libc6-dev \
+    curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/cache/apt/*
 
-# Create virtual environment
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Copy dependency files first for better layer caching
-COPY requirements.txt pyproject.toml ./
+COPY pyproject.toml ./
 
-# Install Python dependencies with optimizations
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel &&     pip install --no-cache-dir -r requirements.txt &&     pip install --no-cache-dir gunicorn[gthread]==21.2.0 &&     pip install --no-cache-dir "pyswisseph[binary]" --use-pep517 --no-build-isolation
+# Install Python dependencies with uv (full dependencies for Linux)
+RUN uv venv && uv pip install -e ".[full,dev]"
 
 # Production stage
 FROM python:3.12-slim AS production
@@ -42,8 +42,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/cache/apt/* \
     && rm -rf /tmp/*
 
-# Copy virtual environment from builder stage
-COPY --from=builder /opt/venv /opt/venv
+# Install uv in production stage and copy virtual environment from builder stage
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+COPY --from=builder /.venv /opt/venv
 
 # Create non-root user with specific UID/GID for security
 RUN groupadd --gid 1001 astroloh && \
@@ -72,17 +73,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose port
 EXPOSE 8000
 
-# Production-ready startup command with Gunicorn
-CMD ["gunicorn", "app.main:app", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "4", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--worker-connections", "1000", \
-     "--max-requests", "1000", \
-     "--max-requests-jitter", "100", \
-     "--preload", \
-     "--timeout", "30", \
-     "--keep-alive", "5", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-", \
-     "--log-level", "info"]
+# Production-ready startup command with uv and uvicorn
+CMD ["uv", "run", "uvicorn", "app.main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8000", \
+     "--workers", "4"]

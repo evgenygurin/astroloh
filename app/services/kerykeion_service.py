@@ -14,12 +14,13 @@ logger = logging.getLogger(__name__)
 
 # Try to import Kerykeion with detailed error handling
 try:
-    from kerykeion import AstrologicalSubject, KerykeionChartSVG, NatalChart
+    # Updated imports for Kerykeion 4.x
+    from kerykeion import KerykeionSubject as AstrologicalSubject, MakeSvgInstance as KerykeionChartSVG, KrInstance as NatalChart
 
     KERYKEION_AVAILABLE = True
-    logger.info("KERYKEION_SERVICE_INIT: Kerykeion fully available")
-except ImportError as e:
-    logger.warning(f"KERYKEION_SERVICE_INIT: Kerykeion not available - {e}")
+    logger.info("KERYKEION_SERVICE_INIT: Kerykeion fully available with updated classes")
+except (ImportError, ModuleNotFoundError) as e:
+    logger.warning(f"KERYKEION_SERVICE_INIT: Kerykeion not fully available: {e}")
     KERYKEION_AVAILABLE = False
     # Create stub classes to prevent import errors
     AstrologicalSubject = None
@@ -78,6 +79,20 @@ class KerykeionService:
     def is_available(self) -> bool:
         """Check if Kerykeion is available"""
         return self.available
+
+    def get_service_status(self) -> Dict[str, Any]:
+        """Get service status information"""
+        return {
+            "available": self.available,
+            "service_name": "KerykeionService",
+            "features": {
+                "natal_charts": self.available,
+                "house_systems": self.available,
+                "synastry": self.available,
+                "svg_generation": self.available
+            },
+            "fallback_enabled": not self.available
+        }
 
     def create_astrological_subject(
         self,
