@@ -1,4 +1,11 @@
-# Database Schema Documentation
+# Database Schema
+
+- Users, preferences, interactions (see `app/models/*`).
+- Use Alembic for migrations.
+
+Commands:
+- `alembic upgrade head`
+- `alembic revision --autogenerate -m "message"`
 
 ## Overview
 
@@ -634,3 +641,4 @@ retrieved_date = user.birth_date     # Automatically decrypted
 6. **Consent Management**: Tracking and enforcement of data consent
 
 This schema provides a robust foundation for the Astroloh platform while ensuring security, performance, and regulatory compliance.
+

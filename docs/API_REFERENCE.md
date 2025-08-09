@@ -1,5 +1,16 @@
 # API Reference
 
+- GET `/` – service info
+- GET `/health` – health
+- POST `/api/v1/yandex/webhook` – Yandex Dialogs
+- Astrology (`/api/astrology`):
+  - POST `/natal-chart`
+  - GET `/horoscope/{sign}/{type}` (daily|weekly|monthly)
+  - POST `/compatibility`
+- Lunar (`/api/lunar/*`) – phases and calendar
+
+Auth: token-based (see `app/api/auth.py`).
+
 ## Overview
 
 Astroloh provides a comprehensive multi-platform astrological API supporting Yandex Alice, Telegram Bot, Google Assistant, and IoT Smart Home integrations. All endpoints follow RESTful principles and return JSON responses.
@@ -610,3 +621,4 @@ Real-time updates for:
 - **Caching**: Redis-based intelligent caching with TTL optimization
 - **Background Processing**: Async handling for CPU-intensive astrological calculations
 - **Rate Limiting**: Configurable per-endpoint limits
+

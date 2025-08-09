@@ -1,5 +1,27 @@
 # Astroloh Documentation Index
 
+This documentation index provides comprehensive coverage of the Astroloh platform, from basic setup to advanced operational procedures. Each section includes detailed technical information, practical examples, and troubleshooting guidance to support both development and production environments.
+
+- Product
+  - [PRODUCT_VISION.md](./PRODUCT_VISION.md)
+  - [ROADMAP_MVP.md](./ROADMAP_MVP.md)
+  - [MVP_CHECKLIST.md](./MVP_CHECKLIST.md)
+- Architecture
+  - [ARCHITECTURE.md](./ARCHITECTURE.md)
+  - [SYSTEM_MAP.md](./SYSTEM_MAP.md)
+  - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)
+- Engineering
+  - [DEVELOPER_SETUP.md](./DEVELOPER_SETUP.md)
+  - [API_REFERENCE.md](./API_REFERENCE.md)
+  - [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+  - [SECURITY_MODEL.md](./SECURITY_MODEL.md)
+- Frontend
+  - [FRONTEND_GUIDE.md](./FRONTEND_GUIDE.md)
+  - [DESIGN_SYSTEM_GUIDE.md](./DESIGN_SYSTEM_GUIDE.md)
+- Operations
+  - [DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)
+  - [TESTING.md](./TESTING.md)
+
 ## Overview
 
 Welcome to the comprehensive documentation for Astroloh, a sophisticated multi-platform astrological assistant supporting Yandex Alice, Telegram Bot, Google Assistant, and IoT Smart Home devices.
@@ -175,5 +197,3 @@ Welcome to the comprehensive documentation for Astroloh, a sophisticated multi-p
 - **[Telegram Bot Compliance](API_REFERENCE.md#telegram-bot-integration)**: Messaging platform standards
 - **[Google Assistant Compliance](API_REFERENCE.md#google-assistant-integration)**: Actions on Google requirements
 - **[GDPR Compliance](DATABASE_SCHEMA.md#gdpr-compliance-features)**: Data protection regulations
-
-This documentation index provides comprehensive coverage of the Astroloh platform, from basic setup to advanced operational procedures. Each section includes detailed technical information, practical examples, and troubleshooting guidance to support both development and production environments.

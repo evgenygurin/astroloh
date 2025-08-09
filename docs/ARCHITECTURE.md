@@ -1,5 +1,20 @@
 # System Architecture
 
+- Backend: FastAPI (`app/main.py`) exposing unified API + Yandex Dialogs webhook.
+- Services: astrology, natal chart, dialog handling, caching, personalization.
+- Data: PostgreSQL (async), Redis cache.
+- Integrations: Yandex Dialogs webhook (`/api/v1/yandex/webhook`), Telegram/Google (later).
+- Frontend: React + TS.
+
+Key Modules:
+- `app/services/dialog_handler.py`: orchestration for intents and responses.
+- `app/api/astrology.py`: REST endpoints for natal/horoscope/compatibility.
+- `app/core/config.py`: settings and env.
+
+Non-Goals for MVP: IoT, complex ML analytics.
+
+Diagrams: see `docs/SYSTEM_MAP.md`.
+
 ## Overview
 
 Astroloh is a sophisticated multi-platform astrological assistant built using modern microservices architecture principles. The system provides voice-enabled astrological consultations across Yandex Alice, Telegram Bot, Google Assistant, and IoT Smart Home devices.
@@ -457,3 +472,4 @@ Volumes:
 - **ML Model Serving**: Dedicated inference infrastructure
 
 This architecture supports the current multi-platform requirements while providing a foundation for future growth and feature expansion.
+
