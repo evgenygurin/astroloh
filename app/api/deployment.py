@@ -535,10 +535,7 @@ async def check_deployment_alerts():
         )
 
         # Check if rollback conditions are met
-        (
-            should_rollback,
-            triggers,
-        ) = await rollback_system.analyze_rollback_need()
+        rollback_plan = await rollback_system.analyze_rollback_need()
 
         # Get current health status
         health_checks = await deployment_monitor.perform_health_checks()
@@ -556,8 +553,8 @@ async def check_deployment_alerts():
 
         return {
             "timestamp": datetime.now().isoformat(),
-            "rollback_needed": should_rollback is not None,
-            "rollback_triggers": triggers if should_rollback else [],
+            "rollback_needed": rollback_plan is not None,
+            "rollback_triggers": [rollback_plan.strategy.value] if rollback_plan else [],
             "critical_issues": critical_issues,
             "health_summary": {
                 "total_checks": len(health_checks),
