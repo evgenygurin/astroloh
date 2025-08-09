@@ -108,7 +108,7 @@ class AstroCacheService(CacheService):
         timezone: str = "Europe/Moscow",
         house_system: str = "Placidus",
     ) -> bool:
-        """Cache natal chart data."""
+        """Cache natal chart data with extended TTL."""
         birth_dt_str = (
             birth_datetime.isoformat()
             if isinstance(birth_datetime, datetime)
@@ -124,18 +124,27 @@ class AstroCacheService(CacheService):
             house_system=house_system,
         )
 
-        success = await self.set(
-            cache_key, chart_data, self.astro_ttl["natal_chart"]
-        )
+        # Add caching metadata
+        enriched_data = {
+            **chart_data,
+            "_cache_metadata": {
+                "cached_at": datetime.now().isoformat(),
+                "ttl": self.astro_ttl["natal_chart"],
+                "data_type": "natal_chart",
+                "kerykeion_enhanced": chart_data.get("service_info", {}).get("method") == "Kerykeion Enhanced"
+            }
+        }
 
+        success = await self.set(cache_key, enriched_data, self.astro_ttl["natal_chart"])
+        
         if success:
-            logger.info(f"ASTRO_CACHE_SET: Natal chart cached {cache_key}")
+            logger.debug(f"ASTRO_CACHE_SET: Natal chart cached {cache_key}")
         else:
-            logger.error(
-                f"ASTRO_CACHE_SET_ERROR: Failed to cache natal chart {cache_key}"
-            )
+            logger.warning(f"ASTRO_CACHE_SET_FAILED: {cache_key}")
 
         return success
+
+    # Removed duplicate simpler implementation of set_natal_chart to ensure enhanced caching with metadata is used.
 
     async def get_daily_ephemeris(
         self, date: Union[date, str]
