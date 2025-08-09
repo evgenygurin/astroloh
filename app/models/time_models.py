@@ -459,7 +459,7 @@ class TimezoneDetectionModel(BaseModel):
         """Detect timezone from coordinates."""
         coord_info = self.coordinates.to_coordinate_info()
         return astro_time.timezone_manager.detect_timezone_from_coordinates(
-            coord_info.longitude
+            coord_info.latitude, coord_info.longitude
         )
 
     class Config:

@@ -172,44 +172,15 @@ class TimezoneManager:
                 f"Failed to load timezone '{tz_id}': {e}"
             )
 
-    def detect_timezone_from_coordinates(self, longitude: float) -> str:
-        """Detect timezone from coordinates using simple longitude-based estimation."""
-        # This is a simplified approach - in production, use a timezone lookup library
-        # For now, use UTC offset based on longitude
+    def detect_timezone_from_coordinates(self, latitude: float, longitude: float) -> str:
+        """Detect timezone from coordinates.
 
-        # Basic longitude-to-timezone mapping
-        utc_offset = round(longitude / 15.0)
-
-        # Map to common timezone identifiers
-        timezone_map = {
-            -12: "Pacific/Auckland",  # Rough approximation
-            -11: "Pacific/Midway",
-            -10: "Pacific/Honolulu",
-            -9: "America/Anchorage",
-            -8: "America/Los_Angeles",
-            -7: "America/Denver",
-            -6: "America/Chicago",
-            -5: "America/New_York",
-            -4: "America/Halifax",
-            -3: "America/Sao_Paulo",
-            -2: "Atlantic/South_Georgia",
-            -1: "Atlantic/Azores",
-            0: "Europe/London",
-            1: "Europe/Paris",
-            2: "Europe/Berlin",
-            3: "Europe/Moscow",
-            4: "Asia/Dubai",
-            5: "Asia/Karachi",
-            6: "Asia/Dhaka",
-            7: "Asia/Bangkok",
-            8: "Asia/Shanghai",
-            9: "Asia/Tokyo",
-            10: "Australia/Sydney",
-            11: "Pacific/Norfolk",
-            12: "Pacific/Auckland",
-        }
-
-        return timezone_map.get(utc_offset, "UTC")
+        Currently uses a simplified longitude-based estimation. Latitude is
+        accepted for future improvements and API compatibility.
+        """
+        return CoordinateTimeCalculator.estimate_timezone_from_coordinates(
+            latitude, longitude
+        )
 
     def validate_timezone_name(self, tz_name: str) -> bool:
         """Validate if timezone name is supported."""
@@ -310,11 +281,10 @@ class DateTimeValidator:
 
         # If coordinates provided, validate they make sense
         if coordinates:
-            # Check if timezone roughly matches coordinates
+            # Check if timezone roughly matches coordinates (soft check)
             expected_tz = TimezoneManager().detect_timezone_from_coordinates(
-                coordinates.longitude
+                coordinates.latitude, coordinates.longitude
             )
-            # This is a soft check - log warning but don't fail
             if expected_tz:
                 logger.debug(
                     f"Expected timezone {expected_tz} for coordinates"
@@ -344,11 +314,13 @@ class CoordinateTimeCalculator:
         return dt_utc + solar_offset
 
     @staticmethod
-    def estimate_timezone_from_coordinates(longitude: float) -> str:
-        """Estimate timezone identifier from coordinates."""
-        # Simplified timezone detection
-        # In production, use a proper timezone lookup library
+    def estimate_timezone_from_coordinates(latitude: float, longitude: float) -> str:
+        """Estimate timezone identifier from coordinates.
 
+        Note: This is a simplified estimation using longitude only. Latitude is
+        accepted for signature compatibility and potential future use.
+        """
+        # Simplified timezone detection
         utc_offset_hours = round(longitude / 15.0)
 
         # Map UTC offsets to timezone identifiers
@@ -408,11 +380,13 @@ class AstroTimeUtils:
                 combined = date_input.strip()
 
             if timezone_input:
-                tz_name = timezone_input
+                # Normalize and validate timezone input (supports city aliases)
+                tz_obj = self.timezone_manager.get_timezone(timezone_input)
+                tz_name = str(tz_obj)
             elif coordinates:
                 tz_name = (
                     self.coord_calculator.estimate_timezone_from_coordinates(
-                        coordinates.longitude
+                        coordinates.latitude, coordinates.longitude
                     )
                 )
             else:
@@ -429,7 +403,7 @@ class AstroTimeUtils:
                 if timezone_input:
                     tz = self.timezone_manager.get_timezone(timezone_input)
                     parsed_dt = parsed_dt.replace(tzinfo=tz)
-                    tz_name = timezone_input
+                    tz_name = str(tz)
                 else:
                     parsed_dt = parsed_dt.replace(tzinfo=timezone.utc)
                     tz_name = "UTC"
