@@ -112,3 +112,6 @@ de*.eph
 *.bak
 *.backup
 *.orig
+
+# Re-include project README required by packaging metadata
+!README.md

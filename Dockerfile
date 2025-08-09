@@ -18,6 +18,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Copy dependency files first for better layer caching
 COPY pyproject.toml ./
+# Include README for project metadata and source package for editable install
+COPY README.md ./
+COPY app/ ./app/
 
 # Install Python dependencies with uv (full dependencies for Linux)
 RUN uv venv && uv pip install -e ".[full,dev]"
