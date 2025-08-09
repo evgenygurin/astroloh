@@ -187,7 +187,6 @@ class TestAsyncKerykeionServicePerformance:
     async def test_async_calculation_performance(self, service):
         """Test async calculation performance"""
         birth_data = {
-            "name": "Async Performance Test",
             "birth_datetime": datetime(1990, 8, 15, 14, 30),
             "latitude": 55.7558,
             "longitude": 37.6176,
@@ -236,7 +235,6 @@ class TestAsyncKerykeionServicePerformance:
         """Test performance under concurrent load"""
         birth_data_sets = [
             {
-                "name": f"Concurrent Test {i}",
                 "birth_datetime": datetime(
                     1990 + i, 1 + i % 12, 1 + i % 28, 12, 0
                 ),
@@ -288,7 +286,7 @@ class TestAsyncKerykeionServicePerformance:
 
     async def test_performance_monitoring_integration(self, service):
         """Test integration with performance monitoring"""
-        initial_stats = service.get_performance_stats()
+        initial_stats = await service.get_performance_stats()
 
         with patch.object(
             service.kerykeion_service, "get_full_natal_chart_data"
@@ -302,26 +300,30 @@ class TestAsyncKerykeionServicePerformance:
             # Perform calculations
             for i in range(5):
                 await service.calculate_natal_chart_async(
-                    name=f"Monitoring Test {i}",
                     birth_datetime=datetime(1990, 8, 15, 14, 30),
                     latitude=55.7558,
                     longitude=37.6176,
                     timezone="Europe/Moscow",
                 )
 
-        final_stats = service.get_performance_stats()
+        final_stats = await service.get_performance_stats()
 
         # Performance stats should be updated
         assert (
-            final_stats["total_operations"] > initial_stats["total_operations"]
+            final_stats["async_kerykeion_stats"]["total_operations"]
+            > initial_stats["async_kerykeion_stats"]["total_operations"]
         )
         assert (
-            final_stats["async_operations"] > initial_stats["async_operations"]
+            final_stats["async_kerykeion_stats"]["async_operations"]
+            > initial_stats["async_kerykeion_stats"]["async_operations"]
         )
-        assert final_stats["average_calculation_time"] >= 0
+        assert (
+            final_stats["async_kerykeion_stats"]["average_calculation_time_ms"]
+            >= 0
+        )
 
         print(
-            f"Performance monitoring: {final_stats['total_operations']} operations tracked"
+            f"Performance monitoring: {final_stats['async_kerykeion_stats']['total_operations']} operations tracked"
         )
 
 
@@ -634,9 +636,9 @@ class TestSystemLoadTesting:
                     }
 
                     # Simulate chart calculation
-                    services[
-                        "kerykeion"
-                    ].get_full_natal_chart_data(**birth_data)
+                    services["kerykeion"].get_full_natal_chart_data(
+                        **birth_data
+                    )
 
                 except Exception:
                     pass  # Continue testing memory even if calculations fail

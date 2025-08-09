@@ -13,11 +13,7 @@ from typing import Any, Dict, List, Optional
 from loguru import logger
 
 from app.services.astro_cache_service import astro_cache
-from app.services.kerykeion_service import (
-    HouseSystem,
-    KerykeionService,
-    ZodiacType,
-)
+from app.services.kerykeion_service import HouseSystem, KerykeionService, ZodiacType
 
 
 class AsyncKerykeionService:
@@ -480,7 +476,9 @@ class AsyncKerykeionService:
         total_ops = self.performance_stats["total_operations"]
 
         if total_ops > 0:
-            new_avg = ((current_avg * (total_ops - 1)) + elapsed_time) / total_ops
+            new_avg = (
+                (current_avg * (total_ops - 1)) + elapsed_time
+            ) / total_ops
             self.performance_stats["average_calculation_time"] = new_avg
 
     async def calculate_natal_chart_async(
@@ -504,7 +502,7 @@ class AsyncKerykeionService:
         Returns:
             Natal chart data dictionary
         """
-        chart_id = self._generate_chart_id(
+        self._generate_chart_id(
             birth_datetime, latitude, longitude, timezone
         )
 
@@ -514,7 +512,7 @@ class AsyncKerykeionService:
                 birth_datetime=birth_datetime,
                 latitude=latitude,
                 longitude=longitude,
-                timezone=timezone
+                timezone=timezone,
             )
             if cached_result:
                 self.performance_stats["cached_operations"] += 1
@@ -547,7 +545,7 @@ class AsyncKerykeionService:
                 latitude=latitude,
                 longitude=longitude,
                 chart_data=result,
-                timezone=timezone
+                timezone=timezone,
             )
 
         return result

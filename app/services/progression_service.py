@@ -7,11 +7,7 @@ import logging
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-
-from app.models.transit_models import (
-    ProgressedPlanet,
-    ProgressionInterpretation,
-)
+from app.models.transit_models import ProgressedPlanet, ProgressionInterpretation
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.kerykeion_service import KerykeionService
 

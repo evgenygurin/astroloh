@@ -71,9 +71,7 @@ class TestYandexDialogsAPI:
 
     @patch("app.api.yandex_dialogs.get_database")
     @patch("app.api.yandex_dialogs.dialog_handler")
-    def test_yandex_webhook_success(
-        self, mock_handler, mock_get_db
-    ):
+    def test_yandex_webhook_success(self, mock_handler, mock_get_db):
         """Test successful webhook request processing."""
         # Setup mocks
         mock_db = MagicMock()
@@ -130,9 +128,7 @@ class TestYandexDialogsAPI:
 
     @patch("app.api.yandex_dialogs.get_database")
     @patch("app.api.yandex_dialogs.dialog_handler")
-    def test_yandex_webhook_error_handling(
-        self, mock_handler, mock_get_db
-    ):
+    def test_yandex_webhook_error_handling(self, mock_handler, mock_get_db):
         """Test webhook error handling."""
         # Setup mocks to raise an exception
         mock_db = MagicMock()
