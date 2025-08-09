@@ -425,7 +425,7 @@ async def test_deployment_system_startup():
         # Clean up any initialized services
         try:
             await startup_manager.shutdown_performance_systems()
-        except Exception as cleanup_error:
+        except Exception:
             # Ignore cleanup errors in tests as services may not be initialized
             pass
 

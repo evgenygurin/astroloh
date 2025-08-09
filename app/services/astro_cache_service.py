@@ -7,7 +7,8 @@ import hashlib
 import importlib.util
 import json
 import time
-from datetime import date as date_type, datetime, timedelta
+from datetime import date as date_type
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
 from loguru import logger
@@ -157,12 +158,17 @@ class AstroCacheService(CacheService):
                 "cached_at": datetime.now().isoformat(),
                 "ttl": self.astro_ttl["natal_chart"],
                 "data_type": "natal_chart",
-                "kerykeion_enhanced": chart_data.get("service_info", {}).get("method") == "Kerykeion Enhanced"
-            }
+                "kerykeion_enhanced": chart_data.get("service_info", {}).get(
+                    "method"
+                )
+                == "Kerykeion Enhanced",
+            },
         }
 
-        success = await self.set(cache_key, enriched_data, self.astro_ttl["natal_chart"])
-        
+        success = await self.set(
+            cache_key, enriched_data, self.astro_ttl["natal_chart"]
+        )
+
         if success:
             logger.debug(f"ASTRO_CACHE_SET: Natal chart cached {cache_key}")
         else:
