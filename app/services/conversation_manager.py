@@ -5,7 +5,9 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from app.utils.astro_time_utils import utcnow
 from typing import Any, Dict, List, Tuple
 
 from app.core.database import get_db_session_context
@@ -24,7 +26,7 @@ class ConversationContext:
         self.conversation_history: List[Dict[str, Any]] = []
         self.max_history_size = 100  # Prevent memory leaks
         self.preferences: Dict[str, Any] = {}
-        self.last_interaction = datetime.now()
+        self.last_interaction = utcnow()
         self.interaction_count = 0
         self.conversation_count = 0  # Add this for test compatibility
         self.personalization_level = 0.0  # От 0 до 1
@@ -37,7 +39,7 @@ class ConversationContext:
     ) -> None:
         """Добавляет взаимодействие в историю."""
         interaction = {
-            "timestamp": datetime.now(),
+            "timestamp": utcnow(),
             "intent": intent.value,
             "entities": entities,
             "response_type": response_type,
@@ -50,7 +52,7 @@ class ConversationContext:
                 -self.max_history_size :
             ]
 
-        self.last_interaction = datetime.now()
+        self.last_interaction = utcnow()
         self.interaction_count += 1
 
         # Увеличиваем уровень персонализации
@@ -58,7 +60,7 @@ class ConversationContext:
 
     def get_recent_intents(self, hours: int = 24) -> List[YandexIntent]:
         """Возвращает недавние интенты пользователя."""
-        cutoff = datetime.now() - timedelta(hours=hours)
+        cutoff = utcnow() - timedelta(hours=hours)
         recent_intents = []
 
         for interaction in self.conversation_history:
@@ -218,7 +220,7 @@ class ConversationManager:
 
                 if user:
                     # Загружаем недавние сессии (последние 7 дней)
-                    cutoff_date = datetime.now() - timedelta(days=7)
+                    cutoff_date = utcnow() - timedelta(days=7)
 
                     # Загружаем историю разговоров из базы данных
                     from sqlalchemy import select
@@ -366,7 +368,7 @@ class ConversationManager:
             "total_interactions": conversation.interaction_count,
             "personalization_level": conversation.personalization_level,
             "days_active": (
-                datetime.now() - conversation.last_interaction
+                utcnow() - conversation.last_interaction
             ).days
             + 1,
         }
@@ -507,7 +509,7 @@ class ConversationManager:
 
     async def cleanup_inactive_conversations(self, hours: int = 24) -> int:
         """Очищает неактивные разговоры."""
-        cutoff = datetime.now() - timedelta(hours=hours)
+        cutoff = utcnow() - timedelta(hours=hours)
         inactive_keys = [
             key
             for key, conv in self.active_conversations.items()
@@ -582,7 +584,7 @@ class ConversationManager:
         # Bonus for recent interaction
         if last_interaction:
             hours_since_last = (
-                datetime.now() - last_interaction
+                utcnow() - last_interaction
             ).total_seconds() / 3600
             if hours_since_last <= 24:
                 bonus = max(0, 10 - (hours_since_last / 24 * 10))

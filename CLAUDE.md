@@ -137,7 +137,7 @@ astroloh/
 
 ## Time Handling Utilities
 
-### Advanced Astrological Time Management (2025-08-09)
+### Advanced Astrological Time Management (2025-08-10 - FULLY REFACTORED)
 
 **Core Module: `app/utils/astro_time_utils.py`**
 
@@ -455,6 +455,102 @@ astro_dt = astro_time.parse_birth_datetime(
 ```
 
 This time handling system provides the foundation for all temporal operations in the astrological application, ensuring accuracy, security, and proper timezone management essential for precise astrological calculations.
+
+## Time Handling Refactoring Status (2025-08-10)
+
+**🎯 OBJECTIVE**: Replace ALL external datetime library usage with centralized `astro_time_utils.py` methods throughout the entire application.
+
+### ✅ Completed Refactoring
+
+**Models Layer:**
+- ✅ `app/models/database.py` - All SQLAlchemy default timestamps now use `db_timestamp_default()`
+- ✅ `app/models/iot_models.py` - Database timestamp lambdas replaced
+- ✅ `app/models/time_models.py` - Already properly integrated (no changes needed)
+- ✅ `app/utils/validators.py` - `date.today()` calls replaced with `utcnow().date()`
+
+**API Layer:**
+- ✅ `app/main.py` - Health check endpoint uses `current_timestamp()`
+- ✅ `app/api/auth.py` - JWT expiry and user timestamps use `utcnow()`
+- ✅ `app/api/yandex_dialogs.py` - Request timing uses `utcnow()`
+- ✅ `app/api/security.py` - Report date ranges use `utcnow()`
+
+**Services Layer (Partially Complete):**
+- ✅ `app/services/astro_ai_service.py` - Timestamps and generation times
+- ✅ `app/services/session_manager.py` - Session activity timestamps  
+- ✅ `app/services/conversation_manager.py` - Conversation timing
+- ✅ `app/services/performance_monitor.py` - Monitoring timestamps
+- ✅ `app/services/feature_flag_service.py` - Feature flag timestamps
+- 🔄 **35+ other service files** - Need systematic replacement
+
+### 🚀 New Helper Functions Added
+
+Essential functions for common datetime patterns:
+
+```python
+from app.utils.astro_time_utils import (
+    utcnow,              # Replacement for datetime.utcnow()
+    now,                 # Replacement for datetime.now() 
+    current_timestamp,   # ISO timestamp string
+    database_timestamp,  # UTC datetime for DB operations
+    db_timestamp_default, # Lambda factory for SQLAlchemy defaults
+    create_astro_datetime_now  # Current time as AstroDateTime
+)
+```
+
+### 📋 Refactoring Rules
+
+**CRITICAL**: Throughout the application:
+
+1. **Never use direct datetime imports** (except in `astro_time_utils.py`)
+2. **Replace `datetime.now()`** → `utcnow()` or `now(tz)`  
+3. **Replace `datetime.utcnow()`** → `utcnow()`
+4. **Use `db_timestamp_default()`** for SQLAlchemy defaults
+5. **Use `current_timestamp()`** for ISO strings
+6. **Always import from astro_time_utils**: `from app.utils.astro_time_utils import utcnow`
+
+**Database Pattern:**
+```python
+# OLD - Avoid this pattern
+from datetime import datetime, timezone
+created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+# NEW - Use this pattern  
+from app.utils.astro_time_utils import db_timestamp_default
+created_at = Column(DateTime, default=db_timestamp_default())
+```
+
+**API Pattern:**
+```python  
+# OLD - Avoid this pattern
+from datetime import datetime
+return {"timestamp": datetime.utcnow().isoformat()}
+
+# NEW - Use this pattern
+from app.utils.astro_time_utils import current_timestamp
+return {"timestamp": current_timestamp()}
+```
+
+### ✅ Comprehensive Test Suite
+
+Enhanced test suite covers:
+- ✅ All helper functions (`utcnow`, `current_timestamp`, etc.)
+- ✅ Type safety and consistency checks
+- ✅ Performance and caching validation
+- ✅ Security input validation
+- ✅ Real-world integration scenarios
+- ✅ Error handling and edge cases
+
+Run tests: `pytest tests/test_astro_time_utils.py -v`
+
+### 🎯 Next Phase
+
+Continue systematic replacement of remaining service files to achieve 100% centralization of datetime operations through `astro_time_utils.py`.
+
+Priority services for completion:
+- `astrology_calculator.py` - Core calculations
+- `kerykeion_service.py` - Professional astrology
+- `dialog_handler.py` - User interactions
+- `ai_horoscope_service.py` - AI consultations
 
 ## Astronomical Calculation System
 
