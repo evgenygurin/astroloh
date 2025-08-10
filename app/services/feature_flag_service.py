@@ -5,8 +5,6 @@ Enables gradual deployment with user-based rollout percentages.
 
 import hashlib
 from datetime import datetime
-
-from app.utils.astro_time_utils import utcnow
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set
 
@@ -15,6 +13,7 @@ from pydantic import BaseModel
 
 from app.services.astro_cache_service import astro_cache
 from app.services.performance_monitor import performance_monitor
+from app.utils.astro_time_utils import utcnow
 
 
 class FeatureRolloutPhase(Enum):

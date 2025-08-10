@@ -101,11 +101,12 @@ class TestEnhancedTransitServiceAsync:
         self, service, sample_natal_chart
     ):
         """Test async current transits calculation"""
-        with patch.object(
-            service, "is_available"
-        ) as mock_available, patch.object(
-            service, "_get_kerykeion_transits_async"
-        ) as mock_calc:
+        with (
+            patch.object(service, "is_available") as mock_available,
+            patch.object(
+                service, "_get_kerykeion_transits_async"
+            ) as mock_calc,
+        ):
             mock_available.return_value = True  # Enable Kerykeion path
             mock_calc.return_value = {
                 "aspects": [
@@ -221,11 +222,12 @@ class TestEnhancedTransitServiceAsync:
     ):
         """Test comprehensive transit analysis combining all features"""
         # Test calling the individual methods that would be used together
-        with patch.object(
-            service, "is_available"
-        ) as mock_available, patch.object(
-            service, "_get_kerykeion_transits_async"
-        ) as mock_calc:
+        with (
+            patch.object(service, "is_available") as mock_available,
+            patch.object(
+                service, "_get_kerykeion_transits_async"
+            ) as mock_calc,
+        ):
             mock_available.return_value = True  # Enable Kerykeion path
             mock_calc.return_value = {
                 "aspects": [],
@@ -282,13 +284,17 @@ class TestEnhancedTransitServiceCaching:
         """Test that current transits are properly cached"""
         mock_result = {"aspects": [], "energy_level": 80, "cached": False}
 
-        with patch(
-            "app.services.enhanced_transit_service.astro_cache"
-        ) as mock_cache, patch.object(
-            service, "_get_kerykeion_transits_async", return_value=mock_result
-        ), patch.object(
-            service, "is_available"
-        ) as mock_available:
+        with (
+            patch(
+                "app.services.enhanced_transit_service.astro_cache"
+            ) as mock_cache,
+            patch.object(
+                service,
+                "_get_kerykeion_transits_async",
+                return_value=mock_result,
+            ),
+            patch.object(service, "is_available") as mock_available,
+        ):
             # Enable Kerykeion path
             mock_available.return_value = True
 

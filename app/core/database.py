@@ -35,6 +35,13 @@ async def init_database():
     async_session_factory = db_manager.async_session
 
 
+def get_engine():
+    """Get database engine for monitoring."""
+    if not db_manager:
+        raise RuntimeError("Database not initialized")
+    return db_manager.engine
+
+
 async def get_database() -> AsyncGenerator[AsyncSession, None]:
     """
     Database dependency for FastAPI.
@@ -48,6 +55,12 @@ async def get_database() -> AsyncGenerator[AsyncSession, None]:
     assert db_manager is not None and db_manager.async_session is not None
     async with db_manager.async_session() as session:
         yield session
+
+
+# For backward compatibility with Sentry monitoring
+def get_engine_for_monitoring():
+    """Get engine for monitoring purposes."""
+    return get_engine()
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:

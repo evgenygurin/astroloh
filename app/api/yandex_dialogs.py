@@ -7,7 +7,6 @@ import uuid
 from typing import Any
 
 import sentry_sdk
-from app.utils.astro_time_utils import utcnow
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +14,7 @@ from app.core.database import get_database
 from app.core.sentry import capture_alice_context, capture_performance_metrics
 from app.models.yandex_models import YandexRequestModel, YandexResponseModel
 from app.services.dialog_handler import dialog_handler
+from app.utils.astro_time_utils import utcnow
 from app.utils.error_handler import error_handler
 
 logger = logging.getLogger(__name__)

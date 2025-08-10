@@ -47,9 +47,7 @@ class ResponseFormatter:
 
         self.help_buttons = [
             YandexButton(title="Гороскоп", payload={"action": "horoscope"}),
-            YandexButton(
-                title="Совместимость", payload={"action": "compatibility"}
-            ),
+            YandexButton(title="Совместимость", payload={"action": "compatibility"}),
             YandexButton(title="Синастрия", payload={"action": "synastry"}),
             YandexButton(title="Совет дня", payload={"action": "advice"}),
             YandexButton(title="Помощь", payload={"action": "help"}),
@@ -83,9 +81,7 @@ class ResponseFormatter:
 
         if is_returning_user:
             text = "С возвращением! Что вас интересует сегодня?"
-            logger.debug(
-                "RESPONSE_FORMAT_WELCOME_TYPE: returning_user_message"
-            )
+            logger.debug("RESPONSE_FORMAT_WELCOME_TYPE: returning_user_message")
         else:
             text = self.welcome_messages[0]
             logger.debug("RESPONSE_FORMAT_WELCOME_TYPE: new_user_message")
@@ -111,7 +107,9 @@ class ResponseFormatter:
         if user_returning:
             text = "Напомните, пожалуйста, вашу дату рождения для точного гороскопа."
         else:
-            text = "Для составления персонального гороскопа назовите дату вашего рождения."
+            text = (
+                "Для составления персонального гороскопа назовите дату вашего рождения."
+            )
 
         buttons = [
             YandexButton(
@@ -124,9 +122,7 @@ class ResponseFormatter:
         if suggestions:
             for suggestion in suggestions[:2]:
                 buttons.append(
-                    YandexButton(
-                        title=suggestion, payload={"action": "suggestion"}
-                    )
+                    YandexButton(title=suggestion, payload={"action": "suggestion"})
                 )
 
         return YandexResponse(
@@ -165,9 +161,7 @@ class ResponseFormatter:
                     + "В отношениях сейчас время для понимания и компромиссов."
                 )
             else:
-                advice = (
-                    advice_base + "Прислушайтесь к интуиции, она не подведёт."
-                )
+                advice = advice_base + "Прислушайтесь к интуиции, она не подведёт."
         else:
             advice = (
                 advice_base
@@ -176,17 +170,13 @@ class ResponseFormatter:
 
         buttons = [
             YandexButton(title="Другой совет", payload={"action": "advice"}),
-            YandexButton(
-                title="Мой гороскоп", payload={"action": "horoscope"}
-            ),
+            YandexButton(title="Мой гороскоп", payload={"action": "horoscope"}),
         ]
 
         if suggestions:
             for suggestion in suggestions[:2]:
                 buttons.append(
-                    YandexButton(
-                        title=suggestion, payload={"action": "suggestion"}
-                    )
+                    YandexButton(title=suggestion, payload={"action": "suggestion"})
                 )
 
         return YandexResponse(
@@ -218,15 +208,9 @@ class ResponseFormatter:
             logger.debug("RESPONSE_FORMAT_CLARIFICATION_TYPE: standard")
 
         buttons = [
-            YandexButton(
-                title="Мой гороскоп", payload={"action": "horoscope"}
-            ),
-            YandexButton(
-                title="Совместимость", payload={"action": "compatibility"}
-            ),
-            YandexButton(
-                title="Лунный календарь", payload={"action": "lunar"}
-            ),
+            YandexButton(title="Мой гороскоп", payload={"action": "horoscope"}),
+            YandexButton(title="Совместимость", payload={"action": "compatibility"}),
+            YandexButton(title="Лунный календарь", payload={"action": "lunar"}),
             YandexButton(title="Помощь", payload={"action": "help"}),
         ]
 
@@ -238,9 +222,7 @@ class ResponseFormatter:
             buttons = []
             for suggestion in suggestions[:4]:
                 buttons.append(
-                    YandexButton(
-                        title=suggestion, payload={"action": "suggestion"}
-                    )
+                    YandexButton(title=suggestion, payload={"action": "suggestion"})
                 )
 
         response = YandexResponse(
@@ -272,9 +254,7 @@ class ResponseFormatter:
         if len(buttons) < 3:
             buttons.extend(
                 [
-                    YandexButton(
-                        title="Начать сначала", payload={"action": "restart"}
-                    ),
+                    YandexButton(title="Начать сначала", payload={"action": "restart"}),
                     YandexButton(title="Помощь", payload={"action": "help"}),
                 ]
             )
@@ -307,9 +287,7 @@ class ResponseFormatter:
             end_session=False,
         )
 
-    def format_compatibility_request_response(
-        self, step: int = 1
-    ) -> YandexResponse:
+    def format_compatibility_request_response(self, step: int = 1) -> YandexResponse:
         """Форматирует запрос данных для проверки совместимости."""
         if step == 1:
             text = "Для проверки совместимости назовите ваш знак зодиака."
@@ -354,9 +332,7 @@ class ResponseFormatter:
             if "health" in test_horoscope_data:
                 text += f"\n🏥 Здоровье: {test_horoscope_data['health']}"
             if "lucky_numbers" in test_horoscope_data:
-                numbers = ", ".join(
-                    map(str, test_horoscope_data["lucky_numbers"])
-                )
+                numbers = ", ".join(map(str, test_horoscope_data["lucky_numbers"]))
                 text += f"\n🔢 Счастливые числа: {numbers}"
             if "lucky_color" in test_horoscope_data:
                 text += f"\n🎨 Счастливый цвет: {test_horoscope_data['lucky_color']}"
@@ -369,9 +345,7 @@ class ResponseFormatter:
 
         elif horoscope_data and horoscope_data_or_zodiac_sign:
             # Production case: first parameter is zodiac_sign, second is horoscope_data
-            logger.debug(
-                "RESPONSE_FORMAT_HOROSCOPE_MODE: production_with_data"
-            )
+            logger.debug("RESPONSE_FORMAT_HOROSCOPE_MODE: production_with_data")
             zodiac_sign = horoscope_data_or_zodiac_sign
             general_forecast = horoscope_data.get("general_forecast", "")
             spheres = horoscope_data.get("spheres", {})
@@ -397,9 +371,7 @@ class ResponseFormatter:
                         "finances": "💰 Финансы",
                     }
                     sphere_name = sphere_names.get(sphere, sphere.capitalize())
-                    text += (
-                        f"{sphere_name} {stars}: {data.get('forecast', '')}\n"
-                    )
+                    text += f"{sphere_name} {stars}: {data.get('forecast', '')}\n"
 
                 text += "\n"
 
@@ -407,7 +379,9 @@ class ResponseFormatter:
                 text += f"⚡ Уровень энергии: {energy_level.get('level', 60)}% - {energy_level.get('description', '')}\n\n"
 
             if lucky_numbers:
-                text += f"🔢 Счастливые числа: {', '.join(map(str, lucky_numbers[:4]))}\n"
+                text += (
+                    f"🔢 Счастливые числа: {', '.join(map(str, lucky_numbers[:4]))}\n"
+                )
 
             if lucky_colors:
                 text += f"🎨 Счастливые цвета: {', '.join(lucky_colors)}"
@@ -422,18 +396,12 @@ class ResponseFormatter:
                 f"RESPONSE_FORMAT_HOROSCOPE_BASIC: sign={zodiac_sign.value}, generated_length={len(horoscope_text)}"
             )
         else:
-            logger.warning(
-                "RESPONSE_FORMAT_HOROSCOPE_ERROR: no_valid_input_data"
-            )
+            logger.warning("RESPONSE_FORMAT_HOROSCOPE_ERROR: no_valid_input_data")
             text = "Для составления гороскопа нужно указать знак зодиака."
 
         buttons = [
-            YandexButton(
-                title="Другой период", payload={"action": "change_period"}
-            ),
-            YandexButton(
-                title="Совместимость", payload={"action": "compatibility"}
-            ),
+            YandexButton(title="Другой период", payload={"action": "change_period"}),
+            YandexButton(title="Совместимость", payload={"action": "compatibility"}),
             YandexButton(title="Совет дня", payload={"action": "advice"}),
         ]
 
@@ -488,9 +456,7 @@ class ResponseFormatter:
 
         elif compatibility_data and compatibility_data_or_sign1 and sign2:
             # Production case: first parameter is sign1, with compatibility_data
-            logger.debug(
-                "RESPONSE_FORMAT_COMPATIBILITY_MODE: production_with_data"
-            )
+            logger.debug("RESPONSE_FORMAT_COMPATIBILITY_MODE: production_with_data")
             sign1 = compatibility_data_or_sign1
             total_score = compatibility_data.get(
                 "total_score", compatibility_data.get("score", 50)
@@ -505,9 +471,7 @@ class ResponseFormatter:
 
             # Создаем визуальный рейтинг
             stars = "⭐" * min(5, max(1, round(total_score / 20)))
-            hearts = (
-                "💕" if total_score >= 80 else "💗" if total_score >= 60 else "💛"
-            )
+            hearts = "💕" if total_score >= 80 else "💗" if total_score >= 60 else "💛"
 
             text = f"Совместимость {sign1.value} и {sign2.value}:\n\n"
             text += f"{hearts} Общий балл: {total_score}/100 {stars}\n"
@@ -517,39 +481,37 @@ class ResponseFormatter:
             if total_score >= 80:
                 text += "✨ Прекрасная пара! У вас много общего и отличные перспективы."
             elif total_score >= 60:
-                text += "💫 Хорошая совместимость. Есть потенциал для гармоничных отношений."
+                text += (
+                    "💫 Хорошая совместимость. Есть потенциал для гармоничных отношений."
+                )
             elif total_score >= 40:
-                text += "⚖️ Умеренная совместимость. Потребуется работа над отношениями."
+                text += (
+                    "⚖️ Умеренная совместимость. Потребуется работа над отношениями."
+                )
             else:
-                text += "🔄 Сложная совместимость, но противоположности могут притягиваться."
+                text += (
+                    "🔄 Сложная совместимость, но противоположности могут притягиваться."
+                )
 
         elif compatibility_data_or_sign1 and sign2:
             # Basic compatibility with just zodiac signs
             logger.debug("RESPONSE_FORMAT_COMPATIBILITY_MODE: basic_signs")
             sign1 = compatibility_data_or_sign1
-            compatibility_text = self._generate_compatibility_text(
-                sign1, sign2
+            compatibility_text = self._generate_compatibility_text(sign1, sign2)
+            text = (
+                f"Совместимость {sign1.value} и {sign2.value}:\n\n{compatibility_text}"
             )
-            text = f"Совместимость {sign1.value} и {sign2.value}:\n\n{compatibility_text}"
             logger.debug(
                 f"RESPONSE_FORMAT_COMPATIBILITY_BASIC: sign1={sign1.value}, sign2={sign2.value}, generated_length={len(compatibility_text)}"
             )
         else:
-            logger.warning(
-                "RESPONSE_FORMAT_COMPATIBILITY_ERROR: insufficient_data"
-            )
-            text = (
-                "Для проверки совместимости нужно указать оба знака зодиака."
-            )
+            logger.warning("RESPONSE_FORMAT_COMPATIBILITY_ERROR: insufficient_data")
+            text = "Для проверки совместимости нужно указать оба знака зодиака."
 
         buttons = [
-            YandexButton(
-                title="Другая пара", payload={"action": "new_compatibility"}
-            ),
+            YandexButton(title="Другая пара", payload={"action": "new_compatibility"}),
             YandexButton(title="Гороскоп", payload={"action": "horoscope"}),
-            YandexButton(
-                title="Главное меню", payload={"action": "main_menu"}
-            ),
+            YandexButton(title="Главное меню", payload={"action": "main_menu"}),
         ]
 
         response = YandexResponse(
@@ -559,9 +521,7 @@ class ResponseFormatter:
             end_session=False,
         )
 
-        logger.info(
-            f"RESPONSE_FORMAT_COMPATIBILITY_SUCCESS: text_length={len(text)}"
-        )
+        logger.info(f"RESPONSE_FORMAT_COMPATIBILITY_SUCCESS: text_length={len(text)}")
         return response
 
     def format_synastry_response(
@@ -576,15 +536,11 @@ class ResponseFormatter:
         )
 
         overall_score = compatibility_report.get("overall_score", 50)
-        compatibility_type = compatibility_report.get(
-            "compatibility_type", "romantic"
-        )
+        compatibility_type = compatibility_report.get("compatibility_type", "romantic")
         strengths = compatibility_report.get("strengths", [])
         challenges = compatibility_report.get("challenges", [])
         advice = compatibility_report.get("advice", [])
-        relationship_themes = compatibility_report.get(
-            "relationship_themes", []
-        )
+        relationship_themes = compatibility_report.get("relationship_themes", [])
 
         # Визуальные элементы
         stars = "⭐" * min(5, max(1, round(overall_score / 20)))
@@ -603,9 +559,7 @@ class ResponseFormatter:
 
         # Формируем основной текст
         text = f"🔮 Синастрия: {user_name} и {partner_name}\n\n"
-        text += (
-            f"{hearts} Общая совместимость: {overall_score:.1f}/100 {stars}\n"
-        )
+        text += f"{hearts} Общая совместимость: {overall_score:.1f}/100 {stars}\n"
         text += f"📊 Оценка: {summary}\n\n"
 
         # Темы отношений
@@ -640,19 +594,13 @@ class ResponseFormatter:
             text = text[:590] + "..."
 
         buttons = [
-            YandexButton(
-                title="Детали", payload={"action": "synastry_details"}
-            ),
+            YandexButton(title="Детали", payload={"action": "synastry_details"}),
             YandexButton(
                 title="Композитная карта",
                 payload={"action": "composite_chart"},
             ),
-            YandexButton(
-                title="Новый анализ", payload={"action": "new_synastry"}
-            ),
-            YandexButton(
-                title="Главное меню", payload={"action": "main_menu"}
-            ),
+            YandexButton(title="Новый анализ", payload={"action": "new_synastry"}),
+            YandexButton(title="Главное меню", payload={"action": "main_menu"}),
         ]
 
         response = YandexResponse(
@@ -674,13 +622,9 @@ class ResponseFormatter:
         text = f"Астрологический совет дня:\n\n{advice_text}"
 
         buttons = [
-            YandexButton(
-                title="Новый совет", payload={"action": "new_advice"}
-            ),
+            YandexButton(title="Новый совет", payload={"action": "new_advice"}),
             YandexButton(title="Гороскоп", payload={"action": "horoscope"}),
-            YandexButton(
-                title="Главное меню", payload={"action": "main_menu"}
-            ),
+            YandexButton(title="Главное меню", payload={"action": "main_menu"}),
         ]
 
         return YandexResponse(
@@ -709,9 +653,7 @@ class ResponseFormatter:
             end_session=False,
         )
 
-    def format_error_response(
-        self, error_type: str = "general"
-    ) -> YandexResponse:
+    def format_error_response(self, error_type: str = "general") -> YandexResponse:
         """Форматирует ответ об ошибке с учетом требований Алисы."""
         logger.warning(f"RESPONSE_FORMAT_ERROR_START: error_type={error_type}")
 
@@ -757,11 +699,7 @@ class ResponseFormatter:
             "До встречи! Пусть звёзды освещают ваш путь.",
         ]
 
-        if (
-            personalized
-            and user_context
-            and hasattr(user_context, "zodiac_sign")
-        ):
+        if personalized and user_context and hasattr(user_context, "zodiac_sign"):
             zodiac_sign = user_context.zodiac_sign
             if zodiac_sign:
                 text = f"До свидания! Пусть звёзды благословят {zodiac_sign.value} на весь день!"
@@ -820,13 +758,9 @@ class ResponseFormatter:
                 text += f"• {strength}\n"
 
         buttons = [
-            YandexButton(
-                title="Подробнее", payload={"action": "detailed_chart"}
-            ),
+            YandexButton(title="Подробнее", payload={"action": "detailed_chart"}),
             YandexButton(title="Гороскоп", payload={"action": "horoscope"}),
-            YandexButton(
-                title="Главное меню", payload={"action": "main_menu"}
-            ),
+            YandexButton(title="Главное меню", payload={"action": "main_menu"}),
         ]
 
         return YandexResponse(
@@ -871,13 +805,9 @@ class ResponseFormatter:
                 text += f"• {rec}\n"
 
         buttons = [
-            YandexButton(
-                title="Другой день", payload={"action": "change_date"}
-            ),
+            YandexButton(title="Другой день", payload={"action": "change_date"}),
             YandexButton(title="Лучшие дни", payload={"action": "best_days"}),
-            YandexButton(
-                title="Главное меню", payload={"action": "main_menu"}
-            ),
+            YandexButton(title="Главное меню", payload={"action": "main_menu"}),
         ]
 
         return YandexResponse(
@@ -933,9 +863,7 @@ class ResponseFormatter:
         # Убираем лишние пробелы
         tts = re.sub(r"\s+", " ", tts).strip()
 
-        logger.debug(
-            f"RESPONSE_TTS_PROCESSING_COMPLETE: final_length={len(tts)}"
-        )
+        logger.debug(f"RESPONSE_TTS_PROCESSING_COMPLETE: final_length={len(tts)}")
         return tts
 
     def _generate_horoscope_text(
@@ -989,9 +917,7 @@ class ResponseFormatter:
         element2 = get_element(sign2)
 
         if element1 == element2:
-            return (
-                "Отличная совместимость! Вы понимаете друг друга с полуслова."
-            )
+            return "Отличная совместимость! Вы понимаете друг друга с полуслова."
         elif (element1 in ["fire", "air"] and element2 in ["fire", "air"]) or (
             element1 in ["earth", "water"] and element2 in ["earth", "water"]
         ):
@@ -1012,35 +938,25 @@ class ResponseFormatter:
 
         return random.choice(advices)
 
-    def format_fallback_response(
-        self, error, request, context=None
-    ) -> YandexResponse:
+    def format_fallback_response(self, error, request, context=None) -> YandexResponse:
         """Форматирует резервный ответ при ошибке."""
         logger.error(
             f"RESPONSE_FORMAT_FALLBACK: error={str(error)[:100]}, has_context={context is not None}"
         )
 
-        text = (
-            "Произошла ошибка. Попробуйте что-то другое или скажите 'помощь'."
-        )
+        text = "Произошла ошибка. Попробуйте что-то другое или скажите 'помощь'."
         buttons = [
             YandexButton(title="Помощь", payload={"action": "help"}),
-            YandexButton(
-                title="Начать сначала", payload={"action": "restart"}
-            ),
+            YandexButton(title="Начать сначала", payload={"action": "restart"}),
         ]
 
         response = YandexResponse(
             text=text, tts=text, buttons=buttons, end_session=False
         )
-        logger.info(
-            "RESPONSE_FORMAT_FALLBACK_SUCCESS: fallback_response_created"
-        )
+        logger.info("RESPONSE_FORMAT_FALLBACK_SUCCESS: fallback_response_created")
         return response
 
-    def format_greeting_response(
-        self, is_new_user: bool = True
-    ) -> YandexResponse:
+    def format_greeting_response(self, is_new_user: bool = True) -> YandexResponse:
         """Форматирует приветственный ответ для тестов."""
         return self.format_welcome_response(is_returning_user=not is_new_user)
 
@@ -1054,9 +970,7 @@ class ResponseFormatter:
                 button_objects.append(
                     YandexButton(
                         title=button_text,
-                        payload={
-                            "action": button_text.lower().replace(" ", "_")
-                        },
+                        payload={"action": button_text.lower().replace(" ", "_")},
                     )
                 )
 
@@ -1071,10 +985,7 @@ class ResponseFormatter:
         self, custom_message: Optional[str] = None
     ) -> YandexResponse:
         """Форматирует запрос знака зодиака для тестов."""
-        text = (
-            custom_message
-            or "Назовите ваш знак зодиака для составления гороскопа."
-        )
+        text = custom_message or "Назовите ваш знак зодиака для составления гороскопа."
 
         return YandexResponse(
             text=text,
@@ -1096,9 +1007,7 @@ class ResponseFormatter:
 
     def format_partner_sign_request_response(self) -> YandexResponse:
         """Форматирует запрос знака партнера для тестов."""
-        text = (
-            "Назовите знак зодиака вашего партнера для проверки совместимости."
-        )
+        text = "Назовите знак зодиака вашего партнера для проверки совместимости."
 
         return YandexResponse(
             text=text,
@@ -1107,9 +1016,7 @@ class ResponseFormatter:
             end_session=False,
         )
 
-    def format_personalized_greeting(
-        self, user_context: Any
-    ) -> YandexResponse:
+    def format_personalized_greeting(self, user_context: Any) -> YandexResponse:
         """Форматирует персонализированное приветствие для тестов."""
         text = "Добро пожаловать! Рады видеть вас снова."
 
@@ -1143,12 +1050,8 @@ class ResponseFormatter:
         text = "Вы хотите завершить работу с астрологом?"
 
         buttons = [
-            YandexButton(
-                title="Да, завершить", payload={"action": "confirm_exit"}
-            ),
-            YandexButton(
-                title="Нет, остаться", payload={"action": "cancel_exit"}
-            ),
+            YandexButton(title="Да, завершить", payload={"action": "confirm_exit"}),
+            YandexButton(title="Нет, остаться", payload={"action": "cancel_exit"}),
             YandexButton(title="Помощь", payload={"action": "help"}),
         ]
 
@@ -1202,20 +1105,14 @@ class ResponseFormatter:
             end_session=False,
         )
 
-    def format_transits_response(
-        self, transits: Dict[str, Any]
-    ) -> YandexResponse:
+    def format_transits_response(self, transits: Dict[str, Any]) -> YandexResponse:
         """Форматирует ответ с транзитами."""
-        text = (
-            f"Актуальные транзиты на {transits.get('summary', 'сегодня')}.\n\n"
-        )
+        text = f"Актуальные транзиты на {transits.get('summary', 'сегодня')}.\n\n"
 
         active_transits = transits.get("active_transits", [])
         if active_transits:
             text += "Основные влияния:\n"
-            for i, transit in enumerate(
-                active_transits[:3]
-            ):  # Ограничиваем тремя
+            for i, transit in enumerate(active_transits[:3]):  # Ограничиваем тремя
                 text += f"• {transit['transit_planet']} {transit['aspect']} {transit['natal_planet']}: {transit['influence']}\n"
 
         daily_influences = transits.get("daily_influences", [])
@@ -1224,9 +1121,7 @@ class ResponseFormatter:
 
         buttons = [
             YandexButton(title="Гороскоп", payload={"action": "horoscope"}),
-            YandexButton(
-                title="Прогрессии", payload={"action": "progressions"}
-            ),
+            YandexButton(title="Прогрессии", payload={"action": "progressions"}),
             YandexButton(title="Помощь", payload={"action": "help"}),
         ]
 
@@ -1259,9 +1154,7 @@ class ResponseFormatter:
         interpretation = progressions.get("interpretation", {})
 
         text = "Ваши прогрессии показывают:\n\n"
-        text += (
-            f"Возраст: {interpretation.get('current_age', 'неизвестен')} лет\n"
-        )
+        text += f"Возраст: {interpretation.get('current_age', 'неизвестен')} лет\n"
         text += f"Жизненный этап: {interpretation.get('life_stage', 'развитие')}\n\n"
 
         prog_sun = interpretation.get("progressed_sun", {})
@@ -1353,10 +1246,10 @@ class ResponseFormatter:
 
         text = f"Ваш лунар на {lunar_return.get('month', 'этот')} месяц:\n\n"
         text += f"{interpretation.get('emotional_theme', 'Эмоциональное развитие')}\n\n"
+        text += f"{interpretation.get('action_theme', 'Активные действия')}\n\n"
         text += (
-            f"{interpretation.get('action_theme', 'Активные действия')}\n\n"
+            f"Совет: {interpretation.get('general_advice', 'Следуйте лунным ритмам')}"
         )
-        text += f"Совет: {interpretation.get('general_advice', 'Следуйте лунным ритмам')}"
 
         buttons = [
             YandexButton(title="Соляр", payload={"action": "solar_return"}),

@@ -3,8 +3,6 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from app.utils.astro_time_utils import utcnow
-
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +15,7 @@ from app.models.iot_models import (
 )
 from app.services.iot_manager import IoTDeviceManager
 from app.services.lunar_calendar import LunarCalendar
+from app.utils.astro_time_utils import utcnow
 
 
 class SmartLightingService:

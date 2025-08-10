@@ -86,6 +86,7 @@ services:
       POSTGRES_DB: astroloh_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_database.sql:/docker-entrypoint-initdb.d/01_init_database.sql:ro
     ports:
       - "5432:5432"
     healthcheck:

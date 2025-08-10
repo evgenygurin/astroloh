@@ -9,8 +9,6 @@ from typing import Any, Dict
 
 from loguru import logger
 
-from app.utils.astro_time_utils import current_timestamp, utcnow
-
 from app.services.deployment_monitor import deployment_monitor
 from app.services.feature_flag_service import (
     FeatureRolloutPhase,
@@ -20,15 +18,14 @@ from app.services.feature_flag_service import (
 from app.services.performance_monitor import performance_monitor
 from app.services.rollback_system import rollback_system
 from app.services.startup_manager import startup_manager
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 
 class ProductionDeploymentConfig:
     """Configuration and orchestration for production Kerykeion deployment."""
 
     def __init__(self):
-        self.deployment_id = (
-            f"kerykeion_deploy_{int(utcnow().timestamp())}"
-        )
+        self.deployment_id = f"kerykeion_deploy_{int(utcnow().timestamp())}"
         self.deployment_start_time = utcnow()
         self.current_phase = "preparation"
         self.phase_progress = {}

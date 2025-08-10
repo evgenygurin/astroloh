@@ -401,6 +401,7 @@ async def get_compliance_report(
     """
     try:
         from datetime import timedelta
+
         from app.utils.astro_time_utils import utcnow
 
         start_date = utcnow() - timedelta(days=days)

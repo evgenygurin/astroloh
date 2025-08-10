@@ -1,9 +1,6 @@
 """Home automation service with astrological triggers."""
 
-from datetime import datetime
 from typing import Any, Dict, List, Optional
-
-from app.utils.astro_time_utils import utcnow
 
 from loguru import logger
 from sqlalchemy import and_, select
@@ -21,6 +18,7 @@ from app.services.iot_manager import IoTDeviceManager
 from app.services.lunar_calendar import LunarCalendar
 from app.services.smart_lighting_service import SmartLightingService
 from app.services.transit_calculator import TransitCalculator
+from app.utils.astro_time_utils import utcnow
 
 
 class HomeAutomationService:
@@ -735,9 +733,7 @@ class HomeAutomationService:
         if not phases:
             return False
 
-        lunar_info = await self.lunar_service.get_lunar_calendar_info(
-            utcnow()
-        )
+        lunar_info = await self.lunar_service.get_lunar_calendar_info(utcnow())
         current_phase = lunar_info.get("phase")
 
         return current_phase in phases

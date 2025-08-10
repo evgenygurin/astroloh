@@ -9,8 +9,6 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.utils.astro_time_utils import utcnow
-
 from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -26,6 +24,7 @@ from app.models.database import (
 )
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.user_manager import UserManager
+from app.utils.astro_time_utils import utcnow
 
 
 class CollaborativeFiltering:
@@ -496,7 +495,7 @@ class HybridRecommendationEngine:
 
         # Анализируем временные паттерны
         time_preferences = self._analyze_time_patterns(interactions)
-        
+
         # Корректируем скоры на основе временных предпочтений
         current_hour = utcnow().hour
         for rec in recommendations:

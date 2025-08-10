@@ -736,7 +736,7 @@ class YandexGPTClient:
             },
         )
 
-        system_prompt = f"""{config['system']}
+        system_prompt = f"""{config["system"]}
 Давай практические советы на основе астрологических принципов.
 
 Твои советы должны быть:
@@ -809,7 +809,7 @@ class YandexGPTClient:
             )
             return result is not None
         except Exception as e:
-            logger.error(f"Yandex GPT availability check failed: {e}")
+            logger.debug(f"Yandex GPT availability check failed: {e}")
             return False
 
 

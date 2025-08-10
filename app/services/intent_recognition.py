@@ -6,7 +6,6 @@ import hashlib
 import logging
 import re
 from typing import Any, Dict, List, Tuple
-from app.utils.astro_time_utils import utcnow
 
 from app.models.yandex_models import (
     ProcessedRequest,
@@ -14,6 +13,7 @@ from app.models.yandex_models import (
     YandexIntent,
     YandexZodiacSign,
 )
+from app.utils.astro_time_utils import utcnow
 
 logger = logging.getLogger(__name__)
 

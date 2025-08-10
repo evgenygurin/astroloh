@@ -3,7 +3,6 @@ Deployment management API endpoints.
 Provides control interface for production deployment monitoring and rollbacks.
 """
 
-from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query

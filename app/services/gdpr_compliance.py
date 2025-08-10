@@ -6,14 +6,13 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from app.utils.astro_time_utils import utcnow, current_timestamp
-
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.database import DataDeletionRequest, HoroscopeRequest, SecurityLog, User
 from app.services.encryption import SecurityUtils, data_protection
 from app.services.user_manager import UserManager
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 
 class GDPRComplianceService:

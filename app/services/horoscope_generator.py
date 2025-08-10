@@ -8,11 +8,10 @@ from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from app.utils.astro_time_utils import utcnow
-
 from app.models.yandex_models import YandexZodiacSign
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.transit_calculator import TransitCalculator
+from app.utils.astro_time_utils import utcnow
 
 logger = logging.getLogger(__name__)
 

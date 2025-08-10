@@ -7,15 +7,12 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from app.utils.astro_time_utils import utcnow, current_timestamp, now
-
-import pytz
-
 from app.services.astro_cache_service import astro_cache
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.async_kerykeion_service import async_kerykeion
 from app.services.kerykeion_service import KerykeionService
 from app.services.performance_monitor import performance_monitor
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -1939,7 +1936,8 @@ class TransitService:
             return self._get_basic_transits(natal_chart, transit_date)
 
         result = await asyncio.get_event_loop().run_in_executor(
-            None, _sync_basic_calculation  # Используем default executor
+            None,
+            _sync_basic_calculation,  # Используем default executor
         )
 
         return result

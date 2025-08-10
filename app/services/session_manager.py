@@ -3,13 +3,12 @@
 """
 
 import logging
-from datetime import timedelta
-
-from app.utils.astro_time_utils import utcnow
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from app.models.yandex_models import UserContext, YandexIntent, YandexSession
 from app.services.user_manager import SessionManager as SecureSessionManager
+from app.utils.astro_time_utils import utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -289,10 +288,7 @@ class SessionManager:
             if last_activity.tzinfo is None:
                 last_activity = last_activity.replace(tzinfo=timezone.utc)
 
-            return (
-                utcnow() - last_activity
-                > self._session_timeout
-            )
+            return utcnow() - last_activity > self._session_timeout
         except (KeyError, ValueError):
             return True
 
@@ -304,10 +300,7 @@ class SessionManager:
                 return False
 
             awaiting_time = datetime.fromisoformat(awaiting_since)
-            return (
-                utcnow() - awaiting_time
-                > self._conversation_timeout
-            )
+            return utcnow() - awaiting_time > self._conversation_timeout
         except (ValueError, TypeError):
             return False
 

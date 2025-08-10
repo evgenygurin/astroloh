@@ -109,9 +109,12 @@ class TestAliceWebhookIntegration:
             alice_request = self.create_alice_request(greeting)
 
             # Mock dependencies
-            with patch("app.core.database.get_database") as mock_db, patch(
-                "app.services.session_manager.SessionManager"
-            ) as mock_session_mgr:
+            with (
+                patch("app.core.database.get_database") as mock_db,
+                patch(
+                    "app.services.session_manager.SessionManager"
+                ) as mock_session_mgr,
+            ):
                 mock_db.return_value.__aenter__.return_value = AsyncMock()
                 mock_session_mgr.return_value.get_user_context = AsyncMock(
                     return_value=None
@@ -155,11 +158,15 @@ class TestAliceWebhookIntegration:
         for horoscope_cmd in AliceTestData.VOICE_COMMANDS["horoscopes"][:2]:
             alice_request = self.create_alice_request(horoscope_cmd)
 
-            with patch("app.core.database.get_database") as mock_db, patch(
-                "app.services.session_manager.SessionManager"
-            ) as mock_session_mgr, patch(
-                "app.services.horoscope_generator.HoroscopeGenerator"
-            ) as mock_horoscope:
+            with (
+                patch("app.core.database.get_database") as mock_db,
+                patch(
+                    "app.services.session_manager.SessionManager"
+                ) as mock_session_mgr,
+                patch(
+                    "app.services.horoscope_generator.HoroscopeGenerator"
+                ) as mock_horoscope,
+            ):
                 mock_db.return_value.__aenter__.return_value = AsyncMock()
                 mock_session_mgr.return_value.get_user_context = AsyncMock(
                     return_value=None
@@ -203,11 +210,15 @@ class TestAliceWebhookIntegration:
         compatibility_cmd = "совместимость льва и овна"
         alice_request = self.create_alice_request(compatibility_cmd)
 
-        with patch("app.core.database.get_database") as mock_db, patch(
-            "app.services.session_manager.SessionManager"
-        ) as mock_session_mgr, patch(
-            "app.services.compatibility_analyzer.CompatibilityAnalyzer"
-        ) as mock_compat:
+        with (
+            patch("app.core.database.get_database") as mock_db,
+            patch(
+                "app.services.session_manager.SessionManager"
+            ) as mock_session_mgr,
+            patch(
+                "app.services.compatibility_analyzer.CompatibilityAnalyzer"
+            ) as mock_compat,
+        ):
             mock_db.return_value.__aenter__.return_value = AsyncMock()
             mock_session_mgr.return_value.get_user_context = AsyncMock(
                 return_value=None
@@ -491,9 +502,10 @@ class TestYandexGPTIntegration:
         self, ai_horoscope_service
     ):
         """Test AI horoscope service integration"""
-        with patch("app.core.config.settings") as mock_settings, patch.object(
-            ai_horoscope_service, "gpt_client"
-        ) as mock_gpt:
+        with (
+            patch("app.core.config.settings") as mock_settings,
+            patch.object(ai_horoscope_service, "gpt_client") as mock_gpt,
+        ):
             mock_settings.ENABLE_AI_GENERATION = True
             mock_gpt.generate_horoscope = AsyncMock(
                 return_value="Прекрасный день для Овнов! Энергия на высоте."
@@ -696,9 +708,12 @@ class TestAliceConversationFlows:
             ),
         )
 
-        with patch("app.core.database.get_database") as mock_db, patch(
-            "app.services.session_manager.SessionManager"
-        ) as mock_session_mgr:
+        with (
+            patch("app.core.database.get_database") as mock_db,
+            patch(
+                "app.services.session_manager.SessionManager"
+            ) as mock_session_mgr,
+        ):
             mock_db.return_value.__aenter__.return_value = AsyncMock()
             mock_session_mgr.return_value.get_user_context = AsyncMock(
                 return_value=None
@@ -737,11 +752,15 @@ class TestAliceConversationFlows:
             }
         )
 
-        with patch("app.core.database.get_database") as mock_db, patch(
-            "app.services.session_manager.SessionManager"
-        ) as mock_session_mgr, patch(
-            "app.services.horoscope_generator.HoroscopeGenerator"
-        ) as mock_horoscope:
+        with (
+            patch("app.core.database.get_database") as mock_db,
+            patch(
+                "app.services.session_manager.SessionManager"
+            ) as mock_session_mgr,
+            patch(
+                "app.services.horoscope_generator.HoroscopeGenerator"
+            ) as mock_horoscope,
+        ):
             mock_db.return_value.__aenter__.return_value = AsyncMock()
             mock_session_mgr.return_value.get_user_context = AsyncMock(
                 return_value={"awaiting_data": "zodiac_sign"}
@@ -800,9 +819,12 @@ class TestAliceConversationFlows:
             ),
         )
 
-        with patch("app.core.database.get_database") as mock_db, patch(
-            "app.services.session_manager.SessionManager"
-        ) as mock_session_mgr:
+        with (
+            patch("app.core.database.get_database") as mock_db,
+            patch(
+                "app.services.session_manager.SessionManager"
+            ) as mock_session_mgr,
+        ):
             mock_db.return_value.__aenter__.return_value = AsyncMock()
             mock_session_mgr.return_value.get_user_context = AsyncMock(
                 return_value={
@@ -859,9 +881,12 @@ class TestAliceConversationFlows:
             ),
         )
 
-        with patch("app.core.database.get_database") as mock_db, patch(
-            "app.services.session_manager.SessionManager"
-        ) as mock_session_mgr:
+        with (
+            patch("app.core.database.get_database") as mock_db,
+            patch(
+                "app.services.session_manager.SessionManager"
+            ) as mock_session_mgr,
+        ):
             mock_db.return_value.__aenter__.return_value = AsyncMock()
             mock_session_mgr.return_value.get_user_context = AsyncMock(
                 return_value=None
@@ -890,11 +915,15 @@ class TestAliceConversationFlows:
             }
         )
 
-        with patch("app.core.database.get_database") as mock_db, patch(
-            "app.services.session_manager.SessionManager"
-        ) as mock_session_mgr, patch(
-            "app.services.horoscope_generator.HoroscopeGenerator"
-        ) as mock_horoscope:
+        with (
+            patch("app.core.database.get_database") as mock_db,
+            patch(
+                "app.services.session_manager.SessionManager"
+            ) as mock_session_mgr,
+            patch(
+                "app.services.horoscope_generator.HoroscopeGenerator"
+            ) as mock_horoscope,
+        ):
             mock_db.return_value.__aenter__.return_value = AsyncMock()
             mock_session_mgr.return_value.get_user_context = AsyncMock(
                 return_value={
@@ -966,11 +995,15 @@ class TestAlicePerformanceRequirements:
             ),
         )
 
-        with patch("app.core.database.get_database") as mock_db, patch(
-            "app.services.session_manager.SessionManager"
-        ) as mock_session_mgr, patch(
-            "app.services.horoscope_generator.HoroscopeGenerator"
-        ) as mock_horoscope:
+        with (
+            patch("app.core.database.get_database") as mock_db,
+            patch(
+                "app.services.session_manager.SessionManager"
+            ) as mock_session_mgr,
+            patch(
+                "app.services.horoscope_generator.HoroscopeGenerator"
+            ) as mock_horoscope,
+        ):
             mock_db.return_value.__aenter__.return_value = AsyncMock()
             mock_session_mgr.return_value.get_user_context = AsyncMock(
                 return_value=None

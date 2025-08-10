@@ -8,8 +8,6 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
-from app.utils.astro_time_utils import utcnow
-
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +18,7 @@ from app.models.database import (
     UserPreference,
     UserSession,
 )
+from app.utils.astro_time_utils import utcnow
 
 
 class PreferenceLearningEngine:
@@ -270,9 +269,7 @@ class PreferenceLearningEngine:
         if requests:
             request_dates = [req.processed_at.date() for req in requests]
             unique_dates = len(set(request_dates))
-            total_days = (
-                utcnow().date() - min(request_dates)
-            ).days + 1
+            total_days = (utcnow().date() - min(request_dates)).days + 1
             patterns["usage_frequency"] = unique_dates / total_days
         else:
             patterns["usage_frequency"] = 0
@@ -438,7 +435,14 @@ class ChurnPredictionModel:
 
         # Признак 1: Дни с момента последней активности
         if user.last_accessed:
-            days_since_last_access = (now - user.last_accessed).days
+            # Обеспечиваем timezone aware datetime для безопасного сравнения
+            last_accessed = user.last_accessed
+            if last_accessed.tzinfo is None:
+                from datetime import timezone
+
+                last_accessed = last_accessed.replace(tzinfo=timezone.utc)
+
+            days_since_last_access = (now - last_accessed).days
             features["days_since_last_access"] = min(
                 days_since_last_access / 30.0, 2.0
             )

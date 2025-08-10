@@ -7,13 +7,12 @@ import asyncio
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, Optional
 
-from app.utils.astro_time_utils import utcnow, current_timestamp
-
 from loguru import logger
 
 from app.services.astro_cache_service import astro_cache
 from app.services.async_kerykeion_service import async_kerykeion
 from app.services.performance_monitor import performance_monitor
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 
 class PrecomputeService:

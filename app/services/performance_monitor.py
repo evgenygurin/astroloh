@@ -7,11 +7,12 @@ import asyncio
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from app.utils.astro_time_utils import utcnow
 from typing import Any, Deque, Dict, List, Optional
 
 import psutil
 from loguru import logger
+
+from app.utils.astro_time_utils import utcnow
 
 
 @dataclass
@@ -320,13 +321,13 @@ class PerformanceMonitor:
 
         report = f"""
 🚀 ASTROLOH PERFORMANCE REPORT (Last {hours} hours)
-{'='*60}
+{"=" * 60}
 
 📊 SUMMARY:
-• Total Operations: {stats['summary']['total_operations']:,}
-• Success Rate: {100 - stats['summary']['overall_error_rate_percent']:.1f}%
-• Cache Hit Rate: {stats['summary']['overall_cache_hit_rate_percent']:.1f}%
-• Active Services: {stats['summary']['active_services']}
+• Total Operations: {stats["summary"]["total_operations"]:,}
+• Success Rate: {100 - stats["summary"]["overall_error_rate_percent"]:.1f}%
+• Cache Hit Rate: {stats["summary"]["overall_cache_hit_rate_percent"]:.1f}%
+• Active Services: {stats["summary"]["active_services"]}
 
 🔧 SERVICE PERFORMANCE:
 """
@@ -340,27 +341,27 @@ class PerformanceMonitor:
 
             report += f"""
 • {service_name.upper()}:
-  - Operations: {ops['total']:,} (Success: {100 - ops['error_rate_percent']:.1f}%)
-  - Avg Response: {perf['avg_duration_ms']:.0f}ms
-  - P95 Response: {perf.get('percentiles_ms', {}).get('p95', 0):.0f}ms
-  - Cache Hit Rate: {ops['cache_hit_rate_percent']:.1f}%
+  - Operations: {ops["total"]:,} (Success: {100 - ops["error_rate_percent"]:.1f}%)
+  - Avg Response: {perf["avg_duration_ms"]:.0f}ms
+  - P95 Response: {perf.get("percentiles_ms", {}).get("p95", 0):.0f}ms
+  - Cache Hit Rate: {ops["cache_hit_rate_percent"]:.1f}%
 """
 
         # System performance
         system = stats["system_performance"]
         report += f"""
 🖥️ SYSTEM PERFORMANCE:
-• CPU Usage: {system.get('avg_cpu_percent', 0):.1f}%
-• Memory Usage: {system.get('avg_memory_mb', 0):.0f}MB
-• Peak Memory: {system.get('peak_memory_mb', 0):.0f}MB
+• CPU Usage: {system.get("avg_cpu_percent", 0):.1f}%
+• Memory Usage: {system.get("avg_memory_mb", 0):.0f}MB
+• Peak Memory: {system.get("peak_memory_mb", 0):.0f}MB
 
 ⚠️ ALERT THRESHOLDS:
-• Slow Operation: >{stats['alerts']['thresholds']['slow_operation_ms']}ms
-• High Memory: >{stats['alerts']['thresholds']['high_memory_mb']}MB
-• High CPU: >{stats['alerts']['thresholds']['high_cpu_percent']}%
-• Error Rate: >{stats['alerts']['thresholds']['error_rate_percent']}%
+• Slow Operation: >{stats["alerts"]["thresholds"]["slow_operation_ms"]}ms
+• High Memory: >{stats["alerts"]["thresholds"]["high_memory_mb"]}MB
+• High CPU: >{stats["alerts"]["thresholds"]["high_cpu_percent"]}%
+• Error Rate: >{stats["alerts"]["thresholds"]["error_rate_percent"]}%
 
-Generated at: {utcnow().strftime('%Y-%m-%d %H:%M:%S')}
+Generated at: {utcnow().strftime("%Y-%m-%d %H:%M:%S")}
 """
 
         return report

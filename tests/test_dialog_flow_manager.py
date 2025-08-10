@@ -2,7 +2,6 @@
 Тесты для системы управления диалоговыми потоками Stage 5.
 """
 
-from datetime import datetime
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -15,6 +14,7 @@ from app.models.yandex_models import (
 )
 from app.services.conversation_manager import ConversationContext, ConversationManager
 from app.services.dialog_flow_manager import DialogFlow, DialogFlowManager, DialogState
+from app.utils.astro_time_utils import utcnow
 
 
 class TestDialogFlowManager:
@@ -146,7 +146,7 @@ class TestDialogFlowManager:
         # Принудительно устанавливаем старое время
         from datetime import timedelta
 
-        flow.updated_at = datetime.now() - timedelta(hours=2)
+        flow.updated_at = utcnow() - timedelta(hours=2)
 
         assert flow.is_expired(timeout_minutes=30)
 
@@ -159,7 +159,7 @@ class TestDialogFlowManager:
         # Помечаем один как истекший
         from datetime import timedelta
 
-        flow1.updated_at = datetime.now() - timedelta(hours=2)
+        flow1.updated_at = utcnow() - timedelta(hours=2)
 
         cleaned_count = dialog_manager.cleanup_expired_flows()
 

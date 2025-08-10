@@ -1,9 +1,6 @@
 """Smart home voice integration for multiple assistants."""
 
-from datetime import datetime
 from typing import Any, Dict, List
-
-from app.utils.astro_time_utils import utcnow, current_timestamp
 
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +10,7 @@ from app.services.horoscope_generator import HoroscopeGenerator
 from app.services.iot_manager import IoTDeviceManager
 from app.services.lunar_calendar import LunarCalendar
 from app.services.smart_lighting_service import SmartLightingService
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 
 class SmartHomeVoiceIntegration:

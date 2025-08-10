@@ -1269,7 +1269,10 @@ class AstrologyCalculator:
             # Проверяем ретроградность
             if transit_data.get("retrograde", False):
                 transits["retrogrades"].append(
-                    {"planet": transit_planet, "status": "ретроградный"}
+                    {
+                        "planet": transit_planet,
+                        "status": "ретроградный",
+                    }
                 )
 
         return transits

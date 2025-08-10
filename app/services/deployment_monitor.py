@@ -9,13 +9,12 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.utils.astro_time_utils import utcnow, current_timestamp
-
 from loguru import logger
 
 from app.services.astro_cache_service import astro_cache
 from app.services.feature_flag_service import KerykeionFeatureFlags, feature_flags
 from app.services.performance_monitor import performance_monitor
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 
 class HealthStatus(Enum):
@@ -661,7 +660,7 @@ class DeploymentMonitor:
 
             report = f"""
 🚀 ASTROLOH DEPLOYMENT REPORT (Last {hours} hours)
-{'='*60}
+{"=" * 60}
 
 📊 OVERVIEW:
 • Total Operations: {total_operations:,}
@@ -705,12 +704,12 @@ class DeploymentMonitor:
             report += f"""
 
 ⚠️ ALERT THRESHOLDS:
-• Response Time: <{self.alert_thresholds['response_time_ms']}ms
-• Error Rate: <{self.alert_thresholds['error_rate_percent']}%
-• Fallback Rate: <{self.alert_thresholds['kerykeion_fallback_rate']}%
-• User Satisfaction: >{self.alert_thresholds['user_satisfaction_min']}/10
+• Response Time: <{self.alert_thresholds["response_time_ms"]}ms
+• Error Rate: <{self.alert_thresholds["error_rate_percent"]}%
+• Fallback Rate: <{self.alert_thresholds["kerykeion_fallback_rate"]}%
+• User Satisfaction: >{self.alert_thresholds["user_satisfaction_min"]}/10
 
-Generated at: {utcnow().strftime('%Y-%m-%d %H:%M:%S')}
+Generated at: {utcnow().strftime("%Y-%m-%d %H:%M:%S")}
 """
 
             return report

@@ -291,11 +291,12 @@ class TestAsyncKerykeionServicePerformance:
         """Test integration with performance monitoring"""
         initial_stats = await service.get_performance_stats()
 
-        with patch.object(
-            service.kerykeion_service, "get_full_natal_chart_data"
-        ) as mock_calc, patch.object(
-            service, "is_available"
-        ) as mock_available:
+        with (
+            patch.object(
+                service.kerykeion_service, "get_full_natal_chart_data"
+            ) as mock_calc,
+            patch.object(service, "is_available") as mock_available,
+        ):
             mock_available.return_value = True
             mock_calc.return_value = {
                 "planets": {},

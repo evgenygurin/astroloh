@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.services.deployment_monitor import HealthStatus, deployment_monitor
-from app.utils.astro_time_utils import utcnow, current_timestamp
 from app.services.feature_flag_service import (
     FeatureRolloutPhase,
     KerykeionFeatureFlags,
@@ -19,6 +18,7 @@ from app.services.rollback_system import (
     RollbackTrigger,
     rollback_system,
 )
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 
 @pytest.fixture

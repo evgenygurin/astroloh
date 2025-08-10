@@ -8,8 +8,6 @@ import uuid
 from datetime import date, datetime
 from typing import Any, Dict
 
-from app.utils.astro_time_utils import utcnow
-
 from app.core.logging_config import log_ai_operation, log_dialog_flow
 from app.models.yandex_models import (
     ProcessedRequest,
@@ -31,6 +29,7 @@ from app.services.response_formatter import ResponseFormatter
 from app.services.session_manager import SessionManager
 from app.services.synastry_service import PartnerData, SynastryService
 from app.services.transit_calculator import TransitCalculator
+from app.utils.astro_time_utils import utcnow
 from app.utils.error_handler import ErrorHandler, handle_skill_errors
 from app.utils.validators import (
     DateValidator,
@@ -1274,8 +1273,6 @@ class DialogHandler:
         )
 
         try:
-            from datetime import datetime
-
             # Получаем информацию о сегодняшнем лунном дне
             today = utcnow()
             logger.info(
@@ -1961,7 +1958,7 @@ class DialogHandler:
         self, user_context: UserContext
     ) -> Dict[str, Any]:
         """Создает расширенные данные натальной карты для транзитов."""
-        from datetime import date, datetime, time
+        from datetime import time
 
         birth_date = date.fromisoformat(user_context.birth_date)
 

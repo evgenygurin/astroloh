@@ -1,6 +1,6 @@
 """Wearable devices integration service."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -11,7 +11,7 @@ from app.models.iot_models import DeviceCommand, DeviceType, WearableAlert, Wear
 from app.services.iot_manager import IoTDeviceManager
 from app.services.lunar_calendar import LunarCalendar
 from app.services.transit_calculator import TransitCalculator
-from app.utils.astro_time_utils import utcnow, current_timestamp
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 
 class WearableIntegrationService:
@@ -527,8 +527,7 @@ class WearableIntegrationService:
                 .where(
                     and_(
                         WearableData.user_id == user_id,
-                        WearableData.timestamp
-                        >= utcnow() - timedelta(days=7),
+                        WearableData.timestamp >= utcnow() - timedelta(days=7),
                     )
                 )
                 .order_by(WearableData.timestamp.desc())

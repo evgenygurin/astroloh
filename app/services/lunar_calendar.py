@@ -6,9 +6,8 @@ import calendar
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from app.utils.astro_time_utils import utcnow
-
 from app.services.astrology_calculator import AstrologyCalculator
+from app.utils.astro_time_utils import utcnow
 
 
 class LunarCalendar:

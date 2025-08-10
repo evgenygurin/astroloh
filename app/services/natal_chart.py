@@ -5,13 +5,13 @@
 
 import logging
 from datetime import date, datetime, time, timedelta
-from app.utils.astro_time_utils import utcnow
 from typing import Any, Dict, List, Optional
 
 import pytz
 
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.kerykeion_service import HouseSystem, KerykeionService, ZodiacType
+from app.utils.astro_time_utils import utcnow
 
 logger = logging.getLogger(__name__)
 

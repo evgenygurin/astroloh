@@ -15,7 +15,9 @@ from app.core.sentry import monitor_operation
 logger = logging.getLogger(__name__)
 
 # Constants for astrological calculations
-STELLIUM_MAX_SPAN_DEGREES = 120  # Maximum span in degrees for stellium detection
+STELLIUM_MAX_SPAN_DEGREES = (
+    120  # Maximum span in degrees for stellium detection
+)
 DAYS_PER_YEAR = 365.25  # Average days per year including leap years
 
 # Try to import Kerykeion with detailed error handling
@@ -242,7 +244,11 @@ class KerykeionService:
         )
 
         if not subject or isinstance(subject, dict) and "error" in subject:
-            return subject if isinstance(subject, dict) else {"error": "Failed to create astrological subject"}
+            return (
+                subject
+                if isinstance(subject, dict)
+                else {"error": "Failed to create astrological subject"}
+            )
 
         try:
             # Extract all planetary data including modern bodies and asteroids
@@ -625,11 +631,7 @@ class KerykeionService:
             # Get necessary positions
             sun = getattr(subject, "sun", {})
             moon = getattr(subject, "moon", {})
-            mercury = getattr(subject, "mercury", {})
             venus = getattr(subject, "venus", {})
-            mars = getattr(subject, "mars", {})
-            jupiter = getattr(subject, "jupiter", {})
-            saturn = getattr(subject, "saturn", {})
 
             # Get ASC and MC
             asc_pos = 0
@@ -642,10 +644,6 @@ class KerykeionService:
             sun_pos = sun.get("pos", [0])[0] if sun else 0
             moon_pos = moon.get("pos", [0])[0] if moon else 0
             venus_pos = venus.get("pos", [0])[0] if venus else 0
-            mars_pos = mars.get("pos", [0])[0] if mars else 0
-            jupiter_pos = jupiter.get("pos", [0])[0] if jupiter else 0
-            saturn_pos = saturn.get("pos", [0])[0] if saturn else 0
-            mercury_pos = mercury.get("pos", [0])[0] if mercury else 0
 
             # Calculate Parts
             # Part of Fortune (Lot of Fortune)
@@ -898,7 +896,11 @@ class KerykeionService:
         )
 
         if not subject or isinstance(subject, dict) and "error" in subject:
-            return subject if isinstance(subject, dict) else {"error": "Failed to create subject for chart"}
+            return (
+                subject
+                if isinstance(subject, dict)
+                else {"error": "Failed to create subject for chart"}
+            )
 
         try:
             # Create chart SVG
@@ -1077,7 +1079,9 @@ class KerykeionService:
         try:
             # Calculate progressed date (1 day = 1 year)
             birth_date = birth_datetime.date()
-            years_elapsed = (current_date.date() - birth_date).days / DAYS_PER_YEAR
+            years_elapsed = (
+                current_date.date() - birth_date
+            ).days / DAYS_PER_YEAR
             progressed_date = birth_date + timedelta(days=years_elapsed)
 
             # Create progressed datetime maintaining birth time

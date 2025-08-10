@@ -4,10 +4,10 @@
 
 import re
 from datetime import date
-from app.utils.astro_time_utils import utcnow
 from typing import Optional, Tuple
 
 from app.models.yandex_models import YandexZodiacSign
+from app.utils.astro_time_utils import utcnow
 from app.utils.error_handler import ValidationSkillError
 
 

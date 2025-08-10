@@ -26,12 +26,11 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from loguru import logger
 
-from app.utils.astro_time_utils import current_timestamp, utcnow
-
 from app.services.deployment_monitor import deployment_monitor
 from app.services.feature_flag_service import feature_flags
 from app.services.rollback_system import rollback_system
 from app.services.startup_manager import startup_manager
+from app.utils.astro_time_utils import current_timestamp, utcnow
 from deployment_config import ProductionDeploymentConfig
 
 

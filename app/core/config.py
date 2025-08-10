@@ -88,39 +88,41 @@ class Settings(BaseSettings):
     SENTRY_ENVIRONMENT: str = "development"
     SENTRY_RELEASE: Optional[str] = None
     SENTRY_DIST: Optional[str] = None  # Build/deployment variant
-    
+
     # Error Monitoring
     SENTRY_SAMPLE_RATE: float = 1.0  # Error sampling rate
     SENTRY_ATTACH_STACKTRACE: bool = True
     SENTRY_SEND_DEFAULT_PII: bool = False
     SENTRY_MAX_BREADCRUMBS: int = 100
-    
+
     # Performance Monitoring
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1  # 10% трейсов
     SENTRY_ENABLE_TRACING: bool = True
-    
+
     # Profiling
     SENTRY_PROFILES_SAMPLE_RATE: float = 0.1  # 10% профилей
     SENTRY_PROFILE_LIFECYCLE: str = "trace"  # "trace" or "manual"
-    
+
     # Metrics
     SENTRY_ENABLE_METRICS: bool = True
     SENTRY_ENABLE_METRICS_SUMMARIES: bool = True
     SENTRY_METRIC_CODE_LOCATIONS: bool = True
-    
+
     # Transport & Network
     SENTRY_SHUTDOWN_TIMEOUT: int = 2
-    SENTRY_MAX_REQUEST_BODY_SIZE: str = "medium"  # small/medium/large/always/never
-    
+    SENTRY_MAX_REQUEST_BODY_SIZE: str = (
+        "medium"  # small/medium/large/always/never
+    )
+
     # Debug & Development
     SENTRY_DEBUG: bool = False
     SENTRY_AUTO_ENABLING_INTEGRATIONS: bool = False  # Manual control
-    
+
     # Filters & Hooks
     SENTRY_IGNORE_ERRORS: List[str] = [
         "BrokenPipeError",
-        "ConnectionResetError", 
-        "asyncio.CancelledError"
+        "ConnectionResetError",
+        "asyncio.CancelledError",
     ]
 
     @model_validator(mode="before")

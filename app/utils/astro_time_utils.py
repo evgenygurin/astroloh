@@ -499,18 +499,25 @@ class AstroTimeUtils:
             parsed_dt = self.validator.parse_datetime_string(combined, tz_name)
 
         # Handle datetime input
-        else:
+        elif isinstance(date_input, datetime):
             parsed_dt = date_input
             tz_name = str(parsed_dt.tzinfo) if parsed_dt.tzinfo else "UTC"
 
-            if parsed_dt.tzinfo is None:
-                if timezone_input:
-                    tz = self.timezone_manager.get_timezone(timezone_input)
-                    parsed_dt = parsed_dt.replace(tzinfo=tz)
-                    tz_name = timezone_input
-                else:
-                    parsed_dt = parsed_dt.replace(tzinfo=timezone.utc)
-                    tz_name = "UTC"
+        # Handle invalid input types
+        else:
+            raise InvalidDateTimeError(
+                f"Unsupported date input type: {type(date_input)}"
+            )
+
+        # Handle timezone for datetime objects
+        if isinstance(date_input, datetime) and parsed_dt.tzinfo is None:
+            if timezone_input:
+                tz = self.timezone_manager.get_timezone(timezone_input)
+                parsed_dt = parsed_dt.replace(tzinfo=tz)
+                tz_name = timezone_input
+            else:
+                parsed_dt = parsed_dt.replace(tzinfo=timezone.utc)
+                tz_name = "UTC"
 
         # Validate for birth calculations
         if not self.validator.validate_birth_datetime(parsed_dt, coordinates):
@@ -741,7 +748,7 @@ def now(tz: Optional[str] = None) -> datetime:
     """Get current datetime in specified timezone."""
     if tz is None:
         return datetime.now()
-    
+
     timezone_manager = TimezoneManager()
     tz_obj = timezone_manager.get_timezone(tz)
     return datetime.now(tz_obj)
@@ -763,9 +770,8 @@ def db_timestamp_default():
     return lambda: database_timestamp()
 
 
-def create_astro_datetime_now(coordinates: Optional[CoordinateInfo] = None) -> AstroDateTime:
+def create_astro_datetime_now(
+    coordinates: Optional[CoordinateInfo] = None,
+) -> AstroDateTime:
     """Create AstroDateTime for current time."""
-    return astro_time.parse_birth_datetime(
-        utcnow(),
-        coordinates=coordinates
-    )
+    return astro_time.parse_birth_datetime(utcnow(), coordinates=coordinates)

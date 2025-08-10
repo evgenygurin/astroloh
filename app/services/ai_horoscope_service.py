@@ -4,21 +4,15 @@ AI-powered сервис генерации гороскопов с интегр�
 """
 
 import logging
-import time
 from datetime import date, datetime
 from typing import Any, Dict, Optional
 
-
 from app.core.config import settings
-from app.core.sentry import (
-    capture_astrology_log,
-    sentry_span,
-    sentry_trace,
-)
+from app.core.sentry import capture_astrology_log, sentry_span, sentry_trace
 from app.models.yandex_models import YandexZodiacSign
 from app.services.horoscope_generator import HoroscopeGenerator, HoroscopePeriod
 from app.services.yandex_gpt import yandex_gpt_client
-from app.utils.astro_time_utils import utcnow, current_timestamp
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +66,7 @@ class AIHoroscopeService:
         """
         if target_date is None:
             target_date = utcnow()
-        
+
         operation_name = "horoscope_generation"
         zodiac_value = zodiac_sign.value
         ai_enabled = use_ai and settings.ENABLE_AI_GENERATION
@@ -96,7 +90,7 @@ class AIHoroscopeService:
             )
 
             if target_date is None:
-                target_date = datetime.now()
+                target_date = utcnow()
 
             # Если указана дата прогноза, используем её вместо target_date
             if forecast_date is not None:
@@ -140,14 +134,10 @@ class AIHoroscopeService:
                             forecast_date=forecast_date,
                         )
 
-                    print(
-                        f"🔍 DEBUG: AI enhanced result: {ai_enhanced is not None}"
-                    )
                     if ai_enhanced:
                         logger.info(
                             "AI_HOROSCOPE_SUCCESS: Enhanced horoscope generated"
                         )
-                        print("✅ DEBUG: Returning AI enhanced horoscope")
                         # Комбинируем традиционные данные с AI контентом
                         return self._merge_horoscope_data(
                             base_horoscope, ai_enhanced
@@ -156,19 +146,15 @@ class AIHoroscopeService:
                         logger.warning(
                             "AI_HOROSCOPE_EMPTY: AI returned empty result"
                         )
-                        print("⚠️ DEBUG: AI returned None, falling back")
 
                 except Exception as e:
                     logger.error(f"AI_HOROSCOPE_ERROR: {e}", exc_info=True)
-                    print(f"❌ DEBUG: AI exception: {e}")
             else:
                 logger.info(
                     f"AI_HOROSCOPE_DISABLED: use_ai={use_ai}, enabled={settings.ENABLE_AI_GENERATION}"
                 )
-                print("🚫 DEBUG: AI disabled, using traditional")
 
             # Fallback: возвращаем традиционный гороскоп
-            print("🔄 DEBUG: Using traditional fallback")
             return self._enhance_traditional_horoscope(base_horoscope)
 
     async def _generate_ai_content(
@@ -196,8 +182,6 @@ class AIHoroscopeService:
         logger.info(
             f"AI_GENERATE_CONTENT_START: Calling Yandex GPT for {zodiac_sign.value}"
         )
-        logger.error("🔥 FORCE: About to call gpt_client.generate_horoscope")
-        print(f"🔥 DEBUG: Calling generate_horoscope with context: {context}")
         ai_horoscope = await self.gpt_client.generate_horoscope(
             zodiac_sign=zodiac_sign.value,
             period=period.value,
@@ -206,12 +190,6 @@ class AIHoroscopeService:
             if forecast_date
             else None,
             additional_context=context,
-        )
-        logger.error(
-            f"🔥 FORCE: generate_horoscope returned: {ai_horoscope is not None}"
-        )
-        print(
-            f"🔥 DEBUG: AI horoscope result: {ai_horoscope[:100] if ai_horoscope else 'None'}"
         )
 
         if not ai_horoscope:

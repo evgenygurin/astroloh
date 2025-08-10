@@ -6,8 +6,6 @@
 import asyncio
 import logging
 from datetime import timedelta
-
-from app.utils.astro_time_utils import utcnow
 from typing import Any, Dict, List, Tuple
 
 from app.core.database import get_db_session_context
@@ -15,6 +13,7 @@ from app.models.yandex_models import ProcessedRequest, YandexIntent
 from app.services.dialog_flow_manager import DialogFlowManager, DialogState
 from app.services.encryption import EncryptionService
 from app.services.user_manager import UserManager
+from app.utils.astro_time_utils import utcnow
 
 
 class ConversationContext:
@@ -367,10 +366,7 @@ class ConversationManager:
         response_context["interaction_stats"] = {
             "total_interactions": conversation.interaction_count,
             "personalization_level": conversation.personalization_level,
-            "days_active": (
-                utcnow() - conversation.last_interaction
-            ).days
-            + 1,
+            "days_active": (utcnow() - conversation.last_interaction).days + 1,
         }
 
         # Добавляем адаптивные предложения

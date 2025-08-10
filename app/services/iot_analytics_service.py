@@ -5,14 +5,13 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
-from app.utils.astro_time_utils import utcnow, current_timestamp
-
 from loguru import logger
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.iot_models import DeviceData, HomeAutomation, IoTDevice, WearableData
 from app.services.lunar_calendar import LunarCalendar
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 
 class IoTAnalyticsService:

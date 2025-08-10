@@ -2,7 +2,7 @@
 Тесты для AI сервиса генерации гороскопов.
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -342,10 +342,10 @@ class TestAIHoroscopeService:
             )
 
             with patch(
-                "app.services.ai_horoscope_service.datetime"
-            ) as mock_datetime:
-                mock_now = datetime(2023, 6, 15, 12, 0)
-                mock_datetime.now.return_value = mock_now
+                "app.services.ai_horoscope_service.utcnow"
+            ) as mock_utcnow:
+                mock_now = datetime(2023, 6, 15, 12, 0, tzinfo=timezone.utc)
+                mock_utcnow.return_value = mock_now
 
                 await self.service.generate_enhanced_horoscope(
                     zodiac_sign=YandexZodiacSign.PISCES, target_date=None

@@ -20,12 +20,12 @@ from app.utils.astro_time_utils import (
     InvalidTimezoneError,
     TimezoneManager,
     astro_time,
+    create_astro_datetime_now,
     current_timestamp,
     database_timestamp,
     db_timestamp_default,
     now,
     utcnow,
-    create_astro_datetime_now,
 )
 
 
@@ -716,7 +716,7 @@ class TestHelperFunctions:
         """Test utcnow function returns UTC datetime."""
         dt = utcnow()
         assert dt.tzinfo == timezone.utc
-        
+
         # Should be very close to actual time
         actual_now = datetime.now(timezone.utc)
         diff = abs((dt - actual_now).total_seconds())
@@ -732,18 +732,18 @@ class TestHelperFunctions:
         """Test now function with specific timezone."""
         moscow_dt = now("Europe/Moscow")
         assert str(moscow_dt.tzinfo) == "Europe/Moscow"
-        
+
         utc_dt = now("UTC")
         assert utc_dt.tzinfo == ZoneInfo("UTC")
 
     def test_current_timestamp(self):
         """Test current_timestamp returns ISO string."""
         timestamp = current_timestamp()
-        
+
         # Should be valid ISO format
-        parsed = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
         assert parsed.tzinfo == timezone.utc
-        
+
         # Should be recent
         now_dt = utcnow()
         diff = abs((parsed - now_dt).total_seconds())
@@ -753,7 +753,7 @@ class TestHelperFunctions:
         """Test database_timestamp returns UTC datetime."""
         dt = database_timestamp()
         assert dt.tzinfo == timezone.utc
-        
+
         # Should be very close to utcnow()
         utc_dt = utcnow()
         diff = abs((dt - utc_dt).total_seconds())
@@ -763,7 +763,7 @@ class TestHelperFunctions:
         """Test db_timestamp_default returns callable."""
         func = db_timestamp_default()
         assert callable(func)
-        
+
         # Calling the function should return a datetime
         dt = func()
         assert isinstance(dt, datetime)
@@ -772,10 +772,10 @@ class TestHelperFunctions:
     def test_create_astro_datetime_now(self):
         """Test create_astro_datetime_now function."""
         astro_dt = create_astro_datetime_now()
-        
+
         assert isinstance(astro_dt, AstroDateTime)
         assert astro_dt.dt.tzinfo == timezone.utc
-        
+
         # Should be very recent
         now_dt = utcnow()
         diff = abs((astro_dt.dt - now_dt).total_seconds())
@@ -785,7 +785,7 @@ class TestHelperFunctions:
         """Test create_astro_datetime_now with coordinates."""
         coords = CoordinateInfo(55.7558, 37.6176)
         astro_dt = create_astro_datetime_now(coordinates=coords)
-        
+
         assert isinstance(astro_dt, AstroDateTime)
         assert astro_dt.coordinates == coords
         assert astro_dt.dt.tzinfo == timezone.utc
@@ -796,12 +796,12 @@ class TestHelperFunctions:
         dt1 = utcnow()
         dt2 = database_timestamp()
         dt3 = db_timestamp_default()()
-        
+
         # All should be within a second of each other
         diff12 = abs((dt1 - dt2).total_seconds())
         diff13 = abs((dt1 - dt3).total_seconds())
         diff23 = abs((dt2 - dt3).total_seconds())
-        
+
         assert diff12 < 1.0
         assert diff13 < 1.0
         assert diff23 < 1.0
@@ -812,20 +812,20 @@ class TestHelperFunctions:
         dt = utcnow()
         assert isinstance(dt, datetime)
         assert dt.tzinfo is not None
-        
+
         # current_timestamp should return string
         ts = current_timestamp()
         assert isinstance(ts, str)
-        
+
         # database_timestamp should return datetime
         db_dt = database_timestamp()
         assert isinstance(db_dt, datetime)
         assert db_dt.tzinfo is not None
-        
+
         # db_timestamp_default should return callable
         func = db_timestamp_default()
         assert callable(func)
-        
+
         # create_astro_datetime_now should return AstroDateTime
         astro_dt = create_astro_datetime_now()
         assert isinstance(astro_dt, AstroDateTime)

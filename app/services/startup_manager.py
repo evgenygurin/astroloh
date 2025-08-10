@@ -4,7 +4,6 @@ Coordinates the startup of caching, monitoring, and pre-computation services.
 """
 
 import asyncio
-from datetime import datetime
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -13,7 +12,7 @@ from app.services.astro_cache_service import astro_cache
 from app.services.async_kerykeion_service import async_kerykeion
 from app.services.performance_monitor import performance_monitor
 from app.services.precompute_service import precompute_service
-from app.utils.astro_time_utils import utcnow, current_timestamp
+from app.utils.astro_time_utils import utcnow
 
 
 class StartupManager:

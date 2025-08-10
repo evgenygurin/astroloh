@@ -3,7 +3,6 @@ Integration tests for API endpoints.
 """
 
 import uuid
-from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from unittest.mock import MagicMock, patch
 

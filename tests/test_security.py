@@ -3,7 +3,7 @@ Tests for security and data protection functionality.
 """
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -439,9 +439,7 @@ class TestGDPRCompliance:
         mock_count_result.scalar.return_value = 5
 
         mock_activity_result = MagicMock()
-        mock_activity_result.scalar_one_or_none.return_value = (
-            utcnow()
-        )
+        mock_activity_result.scalar_one_or_none.return_value = utcnow()
 
         # Configure side_effect to return different results for each call
         mock_db.execute.side_effect = [

@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 
 from app.services.cache_service import CacheService
-from app.utils.astro_time_utils import utcnow, current_timestamp
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 # Check Redis availability without importing it
 REDIS_AVAILABLE = importlib.util.find_spec("redis.asyncio") is not None

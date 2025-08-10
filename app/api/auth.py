@@ -5,8 +5,6 @@ Authentication API endpoints for the frontend.
 from datetime import datetime, timedelta
 from typing import Optional
 
-from app.utils.astro_time_utils import utcnow
-
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -21,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db_session
 from app.models.database import User
+from app.utils.astro_time_utils import utcnow
 from app.utils.validators import PasswordValidator
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])

@@ -6,7 +6,7 @@ Sentry инициализация и настройка расширенного
 import logging
 import time
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import sentry_sdk
 from sentry_sdk import metrics
@@ -19,6 +19,13 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
+
+# Import types from sentry_sdk
+try:
+    from sentry_sdk._types import Event
+except ImportError:
+    # Fallback for older versions
+    Event = Dict[str, Any]
 
 from .config import settings
 
@@ -38,13 +45,23 @@ def init_sentry() -> None:
         # FastAPI интеграция (полная конфигурация)
         FastApiIntegration(
             transaction_style="endpoint",  # "url" или "endpoint"
-            failed_request_status_codes=[400, 401, 403, 404, 422, 500, 502, 503, 504],
-            http_methods_to_capture=["GET", "POST", "PUT", "DELETE", "PATCH"],
+            failed_request_status_codes=[
+                400,
+                401,
+                403,
+                404,
+                422,
+                500,
+                502,
+                503,
+                504,
+            ],
+            http_methods_to_capture=("GET", "POST", "PUT", "DELETE", "PATCH"),
         ),
         # Starlette интеграция для middleware
         StarletteIntegration(
             transaction_style="endpoint",
-            failed_request_status_codes=[400, 401, 403, 404, 422, 500, 503]
+            failed_request_status_codes=[400, 401, 403, 404, 422, 500, 503],
         ),
         # HTTP клиент интеграция (для Yandex API и внешних сервисов)
         HttpxIntegration(),
@@ -76,47 +93,35 @@ def init_sentry() -> None:
             release=settings.SENTRY_RELEASE,
             dist=settings.SENTRY_DIST,
             integrations=integrations,
-            
             # 📊 ERROR MONITORING
             sample_rate=settings.SENTRY_SAMPLE_RATE,
             attach_stacktrace=settings.SENTRY_ATTACH_STACKTRACE,
             send_default_pii=settings.SENTRY_SEND_DEFAULT_PII,
             max_breadcrumbs=settings.SENTRY_MAX_BREADCRUMBS,
             ignore_errors=settings.SENTRY_IGNORE_ERRORS,
-            
             # 🔥 PERFORMANCE MONITORING & TRACING
             traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
             enable_tracing=settings.SENTRY_ENABLE_TRACING,
-            
             # 📈 PROFILING (Continuous Profiling)
             profiles_sample_rate=settings.SENTRY_PROFILES_SAMPLE_RATE,
-            profile_lifecycle=settings.SENTRY_PROFILE_LIFECYCLE,
-            
             # 📊 METRICS (New metrics system)
             _experiments={
                 "enable_metrics": settings.SENTRY_ENABLE_METRICS,
-                "enable_metrics_summaries": settings.SENTRY_ENABLE_METRICS_SUMMARIES,
                 "metric_code_locations": settings.SENTRY_METRIC_CODE_LOCATIONS,
             },
-            
             # 🌐 TRANSPORT & NETWORK
             shutdown_timeout=settings.SENTRY_SHUTDOWN_TIMEOUT,
             max_request_body_size=settings.SENTRY_MAX_REQUEST_BODY_SIZE,
-            
             # 🐛 DEBUG & DEVELOPMENT
             debug=settings.SENTRY_DEBUG,
             auto_enabling_integrations=settings.SENTRY_AUTO_ENABLING_INTEGRATIONS,
-            
             # 🎯 FILTERING & DATA PROCESSING
             before_send=filter_sensitive_data,
             before_send_transaction=filter_transaction_data,
             before_breadcrumb=filter_breadcrumb_data,
-            before_emit_metric=filter_metric_data,  # New metric filtering
-            
             # 🔄 SAMPLING FUNCTIONS (for advanced control)
             traces_sampler=custom_traces_sampler,
             profiles_sampler=custom_profiles_sampler,
-            error_sampler=custom_error_sampler,
         )
         logger.info(
             "🚀 Sentry успешно инициализирован для среды: %s",
@@ -128,8 +133,8 @@ def init_sentry() -> None:
 
 
 def filter_sensitive_data(
-    event: Dict[str, Any], hint: Dict[str, Any]
-) -> Dict[str, Any]:
+    event: Event, hint: Dict[str, Any]
+) -> Optional[Event]:
     """
     Фильтрация чувствительных данных перед отправкой в Sentry.
 
@@ -176,10 +181,12 @@ def filter_sensitive_data(
                         data[field] = "[Filtered]"
 
     # Добавляем контекст астрологического приложения
-    event.setdefault("tags", {}).update({
-        "application": "astroloh",
-        "service": "yandex_alice",
-    })
+    event.setdefault("tags", {}).update(
+        {
+            "application": "astroloh",
+            "service": "yandex_alice",
+        }
+    )
 
     # Добавляем пользовательский контекст для астрологии
     if "user" in event:
@@ -191,16 +198,18 @@ def filter_sensitive_data(
     return event
 
 
-def filter_metric_data(key: str, value: float, unit: str, tags: Dict[str, str]) -> bool:
+def filter_metric_data(
+    key: str, value: float, unit: str, tags: Dict[str, str]
+) -> bool:
     """
     Фильтрация метрик перед отправкой в Sentry.
-    
+
     Args:
         key: Ключ метрики
         value: Значение метрики
         unit: Единица измерения
         tags: Теги метрики
-    
+
     Returns:
         True если метрику нужно отправить, False если пропустить
     """
@@ -208,7 +217,7 @@ def filter_metric_data(key: str, value: float, unit: str, tags: Dict[str, str]) 
     if settings.SENTRY_ENVIRONMENT == "development":
         if key.startswith("system.") or key.startswith("runtime."):
             return False
-    
+
     # Пропускаем слишком частые метрики
     frequent_metrics = [
         "astroloh.cache.get",
@@ -217,44 +226,46 @@ def filter_metric_data(key: str, value: float, unit: str, tags: Dict[str, str]) 
     if any(key.startswith(fm) for fm in frequent_metrics):
         # Сэмплинг 10% для частых метрик
         return hash(key) % 10 == 0
-    
+
     # Фильтруем метрики по значениям (избегаем аномалий)
     if unit in ["millisecond", "second"]:
         # Пропускаем слишком большие значения времени (возможные ошибки)
         if value > 300000:  # > 5 минут
             return False
-    
+
     return True
 
 
-def custom_traces_sampler(sampling_context: Dict[str, Any]) -> Optional[float]:
+def custom_traces_sampler(sampling_context: Dict[str, Any]) -> float:
     """
     Динамический сэмплинг трейсов на основе контекста.
-    
+
     Args:
         sampling_context: Контекст трейса (transaction, parent_sampled, etc.)
-    
+
     Returns:
         Sampling rate (0.0-1.0) или None для дефолтного значения
     """
     transaction_context = sampling_context.get("transaction_context", {})
     transaction_name = transaction_context.get("name", "")
-    
+
     # Высокий приоритет для критических операций
     high_priority_operations = [
         "yandex_webhook",
-        "horoscope_generation", 
+        "horoscope_generation",
         "ai_consultation",
-        "compatibility_analysis"
+        "compatibility_analysis",
     ]
-    
+
     if any(op in transaction_name.lower() for op in high_priority_operations):
         return 0.5  # 50% для важных операций
-    
+
     # Низкий приоритет для служебных операций
-    if transaction_name.startswith("/health") or transaction_name.startswith("/metrics"):
+    if transaction_name.startswith("/health") or transaction_name.startswith(
+        "/metrics"
+    ):
         return 0.01  # 1% для health checks
-    
+
     # Адаптивный сэмплинг в зависимости от нагрузки
     current_hour = time.localtime().tm_hour
     if 9 <= current_hour <= 21:  # Дневные часы (больше пользователей)
@@ -263,73 +274,75 @@ def custom_traces_sampler(sampling_context: Dict[str, Any]) -> Optional[float]:
         return 0.05  # 5%
 
 
-def custom_profiles_sampler(sampling_context: Dict[str, Any]) -> Optional[float]:
+def custom_profiles_sampler(sampling_context: Dict[str, Any]) -> float:
     """
     Динамический сэмплинг профилирования.
-    
+
     Args:
         sampling_context: Контекст профилирования
-    
+
     Returns:
         Sampling rate для профилей
     """
     transaction_context = sampling_context.get("transaction_context", {})
     transaction_name = transaction_context.get("name", "")
-    
+
     # Профилируем только CPU-интенсивные операции
     cpu_intensive_operations = [
         "natal_chart_calculation",
-        "kerykeion_calculation", 
+        "kerykeion_calculation",
         "transit_analysis",
-        "ai_generation"
+        "ai_generation",
     ]
-    
+
     if any(op in transaction_name.lower() for op in cpu_intensive_operations):
         return 0.3  # 30% для CPU-интенсивных операций
-    
+
     # Не профилируем простые операции
     if transaction_name.startswith("/health") or "static" in transaction_name:
         return 0.0
-    
+
     return 0.05  # 5% по умолчанию
 
 
-def custom_error_sampler(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[float]:
+def custom_error_sampler(
+    event: Dict[str, Any], hint: Dict[str, Any]
+) -> Optional[float]:
     """
     Динамический сэмплинг ошибок.
-    
+
     Args:
         event: Событие ошибки
         hint: Дополнительная информация
-    
+
     Returns:
         Sampling rate для ошибок
     """
     exception = hint.get("exc_info")
     if exception:
         exc_type, exc_value, exc_traceback = exception
-        
+
         # Всегда отправляем критические ошибки
         critical_errors = [
             "DatabaseError",
-            "ConnectionError", 
+            "ConnectionError",
             "YandexAPIError",
-            "ConfigurationError"
+            "ConfigurationError",
         ]
-        
+
         if exc_type.__name__ in critical_errors:
             return 1.0  # 100% для критических ошибок
-        
+
         # Сэмплируем частые некритические ошибки
         frequent_errors = [
             "ValidationError",
             "HTTPException",
-            "RequestTimeout"
+            "RequestTimeout",
         ]
-        
+
         if exc_type.__name__ in frequent_errors:
             return 0.1  # 10% для частых ошибок
-    
+
     return 1.0  # 100% по умолчанию
 
 
@@ -347,7 +360,9 @@ def filter_breadcrumb_data(
         Отфильтрованный breadcrumb или None если нужно пропустить
     """
     # Пропускаем некритические SQL запросы
-    if crumb.get("category") == "query" and "SELECT" in str(crumb.get("message", "")):
+    if crumb.get("category") == "query" and "SELECT" in str(
+        crumb.get("message", "")
+    ):
         return None
 
     # Фильтруем чувствительные HTTP заголовки
@@ -373,8 +388,8 @@ def filter_breadcrumb_data(
 
 
 def filter_transaction_data(
-    event: Dict[str, Any], hint: Dict[str, Any]
-) -> Dict[str, Any]:
+    event: Event, hint: Dict[str, Any]
+) -> Optional[Event]:
     """
     Фильтрация данных транзакций для производительности.
 
@@ -386,10 +401,12 @@ def filter_transaction_data(
         Отфильтрованное событие
     """
     # Добавляем теги для транзакций
-    event.setdefault("tags", {}).update({
-        "service_type": "astrology_api",
-        "integration": "yandex_alice",
-    })
+    event.setdefault("tags", {}).update(
+        {
+            "service_type": "astrology_api",
+            "integration": "yandex_alice",
+        }
+    )
 
     # Классифицируем типы операций
     transaction_name = event.get("transaction", "")
@@ -478,7 +495,9 @@ def capture_alice_context(
                 "intent": intent,
                 "response_type": response_type,
                 "has_utterance": bool(user_utterance),
-                "utterance_length": len(user_utterance) if user_utterance else 0,
+                "utterance_length": len(user_utterance)
+                if user_utterance
+                else 0,
             },
         )
 
@@ -647,7 +666,7 @@ def capture_counter_metric(
 ) -> None:
     """
     Отправка counter метрики (подсчет событий).
-    
+
     Args:
         key: Название метрики
         value: Значение для добавления (по умолчанию 1)
@@ -664,7 +683,7 @@ def capture_gauge_metric(
 ) -> None:
     """
     Отправка gauge метрики (текущее значение).
-    
+
     Args:
         key: Название метрики
         value: Текущее значение
@@ -691,7 +710,7 @@ def capture_set_metric(
 ) -> None:
     """
     Отправка set метрики (уникальные значения).
-    
+
     Args:
         key: Название метрики
         value: Уникальное значение для добавления в сет
@@ -717,17 +736,14 @@ def capture_timer_metric(
 ) -> None:
     """
     Отправка timer метрики (измерение времени).
-    
+
     Args:
         key: Название метрики
         duration_ms: Длительность в миллисекундах
         tags: Дополнительные теги
     """
     capture_distribution_metric(
-        key=key,
-        value=duration_ms,
-        unit="millisecond",
-        tags=tags
+        key=key, value=duration_ms, unit="millisecond", tags=tags
     )
 
 
@@ -754,7 +770,9 @@ def capture_distribution_metric(
         if tags:
             default_tags.update(tags)
 
-        metrics.distribution(key=key, value=value, tags=default_tags, unit=unit)
+        metrics.distribution(
+            key=key, value=value, tags=default_tags, unit=unit
+        )
     except Exception as e:
         logger.warning(f"🔶 Ошибка отправки distribution метрики {key}: {e}")
 
@@ -909,7 +927,9 @@ def capture_performance_warning(
     tags = {
         "alert_type": "performance_warning",
         "operation": operation,
-        "severity": "medium" if actual_duration_ms < threshold_ms * 2 else "high",
+        "severity": "medium"
+        if actual_duration_ms < threshold_ms * 2
+        else "high",
     }
 
     capture_structured_log("warning", message, extra_data, tags)
@@ -973,7 +993,7 @@ def sentry_trace(operation_name: str, **trace_data):
             # Отправляем counter метрику о начале операции
             capture_counter_metric(
                 key="astroloh.operation.started",
-                tags={"operation": operation_name, **trace_data}
+                tags={"operation": operation_name, **trace_data},
             )
 
             yield transaction
@@ -985,13 +1005,17 @@ def sentry_trace(operation_name: str, **trace_data):
             # Отправляем успешные метрики
             capture_counter_metric(
                 key="astroloh.operation.completed",
-                tags={"operation": operation_name, "status": "success", **trace_data}
+                tags={
+                    "operation": operation_name,
+                    "status": "success",
+                    **trace_data,
+                },
             )
-            
+
             capture_timer_metric(
                 key="astroloh.operation.duration",
                 duration_ms=duration_ms,
-                tags={"operation": operation_name, **trace_data}
+                tags={"operation": operation_name, **trace_data},
             )
 
         except Exception as e:
@@ -1004,10 +1028,10 @@ def sentry_trace(operation_name: str, **trace_data):
             capture_counter_metric(
                 key="astroloh.operation.failed",
                 tags={
-                    "operation": operation_name, 
+                    "operation": operation_name,
                     "error_type": type(e).__name__,
-                    **trace_data
-                }
+                    **trace_data,
+                },
             )
 
             sentry_sdk.capture_exception(e)
@@ -1021,60 +1045,59 @@ def sentry_trace(operation_name: str, **trace_data):
 def sentry_profiler(profile_name: str, **profile_data):
     """
     Context manager для профилирования с дополнительными метриками.
-    
+
     Usage:
         with sentry_profiler("kerykeion_calculation", chart_type="natal"):
             # CPU-интенсивный код
             pass
     """
     start_time = time.time()
-    
+
     # Устанавливаем теги для профилирования
     with sentry_sdk.configure_scope() as scope:
         for key, value in profile_data.items():
             scope.set_tag(f"profile.{key}", str(value))
-        
+
         scope.set_tag("profile.operation", profile_name)
-    
+
     try:
         # Отправляем метрику о начале профилирования
         capture_counter_metric(
             key="astroloh.profiling.started",
-            tags={"profile_name": profile_name, **profile_data}
+            tags={"profile_name": profile_name, **profile_data},
         )
-        
+
         yield
-        
+
         duration_ms = (time.time() - start_time) * 1000
-        
+
         # Отправляем метрики профилирования
         capture_timer_metric(
             key="astroloh.profiling.duration",
             duration_ms=duration_ms,
-            tags={"profile_name": profile_name, **profile_data}
+            tags={"profile_name": profile_name, **profile_data},
         )
-        
+
     except Exception as e:
         duration_ms = (time.time() - start_time) * 1000
-        
+
         capture_counter_metric(
             key="astroloh.profiling.failed",
             tags={
                 "profile_name": profile_name,
                 "error_type": type(e).__name__,
-                **profile_data
-            }
+                **profile_data,
+            },
         )
         raise
 
 
 def add_user_context(
-    user_id: str, 
-    user_data: Optional[Dict[str, Any]] = None
+    user_id: str, user_data: Optional[Dict[str, Any]] = None
 ) -> None:
     """
     Добавление пользовательского контекста в Sentry.
-    
+
     Args:
         user_id: Идентификатор пользователя (хешированный)
         user_data: Дополнительные данные пользователя
@@ -1082,84 +1105,81 @@ def add_user_context(
     with sentry_sdk.configure_scope() as scope:
         # Хешируем ID для приватности
         hashed_id = f"user_{hash(user_id) % 100000}"
-        
-        user_context = {
-            "id": hashed_id,
-            "timestamp": time.time()
-        }
-        
+
+        user_context = {"id": hashed_id, "timestamp": time.time()}
+
         if user_data:
             # Фильтруем чувствительные данные
             safe_data = {}
             for key, value in user_data.items():
-                if key not in ["birth_time", "birth_place", "real_name", "email"]:
+                if key not in [
+                    "birth_time",
+                    "birth_place",
+                    "real_name",
+                    "email",
+                ]:
                     safe_data[key] = value
-            
+
             user_context.update(safe_data)
-        
+
         scope.set_user(user_context)
 
 
 def add_business_context(
-    operation_type: str,
-    business_data: Dict[str, Any]
+    operation_type: str, business_data: Dict[str, Any]
 ) -> None:
     """
     Добавление бизнес-контекста для астрологических операций.
-    
+
     Args:
         operation_type: Тип операции (horoscope, natal_chart, etc.)
         business_data: Бизнес-данные операции
     """
     with sentry_sdk.configure_scope() as scope:
-        scope.set_context("astrology_business", {
-            "operation_type": operation_type,
-            "timestamp": time.time(),
-            **business_data
-        })
-        
+        scope.set_context(
+            "astrology_business",
+            {
+                "operation_type": operation_type,
+                "timestamp": time.time(),
+                **business_data,
+            },
+        )
+
         # Добавляем теги для бизнес-аналитики
         scope.set_tag("business.operation", operation_type)
         if "zodiac_sign" in business_data:
             scope.set_tag("business.zodiac_sign", business_data["zodiac_sign"])
         if "ai_enabled" in business_data:
-            scope.set_tag("business.ai_enabled", str(business_data["ai_enabled"]))
+            scope.set_tag(
+                "business.ai_enabled", str(business_data["ai_enabled"])
+            )
 
 
 def capture_feature_flag_context(
-    flag_name: str,
-    flag_value: Any,
-    user_id: Optional[str] = None
+    flag_name: str, flag_value: Any, user_id: Optional[str] = None
 ) -> None:
     """
     Отслеживание использования feature flags.
-    
+
     Args:
         flag_name: Название feature flag
         flag_value: Значение флага
         user_id: ID пользователя (опционально)
     """
     with sentry_sdk.configure_scope() as scope:
-        scope.set_context("feature_flags", {
-            flag_name: flag_value,
-            "timestamp": time.time()
-        })
-        
+        scope.set_context(
+            "feature_flags", {flag_name: flag_value, "timestamp": time.time()}
+        )
+
         scope.set_tag(f"feature.{flag_name}", str(flag_value))
-    
+
     # Отправляем метрику использования feature flag
-    tags = {
-        "flag_name": flag_name,
-        "flag_value": str(flag_value)
-    }
-    
+    tags = {"flag_name": flag_name, "flag_value": str(flag_value)}
+
     if user_id:
         tags["user_segment"] = f"segment_{hash(user_id) % 10}"
-    
-    capture_counter_metric(
-        key="astroloh.feature_flag.used",
-        tags=tags
-    )
+
+    capture_counter_metric(key="astroloh.feature_flag.used", tags=tags)
 
 
 def track_external_api_call(
@@ -1168,11 +1188,11 @@ def track_external_api_call(
     method: str = "GET",
     response_time_ms: Optional[float] = None,
     status_code: Optional[int] = None,
-    error: Optional[str] = None
+    error: Optional[str] = None,
 ) -> None:
     """
     Отслеживание вызовов внешних API.
-    
+
     Args:
         api_name: Название API (yandex_gpt, etc.)
         endpoint: Эндпоинт API
@@ -1181,39 +1201,29 @@ def track_external_api_call(
         status_code: HTTP статус код
         error: Ошибка (если есть)
     """
-    tags = {
-        "api_name": api_name,
-        "endpoint": endpoint,
-        "method": method
-    }
-    
+    tags = {"api_name": api_name, "endpoint": endpoint, "method": method}
+
     if status_code:
         tags["status_code"] = str(status_code)
         tags["status_class"] = f"{status_code // 100}xx"
-    
+
     if error:
         tags["error"] = error
-        
+
     # Счетчик вызовов API
-    capture_counter_metric(
-        key="astroloh.external_api.calls",
-        tags=tags
-    )
-    
+    capture_counter_metric(key="astroloh.external_api.calls", tags=tags)
+
     # Время ответа API
     if response_time_ms:
         capture_timer_metric(
             key="astroloh.external_api.response_time",
             duration_ms=response_time_ms,
-            tags=tags
+            tags=tags,
         )
-    
+
     # Ошибки API
     if error or (status_code and status_code >= 400):
-        capture_counter_metric(
-            key="astroloh.external_api.errors",
-            tags=tags
-        )
+        capture_counter_metric(key="astroloh.external_api.errors", tags=tags)
 
 
 @contextmanager
@@ -1229,7 +1239,9 @@ def sentry_span(span_name: str, **span_data):
     """
     start_time = time.time()
 
-    with sentry_sdk.start_span(op="astrology_span", description=span_name) as span:
+    with sentry_sdk.start_span(
+        op="astrology_span", description=span_name
+    ) as span:
         # Добавляем данные в спан
         for key, value in span_data.items():
             span.set_tag(key, str(value))

@@ -3,7 +3,7 @@ Comprehensive tests for the recommendation and personalization system.
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -531,8 +531,7 @@ class TestChurnPredictionModel:
         user = User(
             yandex_user_id="active_user",
             data_consent=True,
-            last_accessed=utcnow()
-            - timedelta(days=1),  # Active recently
+            last_accessed=utcnow() - timedelta(days=1),  # Active recently
         )
         db_session.add(user)
         await db_session.commit()

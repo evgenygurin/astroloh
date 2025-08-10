@@ -118,10 +118,11 @@ class TestAsyncKerykeionServiceAsync:
         self, service, sample_birth_data
     ):
         """Test async natal chart calculation without cache"""
-        with patch.object(
-            service.kerykeion_service, "get_full_natal_chart_data"
-        ) as mock_calc, patch.object(
-            service, "is_available", return_value=True
+        with (
+            patch.object(
+                service.kerykeion_service, "get_full_natal_chart_data"
+            ) as mock_calc,
+            patch.object(service, "is_available", return_value=True),
         ):
             mock_calc.return_value = {
                 "planets": {"sun": {"sign": "leo", "degree": 22.5}},
@@ -224,10 +225,11 @@ class TestAsyncKerykeionServiceAsync:
             "aspects": [],
         }
 
-        with patch.object(
-            service.kerykeion_service, "get_full_natal_chart_data"
-        ) as mock_calc, patch.object(
-            service, "is_available", return_value=True
+        with (
+            patch.object(
+                service.kerykeion_service, "get_full_natal_chart_data"
+            ) as mock_calc,
+            patch.object(service, "is_available", return_value=True),
         ):
             mock_calc.return_value = mock_result
 
@@ -249,10 +251,11 @@ class TestAsyncKerykeionServiceAsync:
         """Test that performance monitoring works correctly"""
         initial_stats = service.performance_stats.copy()
 
-        with patch.object(
-            service.kerykeion_service, "get_full_natal_chart_data"
-        ) as mock_calc, patch.object(
-            service, "is_available", return_value=True
+        with (
+            patch.object(
+                service.kerykeion_service, "get_full_natal_chart_data"
+            ) as mock_calc,
+            patch.object(service, "is_available", return_value=True),
         ):
             mock_calc.return_value = {
                 "planets": {},
@@ -343,10 +346,11 @@ class TestAsyncKerykeionServiceAsync:
 
         mock_result = {"planets": {}, "houses": {}, "aspects": []}
 
-        with patch.object(
-            service.kerykeion_service, "get_full_natal_chart_data"
-        ) as mock_calc, patch.object(
-            service, "is_available", return_value=True
+        with (
+            patch.object(
+                service.kerykeion_service, "get_full_natal_chart_data"
+            ) as mock_calc,
+            patch.object(service, "is_available", return_value=True),
         ):
             mock_calc.return_value = mock_result
 

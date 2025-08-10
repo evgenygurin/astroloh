@@ -15,7 +15,7 @@ from app.services.astro_cache_service import astro_cache
 from app.services.deployment_monitor import deployment_monitor
 from app.services.feature_flag_service import feature_flags
 from app.services.performance_monitor import performance_monitor
-from app.utils.astro_time_utils import utcnow, current_timestamp
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 
 class RollbackTrigger(Enum):
@@ -437,7 +437,7 @@ class RollbackSystem:
             for i, step in enumerate(plan.rollback_steps):
                 try:
                     logger.info(
-                        f"ROLLBACK_STEP: {i+1}/{len(plan.rollback_steps)} - {step['action']}"
+                        f"ROLLBACK_STEP: {i + 1}/{len(plan.rollback_steps)} - {step['action']}"
                     )
                     await self._execute_rollback_step(step, rollback_event)
 
@@ -446,9 +446,9 @@ class RollbackSystem:
 
                 except Exception as step_error:
                     logger.error(
-                        f"ROLLBACK_STEP_ERROR: Step {i+1} failed: {step_error}"
+                        f"ROLLBACK_STEP_ERROR: Step {i + 1} failed: {step_error}"
                     )
-                    rollback_event.rollback_data[f"step_{i+1}_error"] = str(
+                    rollback_event.rollback_data[f"step_{i + 1}_error"] = str(
                         step_error
                     )
                     # Continue with other steps

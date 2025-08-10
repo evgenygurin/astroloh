@@ -2,7 +2,7 @@
 Тесты для менеджера сессий.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from app.models.yandex_models import UserContext, YandexIntent, YandexSession
 from app.services.session_manager import SessionManager

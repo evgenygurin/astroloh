@@ -7,11 +7,10 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from app.utils.astro_time_utils import current_timestamp
-
 from app.models.yandex_models import YandexZodiacSign
 from app.services.astrology_calculator import AstrologyCalculator, NatalChart
 from app.services.kerykeion_service import KerykeionService
+from app.utils.astro_time_utils import current_timestamp
 
 logger = logging.getLogger(__name__)
 

@@ -207,14 +207,14 @@ class TestKerykeionServiceWithoutKerykeion:
     def test_create_astrological_subject_returns_none(
         self, service_without_kerykeion
     ):
-        """Test that creating subject returns None when Kerykeion unavailable"""
+        """Test that creating subject returns error dict when Kerykeion unavailable"""
         result = service_without_kerykeion.create_astrological_subject(
             name="Test",
             birth_datetime=datetime(1990, 8, 15, 14, 30),
             latitude=55.7558,
             longitude=37.6176,
         )
-        assert result is None
+        assert result == {"error": "Kerykeion not available"}
 
     def test_get_full_natal_chart_data_returns_error(
         self, service_without_kerykeion
@@ -387,7 +387,7 @@ class TestKerykeionServicePerformance:
 
         for i, birth_date in enumerate(birth_dates):
             chart_data = service.get_full_natal_chart_data(
-                name=f"Test Subject {i+1}",
+                name=f"Test Subject {i + 1}",
                 birth_datetime=birth_date,
                 latitude=55.7558,
                 longitude=37.6176,
@@ -430,8 +430,12 @@ class TestKerykeionServiceSecurity:
                 longitude=37.6176,
             )
 
-            # Either returns valid subject or None, but shouldn't crash
-            assert result is None or hasattr(result, "name")
+            # Either returns valid subject, error dict, or None, but shouldn't crash
+            assert (
+                result is None
+                or hasattr(result, "name")
+                or (isinstance(result, dict) and "error" in result)
+            )
 
     def test_coordinate_boundary_validation(self):
         """Test validation of latitude/longitude boundaries"""
@@ -456,8 +460,12 @@ class TestKerykeionServiceSecurity:
                     latitude=lat,
                     longitude=lng,
                 )
-                # Either succeeds with clamped values or returns None
-                assert result is None or hasattr(result, "lat")
+                # Either succeeds with clamped values, returns error dict, or returns None
+                assert (
+                    result is None
+                    or hasattr(result, "lat")
+                    or (isinstance(result, dict) and "error" in result)
+                )
             except Exception as e:
                 # Should raise appropriate validation errors, not crash
                 assert (

@@ -5,8 +5,6 @@ Personalization service for dynamic content generation and style adaptation.
 from __future__ import annotations
 
 import uuid
-from datetime import timezone
-from app.utils.astro_time_utils import utcnow
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import select
@@ -15,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.database import User, UserInteraction, UserPreference
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.horoscope_generator import HoroscopeGenerator
+from app.utils.astro_time_utils import utcnow
 
 
 class DynamicHoroscopeGenerator:

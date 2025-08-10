@@ -4,13 +4,13 @@
 """
 
 import logging
-from datetime import datetime, timedelta, date
-from app.utils.astro_time_utils import utcnow
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from app.models.transit_models import ProgressedPlanet, ProgressionInterpretation
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.kerykeion_service import KerykeionService
+from app.utils.astro_time_utils import utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -75,18 +75,13 @@ class ProgressionService:
         days_progressed = (target_date - birth_date).days
 
         # Попробуем использовать Kerykeion, если доступен
-        if (
-            KERYKEION_PROGRESSIONS_AVAILABLE
-            and self.kerykeion_service.is_available()
-        ):
+        if KERYKEION_PROGRESSIONS_AVAILABLE and self.kerykeion_service.is_available():
             return self._get_kerykeion_progressions(
                 natal_chart, target_date, days_progressed
             )
         else:
             # Fallback к базовому методу
-            logger.warning(
-                "PROGRESSION_SERVICE_SECONDARY_FALLBACK: Using basic method"
-            )
+            logger.warning("PROGRESSION_SERVICE_SECONDARY_FALLBACK: Using basic method")
             return self._get_basic_progressions(
                 natal_chart, target_date, days_progressed
             )
@@ -120,22 +115,18 @@ class ProgressionService:
             # Создаем прогрессированную карту (день = год)
             progression_date = birth_datetime + timedelta(days=days_progressed)
 
-            progressed_subject = (
-                self.kerykeion_service.create_astrological_subject(
-                    name="ProgressedChart",
-                    birth_datetime=progression_date,
-                    latitude=coordinates["latitude"],
-                    longitude=coordinates["longitude"],
-                )
+            progressed_subject = self.kerykeion_service.create_astrological_subject(
+                name="ProgressedChart",
+                birth_datetime=progression_date,
+                latitude=coordinates["latitude"],
+                longitude=coordinates["longitude"],
             )
 
             if not progressed_subject:
                 raise ValueError("Failed to create progressed subject")
 
             # Получаем данные прогрессированных планет
-            progressed_planets = self._extract_progressed_planets(
-                progressed_subject
-            )
+            progressed_planets = self._extract_progressed_planets(progressed_subject)
 
             # Создаем интерпретацию
             interpretation = self._create_progression_interpretation(
@@ -152,9 +143,7 @@ class ProgressionService:
                 "key_changes": self._identify_key_changes(
                     progressed_planets, natal_chart.get("planets", {})
                 ),
-                "life_phase_analysis": self._analyze_life_phase(
-                    days_progressed
-                ),
+                "life_phase_analysis": self._analyze_life_phase(days_progressed),
                 "spiritual_evolution": self._assess_spiritual_evolution(
                     progressed_planets
                 ),
@@ -183,10 +172,8 @@ class ProgressionService:
         progression_datetime = birth_datetime + timedelta(days=days_progressed)
 
         # Получаем позиции планет на прогрессированную дату
-        progressed_positions = (
-            self.astro_calculator.calculate_planet_positions(
-                progression_datetime
-            )
+        progressed_positions = self.astro_calculator.calculate_planet_positions(
+            progression_datetime
         )
 
         # Преобразуем в формат прогрессированных планет
@@ -212,9 +199,7 @@ class ProgressionService:
             "days_progressed": days_progressed,
             "progressed_planets": progressed_planets,
             "interpretation": interpretation,
-            "key_changes": self._identify_basic_key_changes(
-                progressed_planets
-            ),
+            "key_changes": self._identify_basic_key_changes(progressed_planets),
             "source": "basic",
         }
 
@@ -277,9 +262,7 @@ class ProgressionService:
             "houses": solar_houses,
             "interpretation": interpretation,
             "themes": self._get_solar_themes(solar_positions, solar_houses),
-            "monthly_highlights": self._get_monthly_highlights(
-                solar_positions
-            ),
+            "monthly_highlights": self._get_monthly_highlights(solar_positions),
             "seasonal_guidance": self._get_seasonal_guidance(solar_positions),
             "success_indicators": self._identify_success_indicators(
                 solar_positions, solar_houses
@@ -340,9 +323,7 @@ class ProgressionService:
             "interpretation": interpretation,
             "monthly_themes": self._get_lunar_themes(lunar_positions),
             "weekly_rhythms": self._get_weekly_rhythms(lunar_positions),
-            "emotional_guidance": self._get_emotional_guidance(
-                lunar_positions
-            ),
+            "emotional_guidance": self._get_emotional_guidance(lunar_positions),
             "optimal_timing": self._get_optimal_lunar_timing(lunar_positions),
         }
 
@@ -404,15 +385,11 @@ class ProgressionService:
         prog_moon = progressed_planets.get("moon", {})
         progressed_moon = ProgressedPlanet(
             sign=prog_moon.get("sign", "Unknown"),
-            meaning=self._interpret_progressed_moon(
-                prog_moon.get("sign", "Unknown")
-            ),
+            meaning=self._interpret_progressed_moon(prog_moon.get("sign", "Unknown")),
         )
 
         # Определяем общие тенденции
-        general_trends = self._identify_general_trends(
-            progressed_planets, current_age
-        )
+        general_trends = self._identify_general_trends(progressed_planets, current_age)
 
         return ProgressionInterpretation(
             current_age=current_age,
@@ -436,15 +413,11 @@ class ProgressionService:
             "current_age": current_age,
             "life_stage": life_stage,
             "progressed_sun": {
-                "sign": progressed_planets.get("sun", {}).get(
-                    "sign", "Unknown"
-                ),
+                "sign": progressed_planets.get("sun", {}).get("sign", "Unknown"),
                 "meaning": f"Развитие личности через энергию знака {progressed_planets.get('sun', {}).get('sign', 'Unknown')}",
             },
             "progressed_moon": {
-                "sign": progressed_planets.get("moon", {}).get(
-                    "sign", "Unknown"
-                ),
+                "sign": progressed_planets.get("moon", {}).get("sign", "Unknown"),
                 "meaning": f"Эмоциональное развитие в энергии {progressed_planets.get('moon', {}).get('sign', 'Unknown')}",
             },
             "general_trends": [
@@ -511,9 +484,7 @@ class ProgressionService:
             "Рыбы": "Эмоциональная чуткость и потребность в единении",
         }
 
-        return moon_interpretations.get(
-            sign, f"Эмоциональное развитие через {sign}"
-        )
+        return moon_interpretations.get(sign, f"Эмоциональное развитие через {sign}")
 
     def _identify_key_changes(
         self, progressed_planets: Dict[str, Any], natal_planets: Dict[str, Any]
@@ -587,9 +558,7 @@ class ProgressionService:
         elif 40 <= age <= 42:
             trends.append("Кризис среднего возраста - переоценка ценностей")
         elif 58 <= age <= 60:
-            trends.append(
-                "Второй сатурнианский возврат - мудрость и наставничество"
-            )
+            trends.append("Второй сатурнианский возврат - мудрость и наставничество")
 
         return trends[:4]
 
@@ -640,19 +609,13 @@ class ProgressionService:
         return {
             "year_theme": self._get_solar_year_theme(asc_sign, sun_house),
             "emotional_focus": self._get_emotional_focus(moon_house),
-            "key_areas": self._get_solar_key_areas(
-                solar_positions, solar_houses
-            ),
+            "key_areas": self._get_solar_key_areas(solar_positions, solar_houses),
             "challenges": self._identify_solar_challenges(solar_positions),
-            "opportunities": self._identify_solar_opportunities(
-                solar_positions
-            ),
+            "opportunities": self._identify_solar_opportunities(solar_positions),
             "overall_energy": self._assess_solar_energy(solar_positions),
         }
 
-    def _get_solar_year_theme(
-        self, asc_sign: str, sun_house: Optional[int]
-    ) -> str:
+    def _get_solar_year_theme(self, asc_sign: str, sun_house: Optional[int]) -> str:
         """Определяет тему года по асценденту и позиции Солнца."""
         base_themes = {
             "Овен": "Год новых начинаний и лидерства",
@@ -702,9 +665,7 @@ class ProgressionService:
 
         for house_num in range(1, 13):
             house_data = houses.get(house_num, {})
-            house_start = house_data.get(
-                "cusp_longitude", (house_num - 1) * 30
-            )
+            house_start = house_data.get("cusp_longitude", (house_num - 1) * 30)
 
             next_house = house_num + 1 if house_num < 12 else 1
             next_house_data = houses.get(next_house, {})
@@ -712,10 +673,7 @@ class ProgressionService:
 
             # Учитываем переход через 0°
             if house_start > house_end:  # Переход через 0°
-                if (
-                    planet_longitude >= house_start
-                    or planet_longitude < house_end
-                ):
+                if planet_longitude >= house_start or planet_longitude < house_end:
                     return house_num
             else:
                 if house_start <= planet_longitude < house_end:
@@ -731,9 +689,7 @@ class ProgressionService:
         # В реальной астрологии нужен точный расчет лунных фаз
 
         try:
-            new_moon_date = datetime(
-                year, month, 15, 12, 0
-            )  # 15 число в полдень
+            new_moon_date = datetime(year, month, 15, 12, 0)  # 15 число в полдень
         except ValueError:
             # Если месяц некорректный, используем январь
             new_moon_date = datetime(year, 1, 15, 12, 0)
@@ -818,9 +774,7 @@ class ProgressionService:
 
         return themes[:4]
 
-    def _get_monthly_highlights(
-        self, positions: Dict[str, Any]
-    ) -> Dict[int, str]:
+    def _get_monthly_highlights(self, positions: Dict[str, Any]) -> Dict[int, str]:
         """Получает ключевые моменты по месяцам."""
         # Базовые рекомендации по месяцам на основе солярных данных
         highlights = {}
@@ -839,9 +793,7 @@ class ProgressionService:
         # Можно добавить более сложную логику
         return highlights
 
-    def _get_seasonal_guidance(
-        self, positions: Dict[str, Any]
-    ) -> Dict[str, str]:
+    def _get_seasonal_guidance(self, positions: Dict[str, Any]) -> Dict[str, str]:
         """Получает сезонные рекомендации."""
         return {
             "весна": "Время новых начинаний и активности",
@@ -870,15 +822,11 @@ class ProgressionService:
         if venus:
             venus_house = self._find_planet_house(venus, houses)
             if venus_house in [2, 5, 7, 8]:  # Благоприятные дома для Венеры
-                indicators.append(
-                    f"Гармония в {self._get_house_meaning(venus_house)}"
-                )
+                indicators.append(f"Гармония в {self._get_house_meaning(venus_house)}")
 
         return indicators[:3]
 
-    def _identify_caution_periods(
-        self, positions: Dict[str, Any]
-    ) -> List[str]:
+    def _identify_caution_periods(self, positions: Dict[str, Any]) -> List[str]:
         """Определяет периоды осторожности."""
         cautions = []
 
@@ -910,9 +858,7 @@ class ProgressionService:
 
         return "Особый жизненный период"
 
-    def _assess_spiritual_evolution(
-        self, progressed_planets: Dict[str, Any]
-    ) -> str:
+    def _assess_spiritual_evolution(self, progressed_planets: Dict[str, Any]) -> str:
         """Оценивает духовную эволюцию."""
         # Анализируем прогрессированные планеты для духовных выводов
         spiritual_signs = ["Рыбы", "Стрелец", "Скорпион", "Водолей"]
@@ -934,7 +880,9 @@ class ProgressionService:
         if not moon_house:
             return "Общее эмоциональное развитие"
 
-        return f"Эмоциональная энергия направлена на {self._get_house_meaning(moon_house)}"
+        return (
+            f"Эмоциональная энергия направлена на {self._get_house_meaning(moon_house)}"
+        )
 
     def _get_solar_key_areas(
         self, positions: Dict[str, Any], houses: Dict[int, Any]
@@ -962,9 +910,7 @@ class ProgressionService:
 
         return key_areas
 
-    def _identify_solar_challenges(
-        self, positions: Dict[str, Any]
-    ) -> List[str]:
+    def _identify_solar_challenges(self, positions: Dict[str, Any]) -> List[str]:
         """Определяет вызовы соляра."""
         challenges = []
 
@@ -975,15 +921,11 @@ class ProgressionService:
                 "Venus",
                 "Mars",
             ]:
-                challenges.append(
-                    f"Задержки и пересмотр в сфере {planet.lower()}"
-                )
+                challenges.append(f"Задержки и пересмотр в сфере {planet.lower()}")
 
         return challenges[:2]
 
-    def _identify_solar_opportunities(
-        self, positions: Dict[str, Any]
-    ) -> List[str]:
+    def _identify_solar_opportunities(self, positions: Dict[str, Any]) -> List[str]:
         """Определяет возможности соляра."""
         opportunities = []
 
@@ -1001,9 +943,7 @@ class ProgressionService:
         for planet, signs in dignities.items():
             planet_data = positions.get(planet, {})
             if planet_data.get("sign", "") in signs:
-                opportunities.append(
-                    f"Сильная поддержка в сфере {planet.lower()}"
-                )
+                opportunities.append(f"Сильная поддержка в сфере {planet.lower()}")
 
         return opportunities[:3]
 
@@ -1013,14 +953,10 @@ class ProgressionService:
         air_signs = ["Близнецы", "Весы", "Водолей"]
 
         fire_count = sum(
-            1
-            for data in positions.values()
-            if data.get("sign", "") in fire_signs
+            1 for data in positions.values() if data.get("sign", "") in fire_signs
         )
         air_count = sum(
-            1
-            for data in positions.values()
-            if data.get("sign", "") in air_signs
+            1 for data in positions.values() if data.get("sign", "") in air_signs
         )
 
         active_count = fire_count + air_count
@@ -1123,9 +1059,7 @@ class ProgressionService:
             moon_sign, ["Следуйте сердцу", "Доверяйте процессу"]
         )
 
-    def _get_optimal_lunar_timing(
-        self, positions: Dict[str, Any]
-    ) -> Dict[str, str]:
+    def _get_optimal_lunar_timing(self, positions: Dict[str, Any]) -> Dict[str, str]:
         """Получает оптимальные тайминги для лунара."""
         return {
             "новые_начинания": "Первая неделя месяца",

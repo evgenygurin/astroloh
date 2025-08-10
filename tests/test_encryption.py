@@ -266,7 +266,7 @@ class TestSecurityUtils:
 
     def test_generate_session_expiry(self):
         """Test session expiry generation."""
-        from datetime import datetime, timedelta
+        from datetime import timedelta
 
         before = utcnow()
         expiry = SecurityUtils.generate_session_expiry(24)
@@ -279,7 +279,7 @@ class TestSecurityUtils:
 
     def test_is_session_expired_not_expired(self):
         """Test session expiry check for non-expired session."""
-        from datetime import datetime, timedelta
+        from datetime import timedelta
 
         future_time = utcnow() + timedelta(hours=1)
 
@@ -287,7 +287,7 @@ class TestSecurityUtils:
 
     def test_is_session_expired_expired(self):
         """Test session expiry check for expired session."""
-        from datetime import datetime, timedelta
+        from datetime import timedelta
 
         past_time = utcnow() - timedelta(hours=1)
 

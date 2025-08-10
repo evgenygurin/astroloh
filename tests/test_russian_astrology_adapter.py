@@ -3,7 +3,6 @@ Comprehensive unit tests for RussianAstrologyAdapter.
 Tests Russian localization, grammatical declensions, timezone support, and TTS optimization.
 """
 
-
 import pytest
 
 from app.services.russian_astrology_adapter import (

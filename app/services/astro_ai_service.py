@@ -4,9 +4,7 @@ Provides sophisticated astrological consultations using professional-grade calcu
 """
 
 import logging
-from datetime import date
-
-from app.utils.astro_time_utils import current_timestamp, utcnow
+from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -19,6 +17,7 @@ from app.services.kerykeion_service import HouseSystem, KerykeionService, Zodiac
 from app.services.progression_service import ProgressionService
 from app.services.synastry_service import SynastryService
 from app.services.yandex_gpt import yandex_gpt_client
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -1267,7 +1266,7 @@ class AstroAIService:
             },
         )
 
-        system_prompt = f"""{consultation_info['system']}
+        system_prompt = f"""{consultation_info["system"]}
 Давай практические советы на основе астрологических принципов.
 
 Твои советы должны быть:
@@ -1411,9 +1410,9 @@ class AstroAIService:
 Используй классические астрологические знания для создания проницательного портрета."""
 
         prompt = f"""Создай астрологическую характеристику для {zodiac_sign}.
-Дата рождения: {birth_date.strftime('%d %B %Y')}
+Дата рождения: {birth_date.strftime("%d %B %Y")}
 
-{f'Особое внимание: {focus}' if focus else ''}
+{f"Особое внимание: {focus}" if focus else ""}
 
 Включи:
 - Основные черты характера

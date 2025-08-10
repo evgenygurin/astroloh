@@ -7,7 +7,6 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import timedelta, timezone
-from app.utils.astro_time_utils import utcnow
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import delete, select, update
@@ -439,9 +438,7 @@ class UserManager:
         Returns:
             List of users for cleanup
         """
-        cutoff_date = utcnow() - timedelta(
-            days=days_threshold
-        )
+        cutoff_date = utcnow() - timedelta(days=days_threshold)
         result = await self.db.execute(
             select(User).where(User.last_accessed < cutoff_date)
         )
@@ -552,9 +549,7 @@ class UserManager:
         if not user.last_accessed:
             return False
 
-        cutoff_date = utcnow() - timedelta(
-            days=days_threshold
-        )
+        cutoff_date = utcnow() - timedelta(days=days_threshold)
 
         # Ensure last_accessed is timezone-aware
         last_accessed = user.last_accessed

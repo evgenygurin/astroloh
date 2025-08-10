@@ -4,13 +4,12 @@
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from enum import Enum
 from typing import Any, Dict, List, Tuple
 
-from app.utils.astro_time_utils import utcnow
-
 from app.models.yandex_models import ProcessedRequest, YandexIntent
+from app.utils.astro_time_utils import utcnow
 
 
 class DialogState(Enum):
@@ -55,9 +54,7 @@ class DialogFlow:
 
     def is_expired(self, timeout_minutes: int = 30) -> bool:
         """Проверяет, истек ли диалог."""
-        return utcnow() - self.updated_at > timedelta(
-            minutes=timeout_minutes
-        )
+        return utcnow() - self.updated_at > timedelta(minutes=timeout_minutes)
 
 
 class DialogFlowManager:

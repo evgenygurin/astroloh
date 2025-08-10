@@ -263,16 +263,19 @@ class TestDialogHandler:
             mock_error_response
         )
 
-        with patch.multiple(
-            self.dialog_handler,
-            intent_recognizer=mock_intent_recognizer,
-            conversation_manager=mock_conversation_manager,
-            response_formatter=mock_response_formatter,
-            dialog_flow_manager=mock_dialog_flow_manager,
-            error_recovery_manager=mock_error_recovery_manager,
-        ), patch(
-            "app.services.error_recovery.ResponseFormatter",
-            return_value=mock_response_formatter,
+        with (
+            patch.multiple(
+                self.dialog_handler,
+                intent_recognizer=mock_intent_recognizer,
+                conversation_manager=mock_conversation_manager,
+                response_formatter=mock_response_formatter,
+                dialog_flow_manager=mock_dialog_flow_manager,
+                error_recovery_manager=mock_error_recovery_manager,
+            ),
+            patch(
+                "app.services.error_recovery.ResponseFormatter",
+                return_value=mock_response_formatter,
+            ),
         ):
             # Mock response generation
             self.dialog_handler._generate_contextual_response = AsyncMock(

@@ -1,12 +1,11 @@
 """
 Database models and configuration for secure data storage.
 """
+
 from __future__ import annotations
 
 import uuid
 from typing import Any
-
-from app.utils.astro_time_utils import db_timestamp_default
 
 from sqlalchemy import (
     JSON,
@@ -30,6 +29,8 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
+
+from app.utils.astro_time_utils import db_timestamp_default
 
 Base = declarative_base()
 
@@ -109,9 +110,7 @@ class User(Base):
         default=db_timestamp_default(),
         onupdate=db_timestamp_default(),
     )
-    last_accessed = Column(
-        DateTime, default=db_timestamp_default()
-    )
+    last_accessed = Column(DateTime, default=db_timestamp_default())
 
     # Связи
     sessions: Mapped[list["UserSession"]] = relationship(
