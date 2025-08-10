@@ -4,8 +4,9 @@ Database models and configuration for secure data storage.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
 from typing import Any
+
+from app.utils.astro_time_utils import db_timestamp_default
 
 from sqlalchemy import (
     JSON,
@@ -101,15 +102,15 @@ class User(Base):
 
     # Метаданные
     created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
     updated_at = Column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=db_timestamp_default(),
+        onupdate=db_timestamp_default(),
     )
     last_accessed = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime, default=db_timestamp_default()
     )
 
     # Связи
@@ -159,12 +160,12 @@ class UserSession(Base):
 
     # Метаданные
     created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
     last_activity = Column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=db_timestamp_default(),
+        onupdate=db_timestamp_default(),
     )
 
     user: Mapped["User"] = relationship("User", back_populates="sessions")
@@ -193,7 +194,7 @@ class HoroscopeRequest(Base):
 
     # Метаданные запроса
     processed_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
     ip_hash = Column(String(64), nullable=True)  # Хеш IP для аналитики
 
@@ -220,7 +221,7 @@ class DataDeletionRequest(Base):
     # Детали запроса
     request_reason = Column(Text, nullable=True)
     requested_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
     processed_at = Column(DateTime, nullable=True)
 
@@ -256,7 +257,7 @@ class SecurityLog(Base):
 
     # Временная метка
     timestamp = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
 
     # Индексы для быстрого поиска
@@ -313,12 +314,12 @@ class UserPreference(Base):
 
     # Метаданные
     created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
     updated_at = Column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=db_timestamp_default(),
+        onupdate=db_timestamp_default(),
     )
 
     # Связи
@@ -356,7 +357,7 @@ class UserInteraction(Base):
 
     # Временная метка
     timestamp = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
 
     # Связи
@@ -407,7 +408,7 @@ class Recommendation(Base):
 
     # Временная метка
     created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
 
     # Связи
@@ -437,12 +438,12 @@ class UserCluster(Base):
     # Метаданные
     algorithm_version = Column(String(20), nullable=False)
     created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
     updated_at = Column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=db_timestamp_default(),
+        onupdate=db_timestamp_default(),
     )
 
     # Связи
@@ -475,7 +476,7 @@ class ABTestGroup(Base):
 
     # Временная метка
     assigned_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
 
     # Связи
@@ -507,7 +508,7 @@ class RecommendationMetrics(Base):
 
     # Временная метка
     recorded_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime, default=db_timestamp_default(), nullable=False
     )
 
     # Связи

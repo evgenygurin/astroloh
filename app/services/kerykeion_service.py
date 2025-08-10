@@ -4,7 +4,7 @@ This service extends the basic astrology calculator with Kerykeion-specific feat
 """
 
 import logging
-from datetime import datetime
+from app.utils.astro_time_utils import utcnow, parse_datetime_safe, get_timezone_info
 from enum import Enum
 from typing import Any, Dict, List, Optional
 

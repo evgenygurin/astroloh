@@ -7,8 +7,9 @@ import asyncio
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any, Deque, Dict, List, Optional
+
+from app.utils.astro_time_utils import utcnow
 
 import psutil
 from loguru import logger
@@ -360,7 +361,7 @@ class PerformanceMonitor:
 • High CPU: >{stats['alerts']['thresholds']['high_cpu_percent']}%
 • Error Rate: >{stats['alerts']['thresholds']['error_rate_percent']}%
 
-Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Generated at: {utcnow().strftime('%Y-%m-%d %H:%M:%S')}
 """
 
         return report

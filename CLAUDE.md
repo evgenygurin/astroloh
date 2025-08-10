@@ -6,6 +6,60 @@ This file contains guidelines and instructions for Claude AI when working with t
 
 Astroloh is a voice skill for Yandex Alice that provides personalized astrological forecasts and consultations. The project is built with Python 3.11, FastAPI, PostgreSQL, and integrates with advanced astronomical calculation libraries.
 
+## ⏰ CRITICAL: Centralized Time Handling
+
+**ALL time, date, and timezone operations MUST use `app/utils/astro_time_utils.py`**
+
+### 🚫 FORBIDDEN - Do NOT use these directly:
+```python
+# ❌ NEVER use these in application code:
+from datetime import datetime, timezone
+import pytz
+from dateutil import tz
+
+datetime.now()
+datetime.utcnow()
+datetime.now(timezone.utc)
+pytz.timezone()
+```
+
+### ✅ REQUIRED - Use these instead:
+```python
+# ✅ ALWAYS use centralized functions:
+from app.utils.astro_time_utils import (
+    utcnow,              # Replace datetime.utcnow()
+    now,                 # Replace datetime.now()
+    current_timestamp,   # ISO timestamp string
+    db_timestamp_default, # SQLAlchemy default factory
+    create_astro_datetime, # Create AstroDateTime objects
+    parse_datetime_safe,  # Safe datetime parsing
+    get_timezone_info,   # Timezone information
+)
+
+# Examples:
+current_time = utcnow()  # Instead of datetime.utcnow()
+moscow_time = now("Europe/Moscow")  # Instead of datetime.now(pytz.timezone("Europe/Moscow"))
+api_timestamp = current_timestamp()  # ISO string for APIs
+```
+
+### 🏗️ Database Models Pattern:
+```python
+# ✅ Correct SQLAlchemy pattern:
+from app.utils.astro_time_utils import db_timestamp_default
+
+class MyModel(Base):
+    created_at = Column(DateTime, default=db_timestamp_default())
+    updated_at = Column(DateTime, default=db_timestamp_default(), onupdate=db_timestamp_default())
+```
+
+### 🌍 Russian Timezone Support:
+```python
+# ✅ Automatic Russian city mapping:
+moscow_tz = get_timezone_info("Москва")  # Returns Europe/Moscow
+spb_tz = get_timezone_info("Санкт-Петербург")  # Returns Europe/Moscow
+nsk_tz = get_timezone_info("Новосибирск")  # Returns Asia/Novosibirsk
+```
+
 **Core Features:**
 
 - Personalized horoscopes (daily/weekly/monthly)

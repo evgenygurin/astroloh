@@ -1,8 +1,9 @@
 """IoT integration models for Astroloh."""
 
-from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
+
+from app.utils.astro_time_utils import db_timestamp_default
 
 from pydantic import BaseModel, Field
 from sqlalchemy import (
@@ -92,11 +93,11 @@ class IoTDevice(SQLBaseModel):
     location = Column(String(255))
     room = Column(String(255))
     last_seen = Column(DateTime)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=db_timestamp_default())
     updated_at = Column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=db_timestamp_default(),
+        onupdate=db_timestamp_default(),
     )
 
     # Relationships
@@ -124,11 +125,11 @@ class HomeAutomation(SQLBaseModel):
     is_enabled = Column(Boolean, default=True)
     last_executed = Column(DateTime)
     execution_count = Column(Integer, default=0)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=db_timestamp_default())
     updated_at = Column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=db_timestamp_default(),
+        onupdate=db_timestamp_default(),
     )
 
     # Relationships
@@ -148,7 +149,7 @@ class DeviceData(SQLBaseModel):
     value = Column(Float)
     unit = Column(String(50))
     device_metadata = Column(JSON)
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    timestamp = Column(DateTime, default=db_timestamp_default())
 
     # Relationships
     device: Mapped["IoTDevice"] = relationship(
@@ -170,7 +171,7 @@ class WearableData(SQLBaseModel):
     stress_level = Column(Float)
     mood_score = Column(Float)
     lunar_correlation = Column(Float)
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    timestamp = Column(DateTime, default=db_timestamp_default())
 
 
 # Pydantic Models for API

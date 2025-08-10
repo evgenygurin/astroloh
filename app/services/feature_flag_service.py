@@ -4,9 +4,10 @@ Enables gradual deployment with user-based rollout percentages.
 """
 
 import hashlib
-from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set
+
+from app.utils.astro_time_utils import utcnow, current_timestamp
 
 from loguru import logger
 from pydantic import BaseModel
@@ -39,8 +40,8 @@ class FeatureFlag(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     metrics: Dict[str, Any] = {}
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
+    created_at: datetime = utcnow()
+    updated_at: datetime = utcnow()
 
 
 class KerykeionFeatureFlags:
@@ -185,13 +186,13 @@ class FeatureFlagService:
                 return True
 
             # Check time-based constraints
-            if flag.start_date and datetime.now() < flag.start_date:
+            if flag.start_date and utcnow() < flag.start_date:
                 performance_monitor.end_operation(
                     op_id, success=True, cache_hit=True
                 )
                 return False
 
-            if flag.end_date and datetime.now() > flag.end_date:
+            if flag.end_date and utcnow() > flag.end_date:
                 performance_monitor.end_operation(
                     op_id, success=True, cache_hit=True
                 )
@@ -306,7 +307,7 @@ class FeatureFlagService:
             if excluded_users is not None:
                 flag.excluded_users = excluded_users
 
-            flag.updated_at = datetime.now()
+            flag.updated_at = utcnow()
 
             logger.info(
                 f"FEATURE_FLAG_UPDATED: {feature_name} -> phase={flag.rollout_phase.value}, percentage={flag.rollout_percentage}%"
@@ -417,7 +418,7 @@ class FeatureFlagService:
 
         flag = self.flags[feature_name]
         flag.metrics.update(metrics)
-        flag.updated_at = datetime.now()
+        flag.updated_at = utcnow()
 
         logger.debug(f"FEATURE_FLAG_METRICS_UPDATED: {feature_name}")
         return True
@@ -472,7 +473,7 @@ class FeatureFlagService:
                     user_id: list(features)
                     for user_id, features in self.user_assignments.items()
                 },
-                "saved_at": datetime.now().isoformat(),
+                "saved_at": utcnow().isoformat(),
             }
 
             await astro_cache.set(

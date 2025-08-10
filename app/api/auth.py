@@ -2,8 +2,10 @@
 Authentication API endpoints for the frontend.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional
+
+from app.utils.astro_time_utils import utcnow
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -89,9 +91,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -155,7 +157,7 @@ async def register(
             "email": user_data.email,
         },  # Store actual name in preferences
         data_consent=True,
-        created_at=datetime.utcnow(),
+        created_at=utcnow(),
     )
 
     db.add(user)
@@ -203,7 +205,7 @@ async def login(
         )
 
     # Update last accessed
-    user.last_accessed = datetime.utcnow()
+    user.last_accessed = utcnow()
     await db.commit()
 
     logger.info(f"User logged in: {form_data.username}")
