@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 # Try to import Kerykeion with detailed error handling
 try:
     # Updated imports for Kerykeion 4.x
-    from kerykeion import KerykeionSubject as AstrologicalSubject
-    from kerykeion import KrInstance as NatalChart
-    from kerykeion import MakeSvgInstance as KerykeionChartSVG
+    from kerykeion import AstrologicalSubject
+    from kerykeion import Report as NatalChart
+    from kerykeion import KerykeionChartSVG
 
     KERYKEION_AVAILABLE = True
     logger.info(
@@ -80,6 +80,31 @@ class AspectColor(Enum):
 class KerykeionService:
     """Advanced astrological service using Kerykeion library"""
 
+
+    # House system mapping for Kerykeion 4.x
+    HOUSE_SYSTEM_MAPPING = {
+        HouseSystem.PLACIDUS: "P",
+        HouseSystem.KOCH: "K",
+        HouseSystem.EQUAL: "A",
+        HouseSystem.WHOLE_SIGN: "W",
+        HouseSystem.REGIOMONTANUS: "R",
+        HouseSystem.CAMPANUS: "C",
+        HouseSystem.TOPOCENTRIC: "T",
+        HouseSystem.ALCABITUS: "B",
+        HouseSystem.MORINUS: "M",
+        HouseSystem.PORPHYRIUS: "O",
+        HouseSystem.VEHLOW: "V",
+        HouseSystem.MERIDIAN: "X",
+        HouseSystem.AZIMUTHAL: "H",
+        HouseSystem.POLICH_PAGE: "U",
+        HouseSystem.NATURAL_GRADUATION: "N"
+    }
+
+    # Zodiac type mapping for Kerykeion 4.x
+    ZODIAC_TYPE_MAPPING = {
+        ZodiacType.TROPICAL: "Tropic",
+        ZodiacType.SIDEREAL: "Sidereal"
+    }
     def __init__(self):
         self.available = KERYKEION_AVAILABLE
         if not self.available:
@@ -143,6 +168,10 @@ class KerykeionService:
                 if birth_datetime.tzinfo is None:
                     birth_datetime = pytz.UTC.localize(birth_datetime)
 
+            # Map house system and zodiac type to Kerykeion 4.x format
+            houses_system_id = self.HOUSE_SYSTEM_MAPPING.get(house_system, "P")  # Default to Placidus
+            zodiac_type_str = self.ZODIAC_TYPE_MAPPING.get(zodiac_type, "Tropic")  # Default to Tropical
+
             subject = AstrologicalSubject(
                 name=name,
                 year=birth_datetime.year,
@@ -155,18 +184,21 @@ class KerykeionService:
                 tz_str=str(birth_datetime.tzinfo),
                 city=city,
                 nation=nation,
-                zodiac_type=zodiac_type.value,
-                sidereal_mode="FAGAN_BRADLEY",  # Default sidereal mode
-                house_system=house_system.value,
+                zodiac_type=zodiac_type_str,
+                houses_system_identifier=houses_system_id,
+                sidereal_mode="FAGAN_BRADLEY" if zodiac_type == ZodiacType.SIDEREAL else None,
+                online=True,  # Enable online city lookup
+                cache_expire_after_days=30
             )
 
-            logger.info(f"KERYKEION_SERVICE_CREATE_SUBJECT_SUCCESS: {name}")
+            logger.info(
+                f"KERYKEION_SERVICE_CREATE_SUBJECT_SUCCESS: {name} created with {houses_system_id} houses, {zodiac_type_str} zodiac"
+            )
             return subject
 
         except Exception as e:
             logger.error(f"KERYKEION_SERVICE_CREATE_SUBJECT_ERROR: {e}")
             return None
-
     def get_full_natal_chart_data(
         self,
         name: str,
@@ -287,7 +319,7 @@ class KerykeionService:
 
             # Get additional chart information
             chart_info = {
-                "timezone": str(subject.tz),
+                "timezone": str(subject.tz_str),
                 "julian_day": getattr(subject, "julian_day", None),
                 "house_system": house_system.value,
                 "zodiac_type": zodiac_type.value,
