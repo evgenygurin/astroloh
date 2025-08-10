@@ -14,7 +14,6 @@ psycopg[binary]==3.2.4
 
 # Астрологические вычисления
 kerykeion>=4.0.0
-slowapi
 
 # Шифрование и безопасность
 cryptography==42.0.8
@@ -57,9 +56,9 @@ python-dotenv==1.0.0
 slowapi==0.1.9
 
 # Astronomical calculations and scientific computing
-numpy
-skyfield
-astropy
+numpy>=1.24.0,<2.0.0
+skyfield>=1.46
+astropy>=5.0.0,<6.0.0
 
 # Additional testing dependencies
 pytest-mock==3.12.0

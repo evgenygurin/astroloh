@@ -14,6 +14,10 @@ from app.core.sentry import monitor_operation
 
 logger = logging.getLogger(__name__)
 
+# Constants for astrological calculations
+STELLIUM_MAX_SPAN_DEGREES = 120  # Maximum span in degrees for stellium detection
+DAYS_PER_YEAR = 365.25  # Average days per year including leap years
+
 # Try to import Kerykeion with detailed error handling
 try:
     # Updated imports for Kerykeion 4.x
@@ -148,7 +152,7 @@ class KerykeionService:
             logger.error(
                 "KERYKEION_SERVICE_CREATE_SUBJECT: Kerykeion not available"
             )
-            return None
+            return {"error": "Kerykeion not available"}
 
         try:
             logger.info(
@@ -205,7 +209,7 @@ class KerykeionService:
 
         except Exception as e:
             logger.error(f"KERYKEION_SERVICE_CREATE_SUBJECT_ERROR: {e}")
-            return None
+            return {"error": f"Failed to create subject: {str(e)}"}
 
     def get_full_natal_chart_data(
         self,
@@ -237,8 +241,8 @@ class KerykeionService:
             nation,
         )
 
-        if not subject:
-            return {"error": "Failed to create astrological subject"}
+        if not subject or isinstance(subject, dict) and "error" in subject:
+            return subject if isinstance(subject, dict) else {"error": "Failed to create astrological subject"}
 
         try:
             # Extract all planetary data including modern bodies and asteroids
@@ -638,10 +642,10 @@ class KerykeionService:
             sun_pos = sun.get("pos", [0])[0] if sun else 0
             moon_pos = moon.get("pos", [0])[0] if moon else 0
             venus_pos = venus.get("pos", [0])[0] if venus else 0
-            mars.get("pos", [0])[0] if mars else 0
-            jupiter.get("pos", [0])[0] if jupiter else 0
-            saturn.get("pos", [0])[0] if saturn else 0
-            mercury.get("pos", [0])[0] if mercury else 0
+            mars_pos = mars.get("pos", [0])[0] if mars else 0
+            jupiter_pos = jupiter.get("pos", [0])[0] if jupiter else 0
+            saturn_pos = saturn.get("pos", [0])[0] if saturn else 0
+            mercury_pos = mercury.get("pos", [0])[0] if mercury else 0
 
             # Calculate Parts
             # Part of Fortune (Lot of Fortune)
@@ -768,7 +772,7 @@ class KerykeionService:
                 "shape": "Bowl",
                 "description": "Планеты в половине зодиака - односторонняя направленность",
             }
-        elif total_span < 120:
+        elif total_span < STELLIUM_MAX_SPAN_DEGREES:
             return {
                 "shape": "Stellium",
                 "description": "Сильная концентрация планет в узком секторе",
@@ -887,14 +891,14 @@ class KerykeionService:
             logger.error(
                 "KERYKEION_SERVICE_SVG: Chart generation not available"
             )
-            return None
+            return {"error": "Chart generation not available"}
 
         subject = self.create_astrological_subject(
             name, birth_datetime, latitude, longitude, timezone, house_system
         )
 
-        if not subject:
-            return None
+        if not subject or isinstance(subject, dict) and "error" in subject:
+            return subject if isinstance(subject, dict) else {"error": "Failed to create subject for chart"}
 
         try:
             # Create chart SVG
@@ -906,7 +910,7 @@ class KerykeionService:
 
         except Exception as e:
             logger.error(f"KERYKEION_SERVICE_SVG_ERROR: {e}")
-            return None
+            return {"error": f"Failed to generate chart: {str(e)}"}
 
     @monitor_operation("kerykeion_compatibility")
     def calculate_compatibility_detailed(
@@ -1073,7 +1077,7 @@ class KerykeionService:
         try:
             # Calculate progressed date (1 day = 1 year)
             birth_date = birth_datetime.date()
-            years_elapsed = (current_date.date() - birth_date).days / 365.25
+            years_elapsed = (current_date.date() - birth_date).days / DAYS_PER_YEAR
             progressed_date = birth_date + timedelta(days=years_elapsed)
 
             # Create progressed datetime maintaining birth time
