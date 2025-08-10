@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
+from app.utils.astro_time_utils import utcnow, current_timestamp
+
 from loguru import logger
 
 from app.services.astro_cache_service import astro_cache
@@ -111,7 +113,7 @@ class DeploymentMonitor:
     ):
         """Record a deployment metric."""
         metric = DeploymentMetric(
-            timestamp=datetime.now(),
+            timestamp=utcnow(),
             feature_name=feature_name,
             metric_type=metric_type,
             value=value,
@@ -134,7 +136,7 @@ class DeploymentMonitor:
             feature_name,
             {
                 f"last_{metric_type}": value,
-                f"last_{metric_type}_timestamp": datetime.now().isoformat(),
+                f"last_{metric_type}_timestamp": current_timestamp(),
             },
         )
 
@@ -204,7 +206,7 @@ class DeploymentMonitor:
                 m.value
                 for m in self.metrics_history[-100:]  # Last 100 metrics
                 if m.metric_type == "response_time"
-                and m.timestamp > datetime.now() - timedelta(minutes=5)
+                and m.timestamp > utcnow() - timedelta(minutes=5)
             ]
 
             if response_times:
@@ -233,7 +235,7 @@ class DeploymentMonitor:
                 m
                 for m in self.metrics_history[-200:]
                 if m.metric_type == "success_rate"
-                and m.timestamp > datetime.now() - timedelta(minutes=10)
+                and m.timestamp > utcnow() - timedelta(minutes=10)
             ]
 
             if recent_operations:
@@ -266,7 +268,7 @@ class DeploymentMonitor:
                 m
                 for m in self.metrics_history[-100:]
                 if m.metric_type == "fallback_usage"
-                and m.timestamp > datetime.now() - timedelta(minutes=15)
+                and m.timestamp > utcnow() - timedelta(minutes=15)
             ]
 
             if fallback_metrics:
@@ -297,7 +299,7 @@ class DeploymentMonitor:
                 m.value
                 for m in self.metrics_history[-50:]
                 if m.metric_type == "satisfaction_rating"
-                and m.timestamp > datetime.now() - timedelta(hours=1)
+                and m.timestamp > utcnow() - timedelta(hours=1)
             ]
 
             if satisfaction_ratings:
@@ -454,7 +456,7 @@ class DeploymentMonitor:
         )
 
         rollback_result = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": current_timestamp(),
             "triggers": triggers,
             "rolled_back_features": [],
             "errors": [],
@@ -473,7 +475,7 @@ class DeploymentMonitor:
 
             # Save rollback event to cache
             await astro_cache.set(
-                f"rollback_event_{int(datetime.now().timestamp())}",
+                f"rollback_event_{int(utcnow().timestamp())}",
                 rollback_result,
                 ttl=86400 * 7,  # Keep for 7 days
             )
@@ -532,14 +534,14 @@ class DeploymentMonitor:
             recent_metrics = [
                 m
                 for m in self.metrics_history
-                if m.timestamp > datetime.now() - timedelta(hours=1)
+                if m.timestamp > utcnow() - timedelta(hours=1)
             ]
 
             # Performance summary from performance monitor
             perf_stats = performance_monitor.get_overall_statistics()
 
             dashboard = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": current_timestamp(),
                 "overall_health": {
                     "status": overall_status.value,
                     "score": round(overall_health_score, 1),
@@ -576,7 +578,7 @@ class DeploymentMonitor:
             logger.error(f"DEPLOYMENT_DASHBOARD_ERROR: {e}")
             return {
                 "error": str(e),
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": current_timestamp(),
                 "overall_health": {
                     "status": "failure",
                     "message": "Dashboard generation failed",
@@ -618,7 +620,7 @@ class DeploymentMonitor:
     def generate_deployment_report(self, hours: int = 24) -> str:
         """Generate human-readable deployment report."""
         try:
-            cutoff_time = datetime.now() - timedelta(hours=hours)
+            cutoff_time = utcnow() - timedelta(hours=hours)
             recent_metrics = [
                 m for m in self.metrics_history if m.timestamp > cutoff_time
             ]
@@ -708,7 +710,7 @@ class DeploymentMonitor:
 • Fallback Rate: <{self.alert_thresholds['kerykeion_fallback_rate']}%
 • User Satisfaction: >{self.alert_thresholds['user_satisfaction_min']}/10
 
-Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Generated at: {utcnow().strftime('%Y-%m-%d %H:%M:%S')}
 """
 
             return report

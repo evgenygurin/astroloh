@@ -5,13 +5,14 @@
 
 import logging
 import math
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import pytz
 
 from app.models.yandex_models import YandexZodiacSign
+from app.utils.astro_time_utils import utcnow
 
 # Попытка импорта kerykeion и связанных библиотек
 try:
@@ -1348,7 +1349,7 @@ class AstrologyCalculator:
     ) -> NatalChart:
         """Вычисляет солнечное возвращение (соляр)"""
         if year is None:
-            year = datetime.now().year
+            year = utcnow().year
 
         # Находим момент, когда Солнце возвращается в натальное положение
         natal_sun = natal_chart.planets.get("Sun", {}).get("longitude", 0)

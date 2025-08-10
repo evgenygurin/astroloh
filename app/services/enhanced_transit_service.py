@@ -7,6 +7,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
+from app.utils.astro_time_utils import utcnow, current_timestamp
+
 import pytz
 
 from app.services.astro_cache_service import astro_cache
@@ -253,7 +255,7 @@ class TransitService:
                 },
                 "service_info": {
                     "method": "Kerykeion Enhanced",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": current_timestamp(),
                 },
             }
 

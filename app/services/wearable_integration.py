@@ -11,6 +11,7 @@ from app.models.iot_models import DeviceCommand, DeviceType, WearableAlert, Wear
 from app.services.iot_manager import IoTDeviceManager
 from app.services.lunar_calendar import LunarCalendar
 from app.services.transit_calculator import TransitCalculator
+from app.utils.astro_time_utils import utcnow, current_timestamp
 
 
 class WearableIntegrationService:
@@ -57,7 +58,7 @@ class WearableIntegrationService:
                 stress_level=data.get("stress_level"),
                 mood_score=data.get("mood_score"),
                 lunar_correlation=lunar_correlation,
-                timestamp=datetime.utcnow(),
+                timestamp=utcnow(),
             )
 
             self.db.add(wearable_data)
@@ -89,7 +90,7 @@ class WearableIntegrationService:
         try:
             # Get current lunar phase info
             lunar_info = await self.lunar_service.get_lunar_calendar_info(
-                datetime.now()
+                utcnow()
             )
             lunar_phase_value = lunar_info.get(
                 "phase_percentage", 0.5
@@ -141,7 +142,7 @@ class WearableIntegrationService:
         try:
             # Get lunar phase info
             lunar_info = await self.lunar_service.get_lunar_calendar_info(
-                datetime.now()
+                utcnow()
             )
             current_phase = lunar_info.get("phase", "unknown")
 
@@ -354,7 +355,7 @@ class WearableIntegrationService:
                     and_(
                         WearableData.user_id == user_id,
                         WearableData.timestamp
-                        >= datetime.utcnow() - timedelta(days=recent_days),
+                        >= utcnow() - timedelta(days=recent_days),
                     )
                 )
                 .order_by(WearableData.timestamp.desc())
@@ -379,7 +380,7 @@ class WearableIntegrationService:
 
             # Get current and upcoming lunar phases
             lunar_info = await self.lunar_service.get_lunar_calendar_info(
-                datetime.now()
+                utcnow()
             )
             current_phase = lunar_info.get("phase", "")
 
@@ -527,7 +528,7 @@ class WearableIntegrationService:
                     and_(
                         WearableData.user_id == user_id,
                         WearableData.timestamp
-                        >= datetime.utcnow() - timedelta(days=7),
+                        >= utcnow() - timedelta(days=7),
                     )
                 )
                 .order_by(WearableData.timestamp.desc())
@@ -551,7 +552,7 @@ class WearableIntegrationService:
                 "user_id": user_id,
                 "goals": goals,
                 "duration_days": duration_days,
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": current_timestamp(),
                 "lunar_cycles": len(lunar_cycles),
                 "phases": plan_phases,
                 "tracking_metrics": [
@@ -582,7 +583,7 @@ class WearableIntegrationService:
     ) -> List[Dict[str, Any]]:
         """Calculate lunar cycles within the plan duration."""
         cycles = []
-        start_date = datetime.now()
+        start_date = utcnow()
 
         # Simplified cycle calculation (29.5 days per cycle)
         cycle_length = 29.5

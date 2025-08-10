@@ -313,12 +313,13 @@ class DateTimeValidator:
             return False
 
         # Must be in the past (no future births)
-        if dt > datetime.now(timezone.utc):
+        current_utc = utcnow()
+        if dt > current_utc:
             return False
 
         # Must be within reasonable historical range
         min_year = 1000  # Approximate earliest reliable records
-        max_year = datetime.now().year + 1  # Allow up to next year
+        max_year = current_utc.year + 1  # Allow up to next year
 
         if not (min_year <= dt.year <= max_year):
             return False

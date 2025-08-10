@@ -13,6 +13,7 @@ from app.services.astro_cache_service import astro_cache
 from app.services.async_kerykeion_service import async_kerykeion
 from app.services.performance_monitor import performance_monitor
 from app.services.precompute_service import precompute_service
+from app.utils.astro_time_utils import utcnow, current_timestamp
 
 
 class StartupManager:
@@ -42,7 +43,7 @@ class StartupManager:
         redis_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Initialize all performance optimization systems."""
-        self.startup_stats["start_time"] = datetime.now()
+        self.startup_stats["start_time"] = utcnow()
         logger.info("STARTUP_MANAGER_BEGIN: Initializing performance systems")
 
         initialization_results = {
@@ -80,7 +81,7 @@ class StartupManager:
             diagnostics = await self._run_startup_diagnostics()
 
             self.startup_completed = True
-            self.startup_stats["end_time"] = datetime.now()
+            self.startup_stats["end_time"] = utcnow()
             self.startup_stats["duration_seconds"] = (
                 self.startup_stats["end_time"]
                 - self.startup_stats["start_time"]
@@ -164,7 +165,7 @@ class StartupManager:
             test_key = "startup_test"
             test_value = {
                 "test": True,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": utcnow().isoformat(),
             }
 
             await astro_cache.set(test_key, test_value, 60)  # 1 minute TTL
@@ -440,7 +441,7 @@ class StartupManager:
                 "startup_completed": self.startup_completed,
                 "startup_stats": self.startup_stats,
                 "startup_errors": self.startup_errors,
-                "current_time": datetime.now().isoformat(),
+                "current_time": utcnow().isoformat(),
             }
 
             # Get individual service statuses
@@ -464,7 +465,7 @@ class StartupManager:
             return {
                 "error": str(e),
                 "startup_completed": self.startup_completed,
-                "current_time": datetime.now().isoformat(),
+                "current_time": utcnow().isoformat(),
             }
 
 

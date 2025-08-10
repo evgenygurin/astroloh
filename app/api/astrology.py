@@ -14,6 +14,7 @@ from app.models.database import User
 from app.models.yandex_models import YandexZodiacSign
 from app.services.horoscope_generator import HoroscopeGenerator, HoroscopePeriod
 from app.services.natal_chart import NatalChartCalculator
+from app.utils.astro_time_utils import utcnow
 
 router = APIRouter(prefix="/api/astrology", tags=["Astrology"])
 
@@ -185,7 +186,7 @@ async def get_horoscope(sign: str, type: str):  # daily, weekly, monthly
         return HoroscopeResponse(
             sign=sign.lower(),
             period=type,
-            date=datetime.now().strftime("%Y-%m-%d"),
+            date=utcnow().strftime("%Y-%m-%d"),
             horoscope=horoscope_data.get(
                 "general_forecast",
                 horoscope_data.get("forecast", "Гороскоп недоступен"),

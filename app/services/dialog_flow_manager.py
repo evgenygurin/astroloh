@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Tuple
 
+from app.utils.astro_time_utils import utcnow
+
 from app.models.yandex_models import ProcessedRequest, YandexIntent
 
 
@@ -35,25 +37,25 @@ class DialogFlow:
         self.flow_id = flow_id
         self.state = state
         self.context = context
-        self.created_at = datetime.now()
-        self.updated_at = datetime.now()
+        self.created_at = utcnow()
+        self.updated_at = utcnow()
         self.step_count = 0
         self.fallback_count = 0
 
     def update_state(self, new_state: DialogState) -> None:
         """Обновляет состояние диалога."""
         self.state = new_state
-        self.updated_at = datetime.now()
+        self.updated_at = utcnow()
         self.step_count += 1
 
     def add_context(self, key: str, value: Any) -> None:
         """Добавляет данные в контекст диалога."""
         self.context[key] = value
-        self.updated_at = datetime.now()
+        self.updated_at = utcnow()
 
     def is_expired(self, timeout_minutes: int = 30) -> bool:
         """Проверяет, истек ли диалог."""
-        return datetime.now() - self.updated_at > timedelta(
+        return utcnow() - self.updated_at > timedelta(
             minutes=timeout_minutes
         )
 

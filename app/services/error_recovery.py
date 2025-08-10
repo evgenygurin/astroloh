@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Tuple
 
+from app.utils.astro_time_utils import utcnow
+
 from app.models.yandex_models import YandexButton, YandexIntent, YandexResponse
 from app.services.dialog_flow_manager import DialogState
 from app.services.response_formatter import ResponseFormatter
@@ -69,7 +71,7 @@ class ErrorContext:
         self.session_id = session_id
         self.intent = intent
         self.dialog_state = dialog_state
-        self.timestamp = datetime.now()
+        self.timestamp = utcnow()
         # Не сохраняем stack trace для безопасности
         self.stack_trace = None
         self.recovery_attempts = 0

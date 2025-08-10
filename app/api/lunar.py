@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db_session
 from app.services.lunar_calendar import LunarCalendar
+from app.utils.astro_time_utils import utcnow
 
 router = APIRouter(prefix="/api/lunar", tags=["Lunar Calendar"])
 
@@ -122,9 +123,7 @@ async def get_current_phase(db: AsyncSession = Depends(get_db_session)):
         lunar_service = LunarCalendar()
 
         # Get current phase data (dummy implementation)
-        from datetime import datetime
-
-        today = datetime.now()
+        today = utcnow()
 
         current_data = {
             "date": today.strftime("%Y-%m-%d"),
@@ -142,12 +141,12 @@ async def get_current_phase(db: AsyncSession = Depends(get_db_session)):
 
         # Get general recommendations (no authentication required)
         recommendations = lunar_service.get_lunar_recommendations(
-            activity_type="general", target_date=today
+            activity_type="general", target_date=utcnow()
         )
 
         # Get lunar day and energy information
         lunar_day = current_data.get("lunar_day", 7)
-        lunar_service.get_lunar_day_info(today)
+        lunar_service.get_lunar_day_info(utcnow())
         energy_data = {
             "energy_level": "medium",
             "best_activities": ["meditation", "planning"],

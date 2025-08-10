@@ -19,6 +19,7 @@ from app.models.iot_models import (
 )
 from app.services.cache_service import cache_service
 from app.services.encryption import EncryptionService
+from app.utils.astro_time_utils import utcnow
 
 
 class IoTDeviceManager:
@@ -188,7 +189,7 @@ class IoTDeviceManager:
                 )
                 device.configuration = encrypted_config
 
-            device.updated_at = datetime.utcnow()
+            device.updated_at = utcnow()
 
             await self.db.commit()
             await self.db.refresh(device)
@@ -243,7 +244,7 @@ class IoTDeviceManager:
             response = await self._route_command(device, command)
 
             # Update last seen
-            device.last_seen = datetime.utcnow()
+            device.last_seen = utcnow()
             await self.db.commit()
 
             return response
@@ -369,7 +370,7 @@ class IoTDeviceManager:
 
             if device:
                 device.status = status.value
-                device.last_seen = datetime.utcnow()
+                device.last_seen = utcnow()
                 await self.db.commit()
 
                 logger.info(
