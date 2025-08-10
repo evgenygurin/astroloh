@@ -11,6 +11,7 @@ from app.services.encryption import (
     EncryptionService,
     SecurityUtils,
 )
+from app.utils.astro_time_utils import utcnow
 
 
 class TestEncryptionService:
@@ -267,9 +268,9 @@ class TestSecurityUtils:
         """Test session expiry generation."""
         from datetime import datetime, timedelta
 
-        before = datetime.utcnow()
+        before = utcnow()
         expiry = SecurityUtils.generate_session_expiry(24)
-        after = datetime.utcnow()
+        after = utcnow()
 
         expected_min = before + timedelta(hours=23, minutes=59)
         expected_max = after + timedelta(hours=24, minutes=1)
@@ -280,7 +281,7 @@ class TestSecurityUtils:
         """Test session expiry check for non-expired session."""
         from datetime import datetime, timedelta
 
-        future_time = datetime.utcnow() + timedelta(hours=1)
+        future_time = utcnow() + timedelta(hours=1)
 
         assert not SecurityUtils.is_session_expired(future_time)
 
@@ -288,7 +289,7 @@ class TestSecurityUtils:
         """Test session expiry check for expired session."""
         from datetime import datetime, timedelta
 
-        past_time = datetime.utcnow() - timedelta(hours=1)
+        past_time = utcnow() - timedelta(hours=1)
 
         assert SecurityUtils.is_session_expired(past_time)
 
