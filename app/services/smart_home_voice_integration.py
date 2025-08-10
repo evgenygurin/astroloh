@@ -3,6 +3,8 @@
 from datetime import datetime
 from typing import Any, Dict, List
 
+from app.utils.astro_time_utils import utcnow, current_timestamp
+
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -195,7 +197,7 @@ class SmartHomeVoiceIntegration:
             # Generate horoscope based on user's profile
             horoscope_result = (
                 await self.horoscope_generator.generate_daily_horoscope(
-                    user_id, datetime.now()
+                    user_id, utcnow()
                 )
             )
 
@@ -269,7 +271,7 @@ class SmartHomeVoiceIntegration:
 
             # Get current lunar phase
             lunar_info = await self.lunar_service.get_lunar_calendar_info(
-                datetime.now()
+                utcnow()
             )
             current_phase = lunar_info.get("phase", "неизвестна")
 
@@ -305,7 +307,7 @@ class SmartHomeVoiceIntegration:
 
             # Get optimal time based on lunar phase and transits
             lunar_info = await self.lunar_service.get_lunar_calendar_info(
-                datetime.now()
+                utcnow()
             )
             current_phase = lunar_info.get("phase", "")
 
@@ -412,7 +414,7 @@ class SmartHomeVoiceIntegration:
                 "user_id": user_id,
                 "triggers": triggers,
                 "actions": actions,
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": current_timestamp(),
                 "is_active": True,
             }
 
@@ -445,7 +447,7 @@ class SmartHomeVoiceIntegration:
 
             # Get current lunar phase for contextual suggestions
             lunar_info = await self.lunar_service.get_lunar_calendar_info(
-                datetime.now()
+                utcnow()
             )
             current_phase = lunar_info.get("phase", "")
 

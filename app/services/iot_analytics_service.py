@@ -5,6 +5,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
+from app.utils.astro_time_utils import utcnow, current_timestamp
+
 from loguru import logger
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +27,7 @@ class IoTAnalyticsService:
     ) -> Dict[str, Any]:
         """Analyze energy consumption patterns and correlations with lunar cycles."""
         try:
-            start_date = datetime.utcnow() - timedelta(days=period_days)
+            start_date = utcnow() - timedelta(days=period_days)
 
             # Get energy consumption data
             query = (
@@ -267,7 +269,7 @@ class IoTAnalyticsService:
     ) -> Dict[str, Any]:
         """Analyze correlations between wellness data and astrological cycles."""
         try:
-            start_date = datetime.utcnow() - timedelta(days=period_days)
+            start_date = utcnow() - timedelta(days=period_days)
 
             # Get wearable data
             query = (
@@ -461,7 +463,7 @@ class IoTAnalyticsService:
         """Generate insights about home automation effectiveness."""
         try:
             # Get automation executions from last 30 days
-            start_date = datetime.utcnow() - timedelta(days=30)
+            start_date = utcnow() - timedelta(days=30)
 
             query = select(HomeAutomation).where(
                 and_(
@@ -608,7 +610,7 @@ class IoTAnalyticsService:
 
             return {
                 "success": True,
-                "report_date": datetime.utcnow().isoformat(),
+                "report_date": current_timestamp(),
                 "user_id": user_id,
                 "device_summary": device_summary,
                 "energy_analysis": energy_analysis,

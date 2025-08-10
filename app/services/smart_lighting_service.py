@@ -3,6 +3,8 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from app.utils.astro_time_utils import utcnow
+
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,7 +40,7 @@ class SmartLightingService:
         try:
             # Get current lunar phase
             lunar_info = await self.lunar_service.get_lunar_calendar_info(
-                datetime.now()
+                utcnow()
             )
             current_phase = lunar_info.get("phase", "new_moon")
 
@@ -343,7 +345,7 @@ class SmartLightingService:
         """Calculate sunrise and sunset times for given coordinates."""
         # This would typically use an astronomy library
         # For now, return approximate times
-        today = datetime.now().date()
+        today = utcnow().date()
 
         return {
             "sunrise": datetime.combine(

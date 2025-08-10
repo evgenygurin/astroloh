@@ -18,7 +18,6 @@ import argparse
 import asyncio
 import json
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
@@ -26,6 +25,8 @@ from typing import Any, Dict
 sys.path.append(str(Path(__file__).parent.parent))
 
 from loguru import logger
+
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 from app.services.deployment_monitor import deployment_monitor
 from app.services.feature_flag_service import feature_flags
@@ -138,7 +139,7 @@ class DeploymentOrchestrator:
         print("🎭 DRY RUN: Simulating deployment phases...")
 
         simulation_result = {
-            "deployment_id": f"dry_run_{int(datetime.now().timestamp())}",
+            "deployment_id": f"dry_run_{int(utcnow().timestamp())}",
             "dry_run": True,
             "simulated_phases": [],
             "success": True,
@@ -162,7 +163,7 @@ class DeploymentOrchestrator:
                 {
                     "phase": phase,
                     "status": "simulated",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": current_timestamp(),
                 }
             )
 

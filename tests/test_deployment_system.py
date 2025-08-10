@@ -3,12 +3,12 @@ Test deployment system functionality.
 Tests feature flags, deployment monitoring, and rollback automation.
 """
 
-from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from app.services.deployment_monitor import HealthStatus, deployment_monitor
+from app.utils.astro_time_utils import utcnow, current_timestamp
 from app.services.feature_flag_service import (
     FeatureRolloutPhase,
     KerykeionFeatureFlags,
@@ -327,7 +327,7 @@ class TestRollbackSystem:
         rollback_system.rollback_history = [
             RollbackEvent(
                 rollback_id="test1",
-                timestamp=datetime.now(),
+                timestamp=utcnow(),
                 trigger=RollbackTrigger.MANUAL,
                 strategy=RollbackStrategy.IMMEDIATE,
                 affected_features=["feature1"],
@@ -337,7 +337,7 @@ class TestRollbackSystem:
             ),
             RollbackEvent(
                 rollback_id="test2",
-                timestamp=datetime.now(),
+                timestamp=utcnow(),
                 trigger=RollbackTrigger.HIGH_ERROR_RATE,
                 strategy=RollbackStrategy.GRADUAL,
                 affected_features=["feature2"],
@@ -383,7 +383,7 @@ class TestIntegration:
         # Update feature metrics
         await feature_flags.update_feature_metrics(
             feature_name,
-            {"last_usage": datetime.now().isoformat(), "user_count": 1},
+            {"last_usage": current_timestamp(), "user_count": 1},
         )
 
         # Get feature metrics

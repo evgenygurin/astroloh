@@ -3,6 +3,8 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from app.utils.astro_time_utils import utcnow
+
 from loguru import logger
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -121,7 +123,7 @@ class HomeAutomationService:
             if update_data.is_enabled is not None:
                 automation.is_enabled = update_data.is_enabled
 
-            automation.updated_at = datetime.utcnow()
+            automation.updated_at = utcnow()
 
             await self.db.commit()
             await self.db.refresh(automation)
@@ -166,7 +168,7 @@ class HomeAutomationService:
                 action_results.append(result)
 
             # Update execution tracking
-            automation.last_executed = datetime.utcnow()
+            automation.last_executed = utcnow()
             automation.execution_count += 1
             await self.db.commit()
 
@@ -717,7 +719,7 @@ class HomeAutomationService:
         if not trigger_time:
             return False
 
-        now = datetime.now()
+        now = utcnow()
         trigger_hour, trigger_minute = map(int, trigger_time.split(":"))
 
         # Check if current time matches trigger time (within 1 minute)
@@ -734,7 +736,7 @@ class HomeAutomationService:
             return False
 
         lunar_info = await self.lunar_service.get_lunar_calendar_info(
-            datetime.now()
+            utcnow()
         )
         current_phase = lunar_info.get("phase")
 

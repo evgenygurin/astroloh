@@ -30,6 +30,7 @@ from app.services.recommendation_engine import (
     TemporalPatternAnalyzer,
     UserClusteringManager,
 )
+from app.utils.astro_time_utils import utcnow
 
 
 @pytest.mark.unit
@@ -530,7 +531,7 @@ class TestChurnPredictionModel:
         user = User(
             yandex_user_id="active_user",
             data_consent=True,
-            last_accessed=datetime.now(timezone.utc)
+            last_accessed=utcnow()
             - timedelta(days=1),  # Active recently
         )
         db_session.add(user)
@@ -544,14 +545,14 @@ class TestChurnPredictionModel:
                 interaction_type="like",
                 content_type="daily",
                 rating=5,
-                timestamp=datetime.now(timezone.utc) - timedelta(days=1),
+                timestamp=utcnow() - timedelta(days=1),
             ),
             UserInteraction(
                 user_id=user.id,
                 interaction_type="view",
                 content_type="weekly",
                 rating=4,
-                timestamp=datetime.now(timezone.utc) - timedelta(days=2),
+                timestamp=utcnow() - timedelta(days=2),
             ),
         ]
 
@@ -576,7 +577,7 @@ class TestChurnPredictionModel:
         user = User(
             yandex_user_id="inactive_user",
             data_consent=True,
-            last_accessed=datetime.now(timezone.utc)
+            last_accessed=utcnow()
             - timedelta(days=45),  # Inactive for long time
         )
         db_session.add(user)
@@ -590,7 +591,7 @@ class TestChurnPredictionModel:
                 interaction_type="dislike",
                 content_type="daily",
                 rating=2,
-                timestamp=datetime.now(timezone.utc) - timedelta(days=40),
+                timestamp=utcnow() - timedelta(days=40),
             )
         ]
 
@@ -645,7 +646,7 @@ class TestABTestManager:
             user_id=user.id,
             test_name=test_name,
             group_name="variant_a",
-            test_start_date=datetime.now(timezone.utc),
+            test_start_date=utcnow(),
             test_parameters={"algorithm": "collaborative"},
         )
         db_session.add(existing_assignment)
@@ -772,7 +773,7 @@ class TestRecommendationSystemIntegration:
                 content_type="compatibility",
                 rating=5,
                 session_duration=250,
-                timestamp=datetime.now(timezone.utc) - timedelta(days=1),
+                timestamp=utcnow() - timedelta(days=1),
             ),
             UserInteraction(
                 user_id=user.id,
@@ -780,7 +781,7 @@ class TestRecommendationSystemIntegration:
                 content_type="daily",
                 rating=4,
                 session_duration=180,
-                timestamp=datetime.now(timezone.utc) - timedelta(days=2),
+                timestamp=utcnow() - timedelta(days=2),
             ),
             UserInteraction(
                 user_id=user.id,
@@ -788,7 +789,7 @@ class TestRecommendationSystemIntegration:
                 content_type="lunar",
                 rating=4,
                 session_duration=200,
-                timestamp=datetime.now(timezone.utc) - timedelta(days=3),
+                timestamp=utcnow() - timedelta(days=3),
             ),
         ]
         db_session.add_all(interactions)

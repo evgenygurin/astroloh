@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 
 from app.services.cache_service import CacheService
+from app.utils.astro_time_utils import utcnow, current_timestamp
 
 # Check Redis availability without importing it
 REDIS_AVAILABLE = importlib.util.find_spec("redis.asyncio") is not None
@@ -155,7 +156,7 @@ class AstroCacheService(CacheService):
         enriched_data = {
             **chart_data,
             "_cache_metadata": {
-                "cached_at": datetime.now().isoformat(),
+                "cached_at": current_timestamp(),
                 "ttl": self.astro_ttl["natal_chart"],
                 "data_type": "natal_chart",
                 "kerykeion_enhanced": chart_data.get("service_info", {}).get(
@@ -428,7 +429,7 @@ class AstroCacheService(CacheService):
 
         try:
             # Pre-compute today's ephemeris for all zodiac signs
-            today = datetime.now().date()
+            today = utcnow().date()
             ephemeris_key = f"ephemeris:popular:{today.isoformat()}"
 
             # This would call the actual calculation service
@@ -436,7 +437,7 @@ class AstroCacheService(CacheService):
             popular_ephemeris = {
                 "date": today.isoformat(),
                 "planets": {},
-                "computed_at": datetime.now().isoformat(),
+                "computed_at": current_timestamp(),
             }
 
             await self.set(
@@ -462,7 +463,7 @@ class AstroCacheService(CacheService):
                     "sign1": sign1,
                     "sign2": sign2,
                     "basic_compatibility": 75,  # Placeholder
-                    "computed_at": datetime.now().isoformat(),
+                    "computed_at": current_timestamp(),
                 }
                 await self.set(
                     compat_key,
@@ -702,7 +703,7 @@ class AstroCacheService(CacheService):
 
         if not self.redis_client:
             # Only needed for memory cache - Redis handles TTL automatically
-            now = datetime.utcnow()
+            now = utcnow()
             expired_keys = [
                 key
                 for key, expiry in self.cache_expiry.items()

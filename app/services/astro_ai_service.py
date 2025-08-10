@@ -4,7 +4,9 @@ Provides sophisticated astrological consultations using professional-grade calcu
 """
 
 import logging
-from datetime import date, datetime
+from datetime import date
+
+from app.utils.astro_time_utils import current_timestamp, utcnow
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -129,7 +131,7 @@ class AstroAIService:
                 "consultation_type": ConsultationType.NATAL_CHART.value,
                 "service_info": {
                     "kerykeion_used": "error" not in chart_data,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": current_timestamp(),
                 },
             }
 
@@ -771,7 +773,7 @@ class AstroAIService:
                 "ai_analysis": ai_analysis,
                 "consultation_type": ConsultationType.COMPATIBILITY.value,
                 "data_source": "kerykeion_synastry",
-                "generation_timestamp": datetime.now().isoformat(),
+                "generation_timestamp": current_timestamp(),
             }
 
             logger.info("ASTRO_AI_COMPATIBILITY_SUCCESS")
@@ -809,7 +811,7 @@ class AstroAIService:
             if self.kerykeion_service.is_available():
                 current_transits = self.transit_service.get_current_transits(
                     natal_chart_data,
-                    datetime.now(),
+                    utcnow(),
                     include_minor_aspects=True,
                 )
                 period_forecast = self.transit_service.get_period_forecast(
@@ -849,7 +851,7 @@ class AstroAIService:
                 "ai_forecast": ai_forecast,
                 "consultation_type": ConsultationType.TRANSIT_ANALYSIS.value,
                 "data_source": "enhanced_transits",
-                "generation_timestamp": datetime.now().isoformat(),
+                "generation_timestamp": current_timestamp(),
             }
 
             logger.info("ASTRO_AI_TRANSIT_SUCCESS")
@@ -902,7 +904,7 @@ class AstroAIService:
                 "advice": ai_advice,
                 "context_used": context,
                 "data_source": "personalized_ai",
-                "generation_timestamp": datetime.now().isoformat(),
+                "generation_timestamp": current_timestamp(),
             }
 
             logger.info(f"ASTRO_AI_ADVICE_SUCCESS: {consultation_type.value}")
@@ -1436,7 +1438,7 @@ class AstroAIService:
             else str(zodiac_sign),
             "ai_interpretation": ai_interpretation,
             "data_source": "basic_zodiac",
-            "generation_timestamp": datetime.now().isoformat(),
+            "generation_timestamp": current_timestamp(),
         }
 
     async def _generate_basic_compatibility(
@@ -1490,7 +1492,7 @@ class AstroAIService:
             "compatibility_score": compatibility_data.get("total_score", 70),
             "ai_analysis": ai_analysis,
             "data_source": "basic_signs",
-            "generation_timestamp": datetime.now().isoformat(),
+            "generation_timestamp": current_timestamp(),
         }
 
     async def is_enhanced_features_available(self) -> Dict[str, bool]:
@@ -1512,7 +1514,7 @@ class AstroAIService:
         return {
             "service_name": "AstroAIService",
             "version": "1.0.0",
-            "initialization_time": datetime.now().isoformat(),
+            "initialization_time": current_timestamp(),
             "feature_availability": availability,
             "supported_consultations": [ct.value for ct in ConsultationType],
             "kerykeion_capabilities": self.kerykeion_service.get_service_capabilities()
