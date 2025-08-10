@@ -1,7 +1,4 @@
-"""
-Advanced time handling utilities for astrological calculations.
-Provides secure, performant, and timezone-aware datetime operations.
-"""
+"""Advanced time handling utilities for astrological calculations."""
 
 import re
 from dataclasses import dataclass
@@ -12,7 +9,6 @@ from zoneinfo import ZoneInfo, available_timezones
 
 from loguru import logger
 
-# Optional TimezoneFinder for accurate coordinate-based timezone detection
 try:
     from timezonefinder import TimezoneFinder
 
@@ -25,25 +21,17 @@ except ImportError:
 class AstroTimeError(Exception):
     """Base exception for time utilities."""
 
-    pass
-
 
 class InvalidTimezoneError(AstroTimeError):
     """Raised when timezone is invalid or not supported."""
-
-    pass
 
 
 class InvalidDateTimeError(AstroTimeError):
     """Raised when datetime is invalid or out of supported range."""
 
-    pass
-
 
 class CoordinateTimeError(AstroTimeError):
     """Raised when coordinate-based time calculations fail."""
-
-    pass
 
 
 @dataclass(frozen=True)
@@ -55,11 +43,11 @@ class CoordinateInfo:
     altitude: Optional[float] = None
 
     def __post_init__(self):
-        if not (-90 <= self.latitude <= 90):
+        if not -90 <= self.latitude <= 90:
             raise CoordinateTimeError(f"Invalid latitude: {self.latitude}")
-        if not (-180 <= self.longitude <= 180):
+        if not -180 <= self.longitude <= 180:
             raise CoordinateTimeError(f"Invalid longitude: {self.longitude}")
-        if self.altitude is not None and not (-1000 <= self.altitude <= 10000):
+        if self.altitude is not None and not -1000 <= self.altitude <= 10000:
             raise CoordinateTimeError(f"Invalid altitude: {self.altitude}")
 
 
@@ -79,7 +67,7 @@ class AstroDateTime:
         min_date = datetime(1, 1, 1, tzinfo=timezone.utc)
         max_date = datetime(3000, 12, 31, tzinfo=timezone.utc)
 
-        if not (min_date <= self.dt.replace(tzinfo=timezone.utc) <= max_date):
+        if not min_date <= self.dt.replace(tzinfo=timezone.utc) <= max_date:
             raise InvalidDateTimeError(
                 f"Date {self.dt} is outside supported range"
             )
@@ -100,6 +88,76 @@ class AstroDateTime:
         offset = self.local_solar_time_offset
         return self.utc + offset if offset else None
 
+    @property
+    def date(self):
+        """Get date component."""
+        return self.dt.date()
+
+    @property
+    def time(self):
+        """Get time component."""
+        return self.dt.time()
+
+    def replace(self, **kwargs: Any) -> "AstroDateTime":
+        """Return AstroDateTime with specified fields replaced."""
+        new_dt = self.dt.replace(**kwargs)
+        return AstroDateTime(
+            dt=new_dt,
+            timezone_name=self.timezone_name,
+            coordinates=self.coordinates,
+            source_format=self.source_format,
+        )
+
+    def add_days(self, days: int) -> "AstroDateTime":
+        """Add days to the datetime."""
+        new_dt = self.dt + timedelta(days=days)
+        return AstroDateTime(
+            dt=new_dt,
+            timezone_name=self.timezone_name,
+            coordinates=self.coordinates,
+            source_format=self.source_format,
+        )
+
+    def add_hours(self, hours: float) -> "AstroDateTime":
+        """Add hours to the datetime."""
+        new_dt = self.dt + timedelta(hours=hours)
+        return AstroDateTime(
+            dt=new_dt,
+            timezone_name=self.timezone_name,
+            coordinates=self.coordinates,
+            source_format=self.source_format,
+        )
+
+    def add_minutes(self, minutes: float) -> "AstroDateTime":
+        """Add minutes to the datetime."""
+        new_dt = self.dt + timedelta(minutes=minutes)
+        return AstroDateTime(
+            dt=new_dt,
+            timezone_name=self.timezone_name,
+            coordinates=self.coordinates,
+            source_format=self.source_format,
+        )
+
+    def to_iso_string(self) -> str:
+        """Convert to ISO format string."""
+        return self.dt.isoformat()
+
+    def format(self, fmt: str) -> str:
+        """Format datetime using strftime."""
+        return self.dt.strftime(fmt)
+
+    def timestamp(self) -> float:
+        """Get Unix timestamp."""
+        return self.dt.timestamp()
+
+    def weekday(self) -> int:
+        """Get weekday (0=Monday, 6=Sunday)."""
+        return self.dt.weekday()
+
+    def day_of_year(self) -> int:
+        """Get day of year (1-366)."""
+        return self.dt.timetuple().tm_yday
+
 
 class TimezoneManager:
     """High-performance timezone manager with caching and validation."""
@@ -110,10 +168,7 @@ class TimezoneManager:
         self._load_city_mappings()
 
     def _load_city_mappings(self):
-        """Load city to timezone mappings for user-friendly input."""
-        # Major cities mapping for common astrology use cases
         city_mappings = {
-            # Russia
             "москва": "Europe/Moscow",
             "moscow": "Europe/Moscow",
             "санкт-петербург": "Europe/Moscow",
@@ -125,7 +180,6 @@ class TimezoneManager:
             "yekaterinburg": "Asia/Yekaterinburg",
             "сочи": "Europe/Moscow",
             "sochi": "Europe/Moscow",
-            # Major world cities
             "london": "Europe/London",
             "лондон": "Europe/London",
             "paris": "Europe/Paris",
@@ -147,7 +201,6 @@ class TimezoneManager:
             "delhi": "Asia/Kolkata",
             "дели": "Asia/Kolkata",
         }
-
         self._city_timezone_mapping.update(city_mappings)
 
     @lru_cache(maxsize=256)
@@ -320,7 +373,7 @@ class DateTimeValidator:
         min_year = 1000  # Approximate earliest reliable records
         max_year = datetime.now().year + 1  # Allow up to next year
 
-        if not (min_year <= dt.year <= max_year):
+        if not min_year <= dt.year <= max_year:
             return False
 
         # If coordinates provided, validate they make sense
@@ -445,7 +498,7 @@ class AstroTimeUtils:
             parsed_dt = self.validator.parse_datetime_string(combined, tz_name)
 
         # Handle datetime input
-        elif isinstance(date_input, datetime):
+        else:
             parsed_dt = date_input
             tz_name = str(parsed_dt.tzinfo) if parsed_dt.tzinfo else "UTC"
 
@@ -457,10 +510,6 @@ class AstroTimeUtils:
                 else:
                     parsed_dt = parsed_dt.replace(tzinfo=timezone.utc)
                     tz_name = "UTC"
-        else:
-            raise InvalidDateTimeError(
-                f"Unsupported date input type: {type(date_input)}"
-            )
 
         # Validate for birth calculations
         if not self.validator.validate_birth_datetime(parsed_dt, coordinates):
@@ -544,6 +593,75 @@ class AstroTimeUtils:
     def create_astro_datetime_builder(self):
         """Create a builder for complex AstroDateTime construction."""
         return AstroDateTimeBuilder(self)
+
+    def now(self, timezone_name: str = "UTC") -> AstroDateTime:
+        """Get current time in specified timezone."""
+        tz = self.timezone_manager.get_timezone(timezone_name)
+        now_dt = datetime.now(tz)
+        return AstroDateTime(
+            dt=now_dt,
+            timezone_name=timezone_name,
+            source_format="current_time",
+        )
+
+    def today(self, timezone_name: str = "UTC") -> AstroDateTime:
+        """Get today's date at midnight in specified timezone."""
+        tz = self.timezone_manager.get_timezone(timezone_name)
+        today_dt = datetime.now(tz).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        return AstroDateTime(
+            dt=today_dt, timezone_name=timezone_name, source_format="today"
+        )
+
+    def from_timestamp(
+        self, timestamp: float, timezone_name: str = "UTC"
+    ) -> AstroDateTime:
+        """Create AstroDateTime from Unix timestamp."""
+        tz = self.timezone_manager.get_timezone(timezone_name)
+        dt = datetime.fromtimestamp(timestamp, tz)
+        return AstroDateTime(
+            dt=dt, timezone_name=timezone_name, source_format="timestamp"
+        )
+
+    def parse_iso_string(self, iso_string: str) -> AstroDateTime:
+        """Parse ISO format datetime string."""
+        sanitized = self.validator.sanitize_input(iso_string)
+
+        try:
+            dt = datetime.fromisoformat(sanitized.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+
+            tz_name = str(dt.tzinfo)
+            return AstroDateTime(
+                dt=dt, timezone_name=tz_name, source_format="iso_string"
+            )
+        except ValueError as e:
+            raise InvalidDateTimeError(
+                f"Cannot parse ISO string '{iso_string}': {e}"
+            )
+
+    def date_range(
+        self, start: AstroDateTime, end: AstroDateTime, days: int = 1
+    ) -> List[AstroDateTime]:
+        """Generate range of dates between start and end."""
+        if start.dt >= end.dt:
+            return []
+
+        current = start
+        dates: List[AstroDateTime] = []
+        while current.dt < end.dt:
+            dates.append(current)
+            current = current.add_days(days)
+
+        return dates
+
+    def is_same_day(self, dt1: AstroDateTime, dt2: AstroDateTime) -> bool:
+        """Check if two datetimes are on the same day."""
+        date1 = dt1.dt.date()
+        date2 = dt2.dt.date()
+        return date1 == date2
 
 
 class AstroDateTimeBuilder:

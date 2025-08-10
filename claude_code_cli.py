@@ -1,12 +1,11 @@
 import asyncio
-from typing import Optional
 from contextlib import AsyncExitStack
-
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from typing import Optional
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 
 load_dotenv()  # load environment variables from .env
 
@@ -47,7 +46,9 @@ class MCPClient:
         # List available tools
         response = await self.session.list_tools()
         tools = response.tools
-        print("\nConnected to server with tools:", [tool.name for tool in tools])
+        print(
+            "\nConnected to server with tools:", [tool.name for tool in tools]
+        )
 
     async def process_query(self, query: str) -> str:
         """Process a query using Claude and available tools"""
@@ -85,11 +86,15 @@ class MCPClient:
                 # Execute tool call
                 result = await self.session.call_tool(tool_name, tool_args)
                 tool_results.append({"call": tool_name, "result": result})
-                final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
+                final_text.append(
+                    f"[Calling tool {tool_name} with args {tool_args}]"
+                )
 
                 # Continue conversation with tool results
                 if hasattr(content, "text") and content.text:
-                    messages.append({"role": "assistant", "content": content.text})
+                    messages.append(
+                        {"role": "assistant", "content": content.text}
+                    )
                 messages.append({"role": "user", "content": result.content})
 
                 # Get next response from Claude
