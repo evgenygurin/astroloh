@@ -4,8 +4,9 @@ API роутер для интеграции с Яндекс.Диалогами.
 
 import logging
 import uuid
-from datetime import datetime
 from typing import Any
+
+from app.utils.astro_time_utils import utcnow
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,7 +32,7 @@ async def yandex_webhook(
     """
     # Создаем уникальный correlation ID для отслеживания запроса
     correlation_id = str(uuid.uuid4())
-    start_time = datetime.now()
+    start_time = utcnow()
 
     # Формируем контекст логирования
     log_context = {
@@ -117,7 +118,7 @@ async def yandex_webhook(
         dialog_response = await dialog_handler.handle_request(request)
 
         # Вычисляем время выполнения
-        processing_time = (datetime.now() - start_time).total_seconds()
+        processing_time = (utcnow() - start_time).total_seconds()
 
         logger.info(
             "WEBHOOK_REQUEST_SUCCESS",
@@ -162,7 +163,7 @@ async def yandex_webhook(
 
     except Exception as e:
         # Вычисляем время до ошибки
-        error_time = (datetime.now() - start_time).total_seconds()
+        error_time = (utcnow() - start_time).total_seconds()
 
         # Детальное логирование ошибки
         logger.error(

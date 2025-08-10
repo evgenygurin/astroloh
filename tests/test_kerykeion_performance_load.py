@@ -15,6 +15,7 @@ from app.services.astro_cache_service import astro_cache
 from app.services.async_kerykeion_service import AsyncKerykeionService
 from app.services.enhanced_transit_service import TransitService
 from app.services.kerykeion_service import KERYKEION_AVAILABLE, KerykeionService
+from app.utils.astro_time_utils import utcnow
 
 
 @pytest.mark.performance
@@ -527,7 +528,7 @@ class TestSystemLoadTesting:
                 tasks.append(
                     services["transit"].get_current_transits_async(
                         natal_chart=sample_natal_chart,
-                        transit_date=datetime.now(),
+                        transit_date=utcnow(),
                     )
                 )
 

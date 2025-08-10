@@ -4,6 +4,7 @@
 
 import re
 from datetime import date
+from app.utils.astro_time_utils import utcnow
 from typing import Optional, Tuple
 
 from app.models.yandex_models import YandexZodiacSign
@@ -43,7 +44,7 @@ class DateValidator:
             year_group = month_match.group(3)
 
             month = month_map[month_name]
-            year = int(year_group) if year_group else date.today().year
+            year = int(year_group) if year_group else utcnow().year
 
             try:
                 return date(year, month, day)
@@ -86,7 +87,7 @@ class DateValidator:
     @staticmethod
     def validate_birth_date(birth_date: date) -> bool:
         """Валидирует дату рождения."""
-        today = date.today()
+        today = utcnow().date()
 
         # Проверяем, что дата не в будущем
         if birth_date > today:

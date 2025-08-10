@@ -366,12 +366,13 @@ class DateTimeValidator:
             return False
 
         # Must be in the past (no future births)
-        if dt > datetime.now(timezone.utc):
+        current_utc = utcnow()
+        if dt > current_utc:
             return False
 
         # Must be within reasonable historical range
         min_year = 1000  # Approximate earliest reliable records
-        max_year = datetime.now().year + 1  # Allow up to next year
+        max_year = current_utc.year + 1  # Allow up to next year
 
         if not min_year <= dt.year <= max_year:
             return False
@@ -728,3 +729,43 @@ class AstroDateTimeBuilder:
 
 # Global instance for easy access
 astro_time = AstroTimeUtils()
+
+
+# Convenience functions for common patterns
+def utcnow() -> datetime:
+    """Get current UTC datetime - replacement for datetime.utcnow()."""
+    return datetime.now(timezone.utc)
+
+
+def now(tz: Optional[str] = None) -> datetime:
+    """Get current datetime in specified timezone."""
+    if tz is None:
+        return datetime.now()
+    
+    timezone_manager = TimezoneManager()
+    tz_obj = timezone_manager.get_timezone(tz)
+    return datetime.now(tz_obj)
+
+
+def current_timestamp() -> str:
+    """Get current UTC timestamp as ISO string."""
+    return utcnow().isoformat()
+
+
+def database_timestamp() -> datetime:
+    """Get current UTC datetime for database timestamps."""
+    return utcnow()
+
+
+# Database lambda functions for SQLAlchemy default values
+def db_timestamp_default():
+    """Lambda function for SQLAlchemy default timestamps."""
+    return lambda: database_timestamp()
+
+
+def create_astro_datetime_now(coordinates: Optional[CoordinateInfo] = None) -> AstroDateTime:
+    """Create AstroDateTime for current time."""
+    return astro_time.parse_birth_datetime(
+        utcnow(),
+        coordinates=coordinates
+    )

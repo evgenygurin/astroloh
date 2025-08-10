@@ -8,6 +8,8 @@ from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from app.utils.astro_time_utils import utcnow
+
 from app.models.yandex_models import YandexZodiacSign
 from app.services.astrology_calculator import AstrologyCalculator
 from app.services.transit_calculator import TransitCalculator
@@ -224,7 +226,7 @@ class HoroscopeGenerator:
         )
 
         if target_date is None:
-            target_date = datetime.now()
+            target_date = utcnow()
             logger.debug(
                 f"HOROSCOPE_TARGET_DATE_DEFAULT: using_current_date={target_date.strftime('%Y-%m-%d')}"
             )
@@ -871,7 +873,7 @@ class HoroscopeGenerator:
         )
 
         if target_date is None:
-            target_date = date.today()
+            target_date = utcnow().date()
 
         # Генерируем базовый гороскоп
         base_horoscope = self.generate_horoscope(sign, period, target_date)
@@ -961,7 +963,7 @@ class HoroscopeGenerator:
             # Создаем прогноз
             forecast = {
                 "forecast_period": f"{forecast_days} дней",
-                "generated_date": date.today().isoformat(),
+                "generated_date": utcnow().date().isoformat(),
                 "period_forecast": period_forecast,
                 "important_transits": important_transits,
                 "daily_guidance": self._create_daily_guidance_from_transits(
@@ -983,7 +985,7 @@ class HoroscopeGenerator:
             return {
                 "error": "Не удалось создать прогноз на основе транзитов",
                 "forecast_period": f"{forecast_days} дней",
-                "generated_date": date.today().isoformat(),
+                "generated_date": utcnow().date().isoformat(),
             }
 
     def generate_comprehensive_analysis(
@@ -1012,7 +1014,7 @@ class HoroscopeGenerator:
             analysis = {
                 "analysis_type": "comprehensive",
                 "analysis_period": f"{analysis_period_days} дней",
-                "generated_date": date.today().isoformat(),
+                "generated_date": utcnow().date().isoformat(),
                 # Основной анализ транзитов
                 "transit_analysis": comprehensive_transit_analysis,
                 # Интерпретация для пользователя
@@ -1038,7 +1040,7 @@ class HoroscopeGenerator:
                 "error": "Не удалось создать комплексный анализ",
                 "analysis_type": "comprehensive",
                 "analysis_period": f"{analysis_period_days} дней",
-                "generated_date": date.today().isoformat(),
+                "generated_date": utcnow().date().isoformat(),
             }
 
     # Helper methods for enhanced functionality

@@ -6,6 +6,8 @@ import calendar
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from app.utils.astro_time_utils import utcnow
+
 from app.services.astrology_calculator import AstrologyCalculator
 
 
@@ -475,7 +477,7 @@ class LunarCalendar:
         """Получает рекомендации для конкретной деятельности."""
 
         if target_date is None:
-            target_date = datetime.now()
+            target_date = utcnow()
 
         lunar_info = self.get_lunar_day_info(target_date)
         phase_name = lunar_info["moon_phase"]["phase_name"]

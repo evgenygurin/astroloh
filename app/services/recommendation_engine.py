@@ -9,6 +9,8 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
+from app.utils.astro_time_utils import utcnow
+
 from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -494,9 +496,9 @@ class HybridRecommendationEngine:
 
         # Анализируем временные паттерны
         time_preferences = self._analyze_time_patterns(interactions)
-        current_hour = datetime.utcnow().hour
-
+        
         # Корректируем скоры на основе временных предпочтений
+        current_hour = utcnow().hour
         for rec in recommendations:
             time_boost = time_preferences.get(current_hour, 0.5)
             rec["final_score"] *= 1 + time_boost
@@ -562,7 +564,7 @@ class TemporalPatternAnalyzer:
     ) -> Dict[str, Any]:
         """Получает рекомендации с учетом сезонных астрологических циклов."""
 
-        current_date = datetime.utcnow()
+        current_date = utcnow()
         season = self._get_current_season(current_date)
 
         # Получаем астрологические особенности текущего периода
@@ -896,8 +898,8 @@ class ABTestManager:
             test_parameters=self._get_test_parameters(
                 test_name, assigned_group
             ),
-            test_start_date=datetime.utcnow(),
-            test_end_date=datetime.utcnow() + timedelta(days=30),
+            test_start_date=utcnow(),
+            test_end_date=utcnow() + timedelta(days=30),
         )
 
         self.db.add(ab_test)
@@ -987,7 +989,7 @@ class MetricsCollector:
     ) -> Dict[str, float]:
         """Получает агрегированные метрики рекомендаций."""
 
-        cutoff_date = datetime.utcnow() - timedelta(days=time_period_days)
+        cutoff_date = utcnow() - timedelta(days=time_period_days)
 
         # CTR (Click-Through Rate)
         views_result = await self.db.execute(

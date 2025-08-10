@@ -7,6 +7,8 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from app.utils.astro_time_utils import current_timestamp
+
 from app.models.yandex_models import YandexZodiacSign
 from app.services.astrology_calculator import AstrologyCalculator, NatalChart
 from app.services.kerykeion_service import KerykeionService
@@ -198,7 +200,7 @@ class SynastryService:
                     ),
                     "service_info": {
                         "method": "Basic Calculator Fallback",
-                        "timestamp": datetime.now().isoformat(),
+                        "timestamp": current_timestamp(),
                     },
                 }
 
@@ -266,7 +268,7 @@ class SynastryService:
                 ),
                 "service_info": {
                     "method": "Kerykeion Advanced",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": current_timestamp(),
                 },
             }
 
