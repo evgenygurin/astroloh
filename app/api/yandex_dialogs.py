@@ -7,10 +7,12 @@ import uuid
 from datetime import datetime
 from typing import Any
 
+import sentry_sdk
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_database
+from app.core.sentry import capture_alice_context, capture_performance_metrics
 from app.models.yandex_models import YandexRequestModel, YandexResponseModel
 from app.services.dialog_handler import dialog_handler
 from app.utils.error_handler import error_handler
@@ -80,6 +82,45 @@ async def yandex_webhook(
             },
         },
     )
+
+    # Добавляем Sentry контекст для Alice
+    with sentry_sdk.start_transaction(
+        op="alice_webhook", name="yandex_dialogs_webhook"
+    ) as transaction:
+        # Устанавливаем контекст Alice в Sentry
+        capture_alice_context(
+            intent="processing",
+            user_utterance=request.request.original_utterance[:100]
+            if request.request.original_utterance
+            else None,
+            session_id=request.session.session_id,
+        )
+
+        transaction.set_tag("session.new", request.session.new)
+        transaction.set_tag(
+            "request.type", getattr(request.request, "type", "SimpleUtterance")
+        )
+
+        # Добавляем метаданные запроса
+        with sentry_sdk.configure_scope() as scope:
+            scope.set_context(
+                "alice_request",
+                {
+                    "user_id": request.session.user_id[:10] + "..."
+                    if len(request.session.user_id) > 10
+                    else request.session.user_id,
+                    "session_new": request.session.new,
+                    "locale": getattr(request.meta, "locale", "ru-RU")
+                    if hasattr(request, "meta")
+                    else "ru-RU",
+                    "timezone": getattr(request.meta, "timezone", "UTC")
+                    if hasattr(request, "meta")
+                    else "UTC",
+                    "utterance_length": len(request.request.original_utterance)
+                    if request.request.original_utterance
+                    else 0,
+                },
+            )
 
     try:
         logger.info(
@@ -157,12 +198,42 @@ async def yandex_webhook(
             },
         )
 
+        # Отправляем метрики производительности в Sentry
+        capture_performance_metrics(
+            operation_name="alice_webhook",
+            duration_ms=processing_time * 1000,
+            success=True,
+            response_has_buttons=bool(
+                getattr(dialog_response.response, "buttons", None)
+            )
+            if hasattr(dialog_response, "response")
+            else False,
+            response_has_card=bool(
+                getattr(dialog_response.response, "card", None)
+            )
+            if hasattr(dialog_response, "response")
+            else False,
+            session_new=request.session.new,
+        )
+
         # Возвращаем ответ напрямую (уже содержит все необходимые поля)
         return dialog_response
 
     except Exception as e:
         # Вычисляем время до ошибки
         error_time = (datetime.now() - start_time).total_seconds()
+
+        # Отправляем ошибку в Sentry с контекстом
+        sentry_sdk.capture_exception(e)
+
+        # Отправляем метрики ошибки
+        capture_performance_metrics(
+            operation_name="alice_webhook",
+            duration_ms=error_time * 1000,
+            success=False,
+            error_type=type(e).__name__,
+            session_new=request.session.new,
+        )
 
         # Детальное логирование ошибки
         logger.error(

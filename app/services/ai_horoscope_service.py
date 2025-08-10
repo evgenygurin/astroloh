@@ -4,10 +4,17 @@ AI-powered сервис генерации гороскопов с интегр�
 """
 
 import logging
+import time
 from datetime import date, datetime
 from typing import Any, Dict, Optional
 
+
 from app.core.config import settings
+from app.core.sentry import (
+    capture_astrology_log,
+    sentry_span,
+    sentry_trace,
+)
 from app.models.yandex_models import YandexZodiacSign
 from app.services.horoscope_generator import HoroscopeGenerator, HoroscopePeriod
 from app.services.yandex_gpt import yandex_gpt_client
@@ -62,75 +69,104 @@ class AIHoroscopeService:
         Returns:
             Словарь с данными гороскопа
         """
-        if target_date is None:
-            target_date = datetime.now()
+        time.time()
+        operation_name = "horoscope_generation"
+        zodiac_value = zodiac_sign.value
+        ai_enabled = use_ai and settings.ENABLE_AI_GENERATION
 
-        # Если указана дата прогноза, используем её вместо target_date
-        if forecast_date is not None:
-            target_date = datetime.combine(forecast_date, datetime.min.time())
-
-        # Получаем базовые астрологические данные
-        base_horoscope = (
-            self.traditional_generator.generate_personalized_horoscope(
-                zodiac_sign=zodiac_sign,
-                birth_date=birth_date,
-                birth_time=birth_time,
-                period=period,
-                target_date=target_date,
+        # 📊 SENTRY TRACE - Начинаем основную операцию
+        with sentry_trace(
+            operation_name,
+            zodiac_sign=zodiac_value,
+            period=period.value,
+            ai_enabled=ai_enabled,
+            has_birth_data=birth_date is not None,
+        ):
+            # 📝 SENTRY LOG - Начало операции
+            capture_astrology_log(
+                operation=operation_name,
+                message=f"Начало генерации гороскопа для {zodiac_value}",
+                level="info",
+                zodiac_sign=zodiac_value,
+                period=period.value,
+                ai_enabled=ai_enabled,
             )
-        )
 
-        # Если AI включен и доступен, генерируем улучшенный контент
-        logger.error(
-            f"🔍 DEBUG: AI check - use_ai={use_ai}, enabled={settings.ENABLE_AI_GENERATION}"
-        )
-        print(
-            f"🔍 DEBUG: AI check - use_ai={use_ai}, enabled={settings.ENABLE_AI_GENERATION}"
-        )
-        if use_ai and settings.ENABLE_AI_GENERATION:
-            logger.info(
-                f"AI_HOROSCOPE_GENERATION_START: sign={zodiac_sign}, period={period}"
-            )
-            print("🔍 DEBUG: About to call _generate_ai_content")
-            try:
-                ai_enhanced = await self._generate_ai_content(
-                    zodiac_sign=zodiac_sign,
-                    period=period,
-                    birth_date=birth_date,
-                    base_data=base_horoscope,
-                    forecast_date=forecast_date,
+            if target_date is None:
+                target_date = datetime.now()
+
+            # Если указана дата прогноза, используем её вместо target_date
+            if forecast_date is not None:
+                target_date = datetime.combine(
+                    forecast_date, datetime.min.time()
                 )
 
-                print(
-                    f"🔍 DEBUG: AI enhanced result: {ai_enhanced is not None}"
+            # 🔥 SENTRY SPAN - Генерация базового гороскопа
+            with sentry_span(
+                "traditional_horoscope_generation", backend="traditional"
+            ):
+                base_horoscope = (
+                    self.traditional_generator.generate_personalized_horoscope(
+                        zodiac_sign=zodiac_sign,
+                        birth_date=birth_date,
+                        birth_time=birth_time,
+                        period=period,
+                        target_date=target_date,
+                    )
                 )
-                if ai_enhanced:
-                    logger.info(
-                        "AI_HOROSCOPE_SUCCESS: Enhanced horoscope generated"
-                    )
-                    print("✅ DEBUG: Returning AI enhanced horoscope")
-                    # Комбинируем традиционные данные с AI контентом
-                    return self._merge_horoscope_data(
-                        base_horoscope, ai_enhanced
-                    )
-                else:
-                    logger.warning(
-                        "AI_HOROSCOPE_EMPTY: AI returned empty result"
-                    )
-                    print("⚠️ DEBUG: AI returned None, falling back")
 
-            except Exception as e:
-                logger.error(f"AI_HOROSCOPE_ERROR: {e}", exc_info=True)
-                print(f"❌ DEBUG: AI exception: {e}")
-        else:
-            logger.info(
-                f"AI_HOROSCOPE_DISABLED: use_ai={use_ai}, enabled={settings.ENABLE_AI_GENERATION}"
-            )
-            print("🚫 DEBUG: AI disabled, using traditional")
+            # Если AI включен и доступен, генерируем улучшенный контент
+            if ai_enabled:
+                capture_astrology_log(
+                    operation="ai_enhancement",
+                    message=f"Начинаем AI улучшение для {zodiac_value}",
+                    level="info",
+                    zodiac_sign=zodiac_value,
+                )
 
-        # Fallback: возвращаем традиционный гороскоп
-        print("🔄 DEBUG: Using traditional fallback")
-        return self._enhance_traditional_horoscope(base_horoscope)
+                try:
+                    # 🔥 SENTRY SPAN - AI генерация
+                    with sentry_span(
+                        "ai_content_generation", backend="yandex_gpt"
+                    ):
+                        ai_enhanced = await self._generate_ai_content(
+                            zodiac_sign=zodiac_sign,
+                            period=period,
+                            birth_date=birth_date,
+                            base_data=base_horoscope,
+                            forecast_date=forecast_date,
+                        )
+
+                    print(
+                        f"🔍 DEBUG: AI enhanced result: {ai_enhanced is not None}"
+                    )
+                    if ai_enhanced:
+                        logger.info(
+                            "AI_HOROSCOPE_SUCCESS: Enhanced horoscope generated"
+                        )
+                        print("✅ DEBUG: Returning AI enhanced horoscope")
+                        # Комбинируем традиционные данные с AI контентом
+                        return self._merge_horoscope_data(
+                            base_horoscope, ai_enhanced
+                        )
+                    else:
+                        logger.warning(
+                            "AI_HOROSCOPE_EMPTY: AI returned empty result"
+                        )
+                        print("⚠️ DEBUG: AI returned None, falling back")
+
+                except Exception as e:
+                    logger.error(f"AI_HOROSCOPE_ERROR: {e}", exc_info=True)
+                    print(f"❌ DEBUG: AI exception: {e}")
+            else:
+                logger.info(
+                    f"AI_HOROSCOPE_DISABLED: use_ai={use_ai}, enabled={settings.ENABLE_AI_GENERATION}"
+                )
+                print("🚫 DEBUG: AI disabled, using traditional")
+
+            # Fallback: возвращаем традиционный гороскоп
+            print("🔄 DEBUG: Using traditional fallback")
+            return self._enhance_traditional_horoscope(base_horoscope)
 
     async def _generate_ai_content(
         self,

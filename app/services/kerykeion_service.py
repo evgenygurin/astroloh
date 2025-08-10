@@ -10,14 +10,15 @@ from typing import Any, Dict, List, Optional
 
 import pytz
 
+from app.core.sentry import monitor_operation
+
 logger = logging.getLogger(__name__)
 
 # Try to import Kerykeion with detailed error handling
 try:
     # Updated imports for Kerykeion 4.x
-    from kerykeion import AstrologicalSubject
+    from kerykeion import AstrologicalSubject, KerykeionChartSVG
     from kerykeion import Report as NatalChart
-    from kerykeion import KerykeionChartSVG
 
     KERYKEION_AVAILABLE = True
     logger.info(
@@ -80,7 +81,6 @@ class AspectColor(Enum):
 class KerykeionService:
     """Advanced astrological service using Kerykeion library"""
 
-
     # House system mapping for Kerykeion 4.x
     HOUSE_SYSTEM_MAPPING = {
         HouseSystem.PLACIDUS: "P",
@@ -97,14 +97,15 @@ class KerykeionService:
         HouseSystem.MERIDIAN: "X",
         HouseSystem.AZIMUTHAL: "H",
         HouseSystem.POLICH_PAGE: "U",
-        HouseSystem.NATURAL_GRADUATION: "N"
+        HouseSystem.NATURAL_GRADUATION: "N",
     }
 
     # Zodiac type mapping for Kerykeion 4.x
     ZODIAC_TYPE_MAPPING = {
         ZodiacType.TROPICAL: "Tropic",
-        ZodiacType.SIDEREAL: "Sidereal"
+        ZodiacType.SIDEREAL: "Sidereal",
     }
+
     def __init__(self):
         self.available = KERYKEION_AVAILABLE
         if not self.available:
@@ -169,8 +170,12 @@ class KerykeionService:
                     birth_datetime = pytz.UTC.localize(birth_datetime)
 
             # Map house system and zodiac type to Kerykeion 4.x format
-            houses_system_id = self.HOUSE_SYSTEM_MAPPING.get(house_system, "P")  # Default to Placidus
-            zodiac_type_str = self.ZODIAC_TYPE_MAPPING.get(zodiac_type, "Tropic")  # Default to Tropical
+            houses_system_id = self.HOUSE_SYSTEM_MAPPING.get(
+                house_system, "P"
+            )  # Default to Placidus
+            zodiac_type_str = self.ZODIAC_TYPE_MAPPING.get(
+                zodiac_type, "Tropic"
+            )  # Default to Tropical
 
             subject = AstrologicalSubject(
                 name=name,
@@ -186,9 +191,11 @@ class KerykeionService:
                 nation=nation,
                 zodiac_type=zodiac_type_str,
                 houses_system_identifier=houses_system_id,
-                sidereal_mode="FAGAN_BRADLEY" if zodiac_type == ZodiacType.SIDEREAL else None,
+                sidereal_mode="FAGAN_BRADLEY"
+                if zodiac_type == ZodiacType.SIDEREAL
+                else None,
                 online=True,  # Enable online city lookup
-                cache_expire_after_days=30
+                cache_expire_after_days=30,
             )
 
             logger.info(
@@ -199,6 +206,7 @@ class KerykeionService:
         except Exception as e:
             logger.error(f"KERYKEION_SERVICE_CREATE_SUBJECT_ERROR: {e}")
             return None
+
     def get_full_natal_chart_data(
         self,
         name: str,
@@ -283,11 +291,20 @@ class KerykeionService:
             # Extract houses data - Kerykeion 4.x uses first_house, second_house, etc.
             houses_data = {}
             house_names = [
-                'first_house', 'second_house', 'third_house', 'fourth_house', 
-                'fifth_house', 'sixth_house', 'seventh_house', 'eighth_house', 
-                'ninth_house', 'tenth_house', 'eleventh_house', 'twelfth_house'
+                "first_house",
+                "second_house",
+                "third_house",
+                "fourth_house",
+                "fifth_house",
+                "sixth_house",
+                "seventh_house",
+                "eighth_house",
+                "ninth_house",
+                "tenth_house",
+                "eleventh_house",
+                "twelfth_house",
             ]
-            
+
             for i, house_name in enumerate(house_names, 1):
                 if hasattr(subject, house_name):
                     house_info = getattr(subject, house_name)
@@ -296,7 +313,8 @@ class KerykeionService:
                             "cusp_longitude": house_info.position,
                             "sign": house_info.sign,
                             "sign_num": house_info.sign_num,
-                            "degree_in_sign": house_info.position % 30,  # Calculate degree within sign
+                            "degree_in_sign": house_info.position
+                            % 30,  # Calculate degree within sign
                             "element": house_info.element,
                             "quality": house_info.quality,
                         }
@@ -359,6 +377,7 @@ class KerykeionService:
             logger.error(f"KERYKEION_SERVICE_FULL_CHART_ERROR: {e}")
             return {"error": f"Chart calculation failed: {str(e)}"}
 
+    @monitor_operation("kerykeion_aspects")
     def calculate_kerykeion_aspects(
         self, subject: Any
     ) -> List[Dict[str, Any]]:
@@ -889,6 +908,7 @@ class KerykeionService:
             logger.error(f"KERYKEION_SERVICE_SVG_ERROR: {e}")
             return None
 
+    @monitor_operation("kerykeion_compatibility")
     def calculate_compatibility_detailed(
         self, person1_data: Dict[str, Any], person2_data: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -1055,7 +1075,7 @@ class KerykeionService:
             birth_date = birth_datetime.date()
             years_elapsed = (current_date.date() - birth_date).days / 365.25
             progressed_date = birth_date + timedelta(days=years_elapsed)
-            
+
             # Create progressed datetime maintaining birth time
             progressed_datetime = datetime.combine(
                 progressed_date, birth_datetime.time()
@@ -1063,9 +1083,14 @@ class KerykeionService:
 
             # Calculate natal chart
             natal_subject = self.create_astrological_subject(
-                name, birth_datetime, latitude, longitude, timezone, house_system
+                name,
+                birth_datetime,
+                latitude,
+                longitude,
+                timezone,
+                house_system,
             )
-            
+
             # Calculate progressed chart
             progressed_subject = self.create_astrological_subject(
                 f"{name} Progressed",
@@ -1084,11 +1109,11 @@ class KerykeionService:
             for planet in ["sun", "moon", "mercury", "venus", "mars"]:
                 natal_planet = getattr(natal_subject, planet, {})
                 prog_planet = getattr(progressed_subject, planet, {})
-                
+
                 if natal_planet and prog_planet:
                     natal_pos = natal_planet.get("pos", [0])[0]
                     prog_pos = prog_planet.get("pos", [0])[0]
-                    
+
                     progressed_planets[planet] = {
                         "natal_longitude": natal_pos,
                         "progressed_longitude": prog_pos,
@@ -1128,7 +1153,7 @@ class KerykeionService:
             natal_subject = self.create_astrological_subject(
                 name, birth_datetime, latitude, longitude, timezone
             )
-            
+
             if not natal_subject:
                 return {"error": "Failed to create natal subject"}
 
@@ -1139,8 +1164,10 @@ class KerykeionService:
             natal_sun_longitude = natal_sun.get("pos", [0])[0]
 
             # Calculate approximate return date (Sun's position at birth)
-            return_date = datetime(return_year, birth_datetime.month, birth_datetime.day)
-            
+            return_date = datetime(
+                return_year, birth_datetime.month, birth_datetime.day
+            )
+
             # Fine-tune to exact Sun return (this is simplified)
             # In production, you'd iterate to find exact longitude match
             return_datetime = return_date.replace(
@@ -1170,7 +1197,9 @@ class KerykeionService:
                 timezone,
             )
 
-            logger.info(f"KERYKEION_SERVICE_SOLAR_RETURN_SUCCESS: {name} {return_year}")
+            logger.info(
+                f"KERYKEION_SERVICE_SOLAR_RETURN_SUCCESS: {name} {return_year}"
+            )
             return {
                 "natal_sun_longitude": natal_sun_longitude,
                 "return_year": return_year,
@@ -1201,7 +1230,7 @@ class KerykeionService:
             natal_subject = self.create_astrological_subject(
                 name, birth_datetime, latitude, longitude, timezone
             )
-            
+
             if not natal_subject:
                 return {"error": "Failed to create natal subject"}
 

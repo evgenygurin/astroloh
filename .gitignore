@@ -218,3 +218,5 @@ logs/
 .vscode/
 .idea/
 CLAUDE.md.backup
+
+mem0-test/

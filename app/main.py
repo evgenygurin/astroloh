@@ -20,10 +20,12 @@ from app.api.iot_api import router as iot_router
 from app.api.lunar import router as lunar_router
 from app.api.recommendations import router as recommendations_router
 from app.api.security import router as security_router
+from app.api.sentry_demo import router as sentry_demo_router
 from app.api.telegram_bot import router as telegram_router
 from app.api.yandex_dialogs import router as yandex_router
 from app.core.config import settings
 from app.core.database import close_database, init_database
+from app.core.sentry import init_sentry
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -108,6 +110,7 @@ app.include_router(iot_router)
 app.include_router(auth_router)
 app.include_router(astrology_router)
 app.include_router(lunar_router)
+app.include_router(sentry_demo_router)
 
 
 @app.get("/")
@@ -139,6 +142,9 @@ async def health_check() -> dict[str, str]:
 @app.on_event("startup")
 async def startup_event() -> None:
     """Инициализация при запуске приложения."""
+    # Инициализируем Sentry первым
+    init_sentry()
+
     # Импортируем и настраиваем логирование
     from app.core.logging_config import log_startup_info, setup_logging
 

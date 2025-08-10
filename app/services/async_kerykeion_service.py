@@ -502,9 +502,7 @@ class AsyncKerykeionService:
         Returns:
             Natal chart data dictionary
         """
-        self._generate_chart_id(
-            birth_datetime, latitude, longitude, timezone
-        )
+        self._generate_chart_id(birth_datetime, latitude, longitude, timezone)
 
         # Check cache if enabled
         if use_cache:
