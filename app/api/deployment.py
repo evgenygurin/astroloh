@@ -19,6 +19,7 @@ from app.services.feature_flag_service import (
 from app.services.performance_monitor import performance_monitor
 from app.services.rollback_system import RollbackStrategy, rollback_system
 from app.services.startup_manager import startup_manager
+from app.utils.astro_time_utils import current_timestamp
 
 router = APIRouter(prefix="/api/v1/deployment", tags=["deployment"])
 
@@ -351,7 +352,7 @@ async def get_health_checks():
         health_checks = await deployment_monitor.perform_health_checks()
 
         return {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": current_timestamp(),
             "health_checks": {
                 name: {
                     "status": check.status.value,
@@ -386,7 +387,7 @@ async def get_performance_report(hours: int = Query(24, ge=1, le=168)):
         deploy_report = deployment_monitor.generate_deployment_report(hours)
 
         return {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": current_timestamp(),
             "hours_covered": hours,
             "performance_report": perf_report,
             "deployment_report": deploy_report,
@@ -505,7 +506,7 @@ async def get_kerykeion_feature_usage():
             usage_stats[feature] = metrics
 
         return {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": current_timestamp(),
             "kerykeion_features": usage_stats,
             "summary": {
                 "total_features": len(kerykeion_features),
@@ -555,7 +556,7 @@ async def check_deployment_alerts():
         ]
 
         return {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": current_timestamp(),
             "rollback_needed": should_rollback is not None,
             "rollback_triggers": triggers if should_rollback else [],
             "critical_issues": critical_issues,

@@ -7,6 +7,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
+from app.utils.astro_time_utils import utcnow, current_timestamp, now
+
 import pytz
 
 from app.services.astro_cache_service import astro_cache
@@ -116,7 +118,7 @@ class TransitService:
         Получает текущие транзиты используя Kerykeion с полными возможностями.
         """
         if transit_date is None:
-            transit_date = datetime.now(pytz.timezone(timezone))
+            transit_date = utcnow()
 
         logger.info(
             f"ENHANCED_TRANSIT_KERYKEION_START: {name} for {transit_date}"
@@ -253,7 +255,7 @@ class TransitService:
                 },
                 "service_info": {
                     "method": "Kerykeion Enhanced",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": current_timestamp(),
                 },
             }
 
@@ -282,7 +284,7 @@ class TransitService:
             include_minor_aspects: Включать минорные аспекты
         """
         if transit_date is None:
-            transit_date = datetime.now(pytz.UTC)
+            transit_date = utcnow()
 
         # Start performance monitoring
         op_id = performance_monitor.start_operation(
@@ -374,7 +376,7 @@ class TransitService:
         Used for performance testing and fallback scenarios.
         """
         if transit_date is None:
-            transit_date = datetime.now(pytz.UTC)
+            transit_date = utcnow()
 
         return self._get_basic_transits(natal_chart, transit_date)
 
@@ -840,7 +842,7 @@ class TransitService:
             start_date: Начальная дата (по умолчанию сегодня)
         """
         if start_date is None:
-            start_date = datetime.now(pytz.UTC)
+            start_date = utcnow()
 
         # Start performance monitoring
         op_id = performance_monitor.start_operation(
@@ -991,7 +993,7 @@ class TransitService:
             lookback_days: Дни назад для анализа
             lookahead_days: Дни вперед для прогноза
         """
-        today = datetime.now(pytz.UTC)
+        today = utcnow()
         start_date = today - timedelta(days=lookback_days)
         end_date = today + timedelta(days=lookahead_days)
 
@@ -1163,7 +1165,7 @@ class TransitService:
         Used for performance testing.
         """
         if start_date is None:
-            start_date = datetime.now(pytz.UTC)
+            start_date = utcnow()
 
         daily_forecasts = []
         for i in range(days):
@@ -1192,7 +1194,7 @@ class TransitService:
         Internal method to calculate important transits synchronously.
         Used for performance testing.
         """
-        today = datetime.now(pytz.UTC)
+        today = utcnow()
         major_transits = []
 
         # Simulate finding major transits
@@ -2050,5 +2052,5 @@ class TransitService:
         return {
             "cache_type_cleared": cache_type,
             "entries_cleared": cleared_count,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": current_timestamp(),
         }

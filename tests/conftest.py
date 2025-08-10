@@ -12,6 +12,8 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+from app.utils.astro_time_utils import utcnow
+
 # Set test environment variables
 os.environ["ENVIRONMENT"] = "testing"
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
@@ -111,7 +113,7 @@ def mock_user_context():
     context.personalization_level = 50
     context.conversation_count = 5
     context.preferences = {"zodiac_sign": "leo"}
-    context.last_interaction = datetime.now()
+    context.last_interaction = utcnow()
     return context
 
 

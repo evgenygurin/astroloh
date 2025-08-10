@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from app.core.config import settings
+from app.utils.astro_time_utils import utcnow
 
 
 class EncryptionError(Exception):
@@ -239,7 +240,7 @@ class SecurityUtils:
         Returns:
             True если сессия истекла
         """
-        return datetime.utcnow() > expires_at
+        return utcnow() > expires_at
 
     @staticmethod
     def generate_session_expiry(hours: int = 24) -> datetime:
@@ -252,7 +253,7 @@ class SecurityUtils:
         Returns:
             Время истечения сессии
         """
-        return datetime.utcnow() + timedelta(hours=hours)
+        return utcnow() + timedelta(hours=hours)
 
 
 class DataProtectionManager:
@@ -374,7 +375,7 @@ class DataProtectionManager:
             True если данные должны быть удалены
         """
         expiry_date = created_at + timedelta(days=data_retention_days)
-        return datetime.utcnow() > expiry_date
+        return utcnow() > expiry_date
 
 
 # Глобальный экземпляр сервиса шифрования

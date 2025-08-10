@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Tuple
 
+from app.utils.astro_time_utils import utcnow
+
 from app.models.yandex_models import YandexButton, YandexIntent, YandexResponse
 from app.services.dialog_flow_manager import DialogState
 from app.services.response_formatter import ResponseFormatter
@@ -69,7 +71,7 @@ class ErrorContext:
         self.session_id = session_id
         self.intent = intent
         self.dialog_state = dialog_state
-        self.timestamp = datetime.now()
+        self.timestamp = utcnow()
         # Не сохраняем stack trace для безопасности
         self.stack_trace = None
         self.recovery_attempts = 0
@@ -555,7 +557,7 @@ class ErrorRecoveryManager:
         severity_counts = {}
         recent_errors = 0
 
-        cutoff_time = datetime.now() - timedelta(hours=24)
+        cutoff_time = utcnow() - timedelta(hours=24)
 
         for error in self.error_history:
             # По типам
@@ -585,7 +587,7 @@ class ErrorRecoveryManager:
     def cleanup_old_errors(self, days: int = 7) -> int:
         """Очищает старые ошибки из истории."""
 
-        cutoff_time = datetime.now() - timedelta(days=days)
+        cutoff_time = utcnow() - timedelta(days=days)
         initial_count = len(self.error_history)
 
         self.error_history = [
@@ -650,7 +652,7 @@ class ErrorRecoveryManager:
 
     def _check_rate_limit(self, user_id: str) -> bool:
         """Проверяет ограничения по частоте ошибок для пользователя."""
-        now = datetime.now()
+        now = utcnow()
         hour_ago = now - timedelta(hours=1)
 
         # Очищаем старые записи

@@ -96,7 +96,15 @@
   - 🔧 **Встроенные методы** - базовые вычисления (резерв)
 - **Интеграция**: Яндекс.Диалоги API
 - **ИИ-генерация**: Yandex GPT для персонализированных гороскопов
-- **Безопасность**: Шифрование персональных данных
+- **Централизованная обработка времени**: Полностью рефакторированная система обработки времени с `astro_time_utils.py` модулем
+  - ✅ Безопасная валидация входных данных с защитой от инъекций
+  - ✅ Поддержка 12+ форматов дат и времени
+  - ✅ Автоматическое определение часовых поясов по координатам
+  - ✅ Кэширование часовых поясов для производительности (LRU кэш 256 записей)
+  - ✅ Расчет локального солнечного времени для точных натальных карт
+  - ✅ Поддержка русских названий городов ("Москва" → "Europe/Moscow")
+  - ✅ Неизменяемые объекты AstroDateTime для безопасности потоков
+- **Безопасность**: Шифрование персональных данных, защищенная обработка временных данных
 - **Производительность**: Асинхронная обработка, пулы потоков, умное кэширование
 - **Инфраструктура**: Docker, CI/CD
 
@@ -229,8 +237,13 @@ astroloh/
 │   ├── models/            # Модели данных
 │   ├── services/          # Бизнес-логика
 │   ├── utils/             # Утилиты
+│   │   ├── astro_time_utils.py  # 🕐 Продвинутые утилиты работы с временем
+│   │   ├── error_handler.py     # Обработка ошибок
+│   │   └── validators.py        # Валидаторы данных
 │   └── main.py           # Точка входа FastAPI
 ├── tests/                 # Тесты
+│   ├── test_astro_time_utils.py  # 🧪 Тесты временных утилит
+│   └── ...               # Другие тесты
 ├── docs/                  # Документация
 ├── scripts/               # Скрипты для развертывания
 ├── docker-compose.yml     # Docker Compose конфигурация
@@ -239,11 +252,908 @@ astroloh/
 └── README.md            # Этот файл
 ```
 
+## 📚 API Endpoints
+
+## 🕐 Система обработки астрологического времени (НОВОЕ 2025-08-09)
+
+### Продвинутые утилиты работы с временем
+
+**Модуль**: `app/utils/astro_time_utils.py`
+
+Комплексная система для безопасной и точной обработки астрологического времени с акцентом на безопасность, точность и управление часовыми поясами.
+
+#### ⭐ Ключевые возможности
+
+**🔒 Безопасность превыше всего:**
+- Валидация ввода с защитой от инъекций
+- Ограничения длины строк против истощения ресурсов
+- Детекция опасных паттернов (HTML/SQL инъекции, обход путей)
+- Безопасный парсинг с комплексной обработкой ошибок
+
+**🎯 Прецизионное управление временем:**
+- Операции с timezone-aware datetime используя Python 3.9+ `zoneinfo`
+- Поддержка исторических дат для астрологических расчетов (1000-3000 н.э.)
+- Автоматическое определение часового пояса по координатам
+- Расчеты локального солнечного времени для точности времени рождения
+- Валидация времени рождения с защитой от будущих дат
+
+**⚡ Оптимизации производительности:**
+- LRU кэширование объектов часовых поясов (лимит 256 записей)
+- Поддержка пакетных операций для множественных конвертаций
+- Неизменяемые структуры данных для потокобезопасности
+- Паттерн Builder для конструирования сложных объектов
+
+#### 🏗️ Основные классы
+
+**AstroTimeUtils** - главный класс утилит:
+```python
+from app.utils.astro_time_utils import astro_time
+
+# Парсинг даты рождения с валидацией
+astro_dt = astro_time.parse_birth_datetime(
+    date_input="15.08.1990",
+    time_input="14:30:00", 
+    timezone_input="Europe/Moscow",
+    coordinates=CoordinateInfo(55.7558, 37.6176)
+)
+```
+
+**TimezoneManager** - продвинутое управление часовыми поясами:
+```python
+# Маппинг названий российских городов
+tz = tz_manager.get_timezone("москва")  # → Europe/Moscow
+tz = tz_manager.get_timezone("новосибирск")  # → Asia/Novosibirsk
+
+# Определение по координатам
+detected_tz = tz_manager.detect_timezone_from_coordinates(37.6176)
+```
+
+**AstroDateTime** - неизменяемый объект астрологического времени:
+```python
+# Доступ к UTC и локальному солнечному времени
+utc_time = astro_dt.utc
+solar_time = astro_dt.to_local_solar_time()
+solar_offset = astro_dt.local_solar_time_offset
+```
+
+#### 🌍 Поддерживаемые форматы
+
+- **ISO форматы**: `2023-08-15T14:30:00`, `2023-08-15T14:30:00Z`
+- **Европейские форматы**: `15.08.2023 14:30:00`, `15.08.2023`
+- **Альтернативные**: `15/08/2023 14:30`, `2023-08-15 14:30`
+- **Российские города**: 50+ крупных городов с автоматическим определением часового пояса
+
+#### 🧪 Тестирование
+
+Комплексное покрытие тестами в `tests/test_astro_time_utils.py`:
+- Тестирование безопасности с проверкой вредоносного ввода
+- Валидация часовых поясов включая российские города
+- Обработка исторических дат и граничных случаев
+- Валидация координат с географическими границами
+- Тестирование производительности с пакетными операциями
+- Интеграционные сценарии реального астрологического использования
+
+#### 🎭 Интеграция с голосовым интерфейсом Алисы
+
+**Обработка ошибок распознавания речи:**
+```python
+# Предобработка частых ошибок речевого распознавания
+cleaned = voice_input.replace("гороскоп ля", "гороскоп для")
+astro_dt = astro_time.parse_birth_datetime(cleaned)
+```
+
+**Поддержка российских форматов:**
+```python
+astro_dt = astro_time.parse_birth_datetime(
+    "15.08.1990",    # Европейский формат
+    "14:30",         # 24-часовое время
+    "москва"         # Название города на русском
+)
+```
+
+Эта система обработки времени обеспечивает основу для всех временных операций в астрологическом приложении, гарантируя точность, безопасность и правильное управление часовыми поясами, необходимые для прецизионных астрологических расчетов.
+
 ## API Endpoints
 
-- `GET /` - Проверка работы API
-- `GET /health` - Проверка здоровья сервиса
-- `POST /api/v1/yandex/webhook` - Webhook для Яндекс.Диалогов
+
+Astroloh предоставляет более 70 API endpoints, организованных по функциональным категориям. Все endpoints поддерживают JSON формат данных и включают подробную обработку ошибок.
+
+### 🔐 Аутентификация
+
+**Базовый путь**: `/auth`
+
+#### POST /auth/register
+Регистрация нового пользователя в системе.
+
+**Параметры запроса**:
+```json
+{
+  "name": "Имя пользователя",
+  "email": "user@example.com",
+  "password": "secure_password"
+}
+```
+
+**Ответ**:
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "token_type": "bearer"
+}
+```
+
+**Rate limiting**: 5 запросов в минуту
+
+#### POST /auth/login
+Вход в систему и получение JWT токена.
+
+**Параметры запроса** (form-data):
+- `username`: email пользователя
+- `password`: пароль
+
+**Ответ**:
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "token_type": "bearer"
+}
+```
+
+**Rate limiting**: 10 запросов в минуту
+
+#### GET /auth/me
+Получение информации о текущем пользователе.
+
+**Заголовки**: `Authorization: Bearer <token>`
+
+**Ответ**:
+```json
+{
+  "id": "user_id",
+  "email": "user@example.com",
+  "name": "Имя пользователя",
+  "created_at": "2025-01-01T00:00:00Z"
+}
+```
+
+### ⭐ Профессиональная астрология
+
+**Базовый путь**: `/astrology`
+**Требует аутентификации**: Да
+
+#### POST /astrology/natal-chart
+Расчет натальной карты с использованием библиотеки Kerykeion.
+
+**Параметры запроса**:
+```json
+{
+  "date": "1990-01-01",
+  "time": "12:00",
+  "latitude": 55.7558,
+  "longitude": 37.6176,
+  "timezone": "Europe/Moscow"
+}
+```
+
+**Ответ**:
+```json
+{
+  "chart_data": {
+    "sun": {"sign": "Козерог", "degree": 10.5, "house": 1},
+    "moon": {"sign": "Рыбы", "degree": 25.3, "house": 3}
+  },
+  "aspects": {
+    "sun_moon": {"aspect": "секстиль", "orb": 2.1, "applying": true}
+  },
+  "houses": {
+    "1": {"sign": "Козерог", "degree": 15.2},
+    "2": {"sign": "Водолей", "degree": 18.7}
+  },
+  "interpretation": "Детальная интерпретация натальной карты..."
+}
+```
+
+#### GET /astrology/horoscope/{sign}/{type}
+Получение гороскопа для знака зодиака.
+
+**Параметры пути**:
+- `sign`: знак зодиака (aries, taurus, gemini, cancer, leo, virgo, libra, scorpio, sagittarius, capricorn, aquarius, pisces)
+- `type`: тип прогноза (daily, weekly, monthly)
+
+**Ответ**:
+```json
+{
+  "sign": "leo",
+  "type": "daily",
+  "date": "2025-08-09",
+  "content": "Сегодня звезды благоволят вашим начинаниям...",
+  "lucky_numbers": [7, 14, 21],
+  "lucky_colors": ["золотой", "оранжевый"],
+  "advice": "Рекомендуется сосредоточиться на творческих проектах"
+}
+```
+
+#### POST /astrology/compatibility
+Анализ совместимости между двумя людьми.
+
+**Параметры запроса**:
+```json
+{
+  "person1": {
+    "date": "1990-01-01",
+    "time": "12:00",
+    "latitude": 55.7558,
+    "longitude": 37.6176
+  },
+  "person2": {
+    "date": "1992-06-15",
+    "time": "18:30",
+    "latitude": 59.9311,
+    "longitude": 30.3609
+  }
+}
+```
+
+**Ответ**:
+```json
+{
+  "compatibility_score": 85,
+  "aspects": {
+    "sun_sun": {"aspect": "трин", "strength": "сильный"},
+    "venus_mars": {"aspect": "соединение", "strength": "очень сильный"}
+  },
+  "strengths": [
+    "Отличная эмоциональная совместимость",
+    "Схожие жизненные цели"
+  ],
+  "challenges": [
+    "Различия в коммуникативных стилях"
+  ],
+  "advice": "Рекомендуется развивать открытое общение"
+}
+```
+
+### 🌙 Лунный календарь
+
+**Базовый путь**: `/lunar`
+
+#### GET /lunar/calendar/{year}/{month}
+Получение лунного календаря на месяц.
+
+**Параметры пути**:
+- `year`: год (например, 2025)
+- `month`: месяц (1-12)
+
+**Ответ**:
+```json
+{
+  "year": 2025,
+  "month": 8,
+  "days": [
+    {
+      "date": "2025-08-01",
+      "lunar_day": 7,
+      "phase": "растущая луна",
+      "phase_percentage": 45.2,
+      "recommendations": [
+        "Благоприятный день для начала новых проектов",
+        "Хорошее время для финансовых решений"
+      ]
+    }
+  ],
+  "key_dates": {
+    "new_moon": "2025-08-04",
+    "full_moon": "2025-08-19",
+    "first_quarter": "2025-08-11",
+    "last_quarter": "2025-08-26"
+  }
+}
+```
+
+#### GET /lunar/current-phase
+Получение текущей фазы Луны.
+
+**Ответ**:
+```json
+{
+  "current_phase": "растущая луна",
+  "phase_percentage": 67.3,
+  "lunar_day": 12,
+  "next_phase": "полнолуние",
+  "next_phase_date": "2025-08-19T14:26:00Z",
+  "recommendations": [
+    "Время для активных действий",
+    "Благоприятно для творчества"
+  ]
+}
+```
+
+#### GET /lunar/phase/{phase_name}/recommendations
+Получение рекомендаций для конкретной фазы Луны.
+
+**Параметры пути**:
+- `phase_name`: название фазы (new_moon, waxing_crescent, first_quarter, waxing_gibbous, full_moon, waning_gibbous, last_quarter, waning_crescent)
+
+**Ответ**:
+```json
+{
+  "phase": "full_moon",
+  "general_recommendations": [
+    "Время завершения проектов",
+    "Благоприятно для медитации и духовных практик"
+  ],
+  "health_recommendations": [
+    "Избегайте хирургических вмешательств",
+    "Уделите внимание эмоциональному здоровью"
+  ],
+  "business_recommendations": [
+    "Хорошее время для подведения итогов",
+    "Не рекомендуется начинать новые проекты"
+  ]
+}
+```
+
+#### GET /lunar/lunar-day/{day}
+Получение информации о конкретном лунном дне.
+
+**Параметры пути**:
+- `day`: номер лунного дня (1-30)
+
+**Ответ**:
+```json
+{
+  "lunar_day": 15,
+  "name": "День полнолуния",
+  "energy": "максимальная",
+  "characteristics": [
+    "День высокой энергетики",
+    "Время для важных решений"
+  ],
+  "recommendations": {
+    "favorable": ["медитация", "творчество", "общение"],
+    "unfavorable": ["конфликты", "рискованные предприятия"]
+  }
+}
+```
+
+### 🗣️ Голосовые ассистенты
+
+#### Yandex Alice
+**Базовый путь**: `/api/v1/yandex`
+
+##### POST /api/v1/yandex/webhook
+Основной webhook для обработки запросов от Яндекс.Диалогов.
+
+**Параметры запроса**:
+```json
+{
+  "meta": {
+    "locale": "ru-RU",
+    "timezone": "UTC",
+    "client_id": "ru.yandex.searchplugin/7.16"
+  },
+  "session": {
+    "message_id": 1,
+    "session_id": "session_id",
+    "user_id": "user_id",
+    "new": true
+  },
+  "request": {
+    "command": "дай гороскоп для льва",
+    "original_utterance": "дай гороскоп для льва",
+    "type": "SimpleUtterance"
+  },
+  "version": "1.0"
+}
+```
+
+**Ответ**:
+```json
+{
+  "response": {
+    "text": "Сегодня для Льва звезды обещают удачный день...",
+    "tts": "Сегодня для Льва звёзды обещают удачный день",
+    "buttons": [
+      {
+        "title": "Совместимость",
+        "payload": {"action": "compatibility"}
+      }
+    ],
+    "end_session": false
+  },
+  "version": "1.0"
+}
+```
+
+##### GET /api/v1/yandex/health
+Проверка здоровья Yandex Dialogs сервиса.
+
+##### POST /api/v1/yandex/cleanup-sessions
+Очистка неактивных сессий пользователей.
+
+#### Telegram Bot
+**Базовый путь**: `/api/v1/telegram`
+
+##### POST /api/v1/telegram/webhook
+Webhook для обработки сообщений Telegram Bot.
+
+##### GET /api/v1/telegram/health
+Проверка здоровья Telegram Bot сервиса.
+
+##### POST /api/v1/telegram/set-webhook
+Установка webhook URL для Telegram Bot.
+
+##### DELETE /api/v1/telegram/webhook
+Удаление webhook для Telegram Bot.
+
+#### Google Assistant
+**Базовый путь**: `/api/v1/google`
+
+##### POST /api/v1/google/webhook
+Webhook для обработки запросов Google Assistant.
+
+##### GET /api/v1/google/health
+Проверка здоровья Google Assistant сервиса.
+
+##### POST /api/v1/google/actions
+Обработка Actions on Google запросов.
+
+##### POST /api/v1/google/dialogflow
+Интеграция с Dialogflow для обработки NLP.
+
+### 💡 Система рекомендаций
+
+**Базовый путь**: `/api/v1/recommendations`
+**Требует аутентификации**: Да
+
+#### GET /api/v1/recommendations/user/{user_id}
+Получение персональных рекомендаций для пользователя.
+
+**Ответ**:
+```json
+[
+  {
+    "id": "rec_001",
+    "type": "daily_advice",
+    "title": "Совет дня",
+    "content": "Сегодня благоприятное время для новых знакомств",
+    "confidence": 0.85,
+    "created_at": "2025-08-09T10:00:00Z"
+  }
+]
+```
+
+#### GET /api/v1/recommendations/user/{user_id}/personalized
+Получение персонализированных рекомендаций на основе ML алгоритмов.
+
+**Параметры запроса**:
+- `limit`: количество рекомендаций (по умолчанию 10)
+- `category`: категория рекомендаций (health, career, love, finance)
+
+#### GET /api/v1/recommendations/user/{user_id}/analytics
+Аналитика пользовательских предпочтений и поведения.
+
+**Ответ**:
+```json
+{
+  "user_id": "user_123",
+  "total_interactions": 156,
+  "favorite_categories": ["love", "career"],
+  "engagement_score": 0.78,
+  "last_active": "2025-08-09T15:30:00Z",
+  "preferences": {
+    "notification_frequency": "daily",
+    "preferred_time": "09:00"
+  }
+}
+```
+
+#### POST /api/v1/recommendations/user/{user_id}/interaction
+Регистрация взаимодействия пользователя с рекомендацией.
+
+**Параметры запроса**:
+```json
+{
+  "recommendation_id": "rec_001",
+  "interaction_type": "like",
+  "feedback": "helpful"
+}
+```
+
+#### GET /api/v1/recommendations/user/{user_id}/seasonal
+Получение сезонных рекомендаций.
+
+#### POST /api/v1/recommendations/ab-test/{user_id}/{test_name}
+Участие в A/B тестировании рекомендательных алгоритмов.
+
+#### POST /api/v1/recommendations/ml/update-clusters
+Обновление ML кластеров для улучшения рекомендаций.
+
+#### GET /api/v1/recommendations/ml/user/{user_id}/preferences
+Получение ML-предсказанных предпочтений пользователя.
+
+#### GET /api/v1/recommendations/ml/user/{user_id}/anomalies
+Обнаружение аномалий в поведении пользователя.
+
+#### GET /api/v1/recommendations/metrics
+Метрики производительности рекомендательной системы.
+
+#### GET /api/v1/recommendations/health
+Проверка здоровья рекомендательной системы.
+
+### 🛡️ Безопасность и GDPR
+
+**Базовый путь**: `/api/v1/security`
+**Требует аутентификации**: Да
+
+#### GET /api/v1/security/user/{user_id}/data-summary
+Получение сводки персональных данных пользователя.
+
+**Ответ**:
+```json
+{
+  "user_id": "user_123",
+  "data_categories": [
+    {
+      "category": "profile_data",
+      "description": "Основная информация профиля",
+      "data_count": 5,
+      "last_updated": "2025-08-09T10:00:00Z"
+    },
+    {
+      "category": "astrological_data",
+      "description": "Астрологические расчеты и предпочтения",
+      "data_count": 23,
+      "last_updated": "2025-08-09T15:30:00Z"
+    }
+  ],
+  "total_data_points": 28,
+  "consent_status": "active",
+  "data_retention_period": "2 years"
+}
+```
+
+#### GET /api/v1/security/user/{user_id}/export
+Экспорт всех данных пользователя в соответствии с GDPR.
+
+**Ответ**: ZIP архив с JSON файлами всех данных пользователя.
+
+#### POST /api/v1/security/user/{user_id}/consent
+Управление согласием на обработку персональных данных.
+
+**Параметры запроса**:
+```json
+{
+  "consent_type": "data_processing",
+  "granted": true,
+  "timestamp": "2025-08-09T10:00:00Z"
+}
+```
+
+#### POST /api/v1/security/user/{user_id}/rectify
+Исправление персональных данных пользователя.
+
+#### POST /api/v1/security/user/{user_id}/delete-request
+Запрос на удаление персональных данных.
+
+#### POST /api/v1/security/user/{user_id}/confirm-deletion
+Подтверждение удаления персональных данных.
+
+#### POST /api/v1/security/user/{user_id}/restrict-processing
+Ограничение обработки персональных данных.
+
+#### GET /api/v1/security/compliance-report
+Отчет о соответствии требованиям GDPR.
+
+#### POST /api/v1/security/cleanup-expired-data
+Очистка истекших персональных данных.
+
+### 🏠 Умный дом и IoT интеграция
+
+**Базовый путь**: `/iot`
+**Требует аутентификации**: Да
+
+#### Управление устройствами
+
+##### POST /iot/devices
+Регистрация нового IoT устройства.
+
+**Параметры запроса**:
+```json
+{
+  "device_id": "smart_light_001",
+  "name": "Умная лампа в гостиной",
+  "device_type": "light",
+  "capabilities": ["brightness", "color", "on_off"],
+  "location": "living_room"
+}
+```
+
+##### GET /iot/devices
+Получение списка всех устройств пользователя.
+
+**Параметры запроса**:
+- `device_type`: фильтр по типу устройства (light, sensor, thermostat)
+
+##### PUT /iot/devices/{device_id}
+Обновление настроек устройства.
+
+##### POST /iot/devices/{device_id}/command
+Отправка команды устройству.
+
+**Параметры запроса**:
+```json
+{
+  "command": "set_brightness",
+  "parameters": {
+    "brightness": 75,
+    "transition_time": 2
+  }
+}
+```
+
+##### GET /iot/devices/{device_id}/capabilities
+Получение возможностей устройства.
+
+##### GET /iot/discover/{protocol}
+Обнаружение устройств по протоколу (zigbee, wifi, bluetooth).
+
+#### Умное освещение
+
+##### POST /iot/lighting/lunar
+Настройка освещения в соответствии с лунными фазами.
+
+**Параметры запроса**:
+```json
+{
+  "device_ids": ["light_001", "light_002"],
+  "lunar_sync": true,
+  "intensity_factor": 0.8
+}
+```
+
+##### POST /iot/lighting/mood
+Настройка освещения по настроению.
+
+##### POST /iot/lighting/sunrise-sunset
+Автоматическое освещение по циклу восход-закат.
+
+##### GET /iot/lighting/state
+Получение текущего состояния освещения.
+
+#### Голосовое управление
+
+##### POST /iot/voice/yandex
+Обработка голосовых команд через Yandex Alice.
+
+##### POST /iot/voice/google
+Обработка голосовых команд через Google Assistant.
+
+##### POST /iot/voice/alexa
+Обработка голосовых команд через Amazon Alexa.
+
+##### GET /iot/voice/suggestions
+Получение предложений голосовых команд.
+
+#### Носимые устройства
+
+##### POST /iot/wearable/sync
+Синхронизация данных с носимых устройств.
+
+##### POST /iot/wearable/notification
+Отправка уведомлений на носимые устройства.
+
+##### GET /iot/wearable/sleep-recommendations
+Рекомендации по сну на основе астрологических данных.
+
+#### Автоматизация
+
+##### POST /iot/automation
+Создание правила автоматизации.
+
+**Параметры запроса**:
+```json
+{
+  "name": "Утренний ритуал",
+  "trigger": {
+    "type": "time",
+    "time": "07:00"
+  },
+  "actions": [
+    {
+      "device_id": "light_001",
+      "command": "turn_on",
+      "parameters": {"brightness": 50}
+    }
+  ],
+  "conditions": [
+    {
+      "type": "lunar_phase",
+      "phase": "waxing_moon"
+    }
+  ]
+}
+```
+
+##### GET /iot/automation
+Получение списка правил автоматизации.
+
+##### POST /iot/automation/morning-ritual
+Создание утреннего ритуала на основе астрологических данных.
+
+##### POST /iot/automation/lunar-phase
+Автоматизация на основе лунных фаз.
+
+#### Аналитика и отчеты
+
+##### GET /iot/analytics/energy
+Аналитика энергопотребления устройств.
+
+##### GET /iot/analytics/wellness
+Аналитика благополучия на основе IoT данных.
+
+##### GET /iot/analytics/automation
+Статистика работы автоматизации.
+
+##### GET /iot/analytics/report
+Комплексный отчет по IoT системе.
+
+### ⚙️ Деплоймент и мониторинг
+
+**Базовый путь**: `/deployment`
+
+#### GET /deployment/status
+Получение статуса развертывания системы.
+
+**Ответ**:
+```json
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "uptime": "5d 12h 30m",
+  "services": {
+    "database": "healthy",
+    "redis": "healthy",
+    "kerykeion": "healthy"
+  },
+  "last_deployment": "2025-08-09T10:00:00Z"
+}
+```
+
+#### GET /deployment/features
+Получение списка feature flags.
+
+#### GET /deployment/features/{feature_name}/metrics
+Метрики использования конкретной функции.
+
+#### PUT /deployment/features/{feature_name}
+Управление feature flag.
+
+#### POST /deployment/features/{feature_name}/advance-phase
+Продвижение функции на следующую фазу развертывания.
+
+#### POST /deployment/features/{feature_name}/emergency-rollback
+Экстренный откат функции.
+
+#### POST /deployment/rollback/manual
+Ручной откат к предыдущей версии.
+
+#### GET /deployment/rollback/history
+История откатов системы.
+
+#### GET /deployment/rollback/statistics
+Статистика откатов.
+
+#### GET /deployment/health-checks
+Результаты проверок здоровья системы.
+
+#### GET /deployment/performance-report
+Отчет о производительности системы.
+
+#### GET /deployment/system-status
+Детальный статус всех компонентов системы.
+
+#### POST /deployment/monitoring/start
+Запуск мониторинга системы.
+
+#### POST /deployment/monitoring/stop
+Остановка мониторинга системы.
+
+#### POST /deployment/user-feedback
+Отправка обратной связи от пользователей.
+
+#### GET /deployment/features/kerykeion/usage
+Статистика использования библиотеки Kerykeion.
+
+#### GET /deployment/alerts/check
+Проверка системных алертов.
+
+### 🌐 Общие endpoints
+
+#### GET /
+Корневой endpoint для проверки работы API.
+
+**Ответ**:
+```json
+{
+  "message": "Astroloh - Multi-Platform Astrological Assistant is running!",
+  "platforms": [
+    "Yandex Alice",
+    "Telegram Bot", 
+    "Google Assistant",
+    "IoT Smart Home"
+  ]
+}
+```
+
+#### GET /health
+Проверка здоровья сервиса.
+
+**Ответ**:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-08-09T16:30:00Z",
+  "version": "1.0.0"
+}
+```
+
+### 🔒 Аутентификация и авторизация
+
+- **JWT токены**: Большинство endpoints требуют JWT токен в заголовке `Authorization: Bearer <token>`
+- **Rate limiting**: Применяется к критическим endpoints (регистрация, вход)
+- **CORS**: Настроен для кросс-доменных запросов
+- **Безопасность**: Все endpoints защищены заголовками безопасности
+
+### 🌍 Поддержка языков
+
+- **Русский**: Основной язык интерфейса и астрологических интерпретаций
+- **Английский**: Поддержка для международных пользователей
+- **Локализация**: Полная поддержка российских часовых поясов и культурных особенностей
+
+### 📊 Коды ответов HTTP
+
+- **200 OK**: Успешный запрос
+- **201 Created**: Ресурс создан
+- **400 Bad Request**: Некорректные параметры запроса
+- **401 Unauthorized**: Требуется аутентификация
+- **403 Forbidden**: Недостаточно прав доступа
+- **404 Not Found**: Ресурс не найден
+- **429 Too Many Requests**: Превышен лимит запросов
+- **500 Internal Server Error**: Внутренняя ошибка сервера
+
+### 🔧 Примеры использования
+
+**Получение дневного гороскопа**:
+```bash
+curl -X GET "https://api.astroloh.com/astrology/horoscope/leo/daily" \
+  -H "Content-Type: application/json"
+```
+
+**Регистрация пользователя**:
+```bash
+curl -X POST "https://api.astroloh.com/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Иван Иванов",
+    "email": "ivan@example.com", 
+    "password": "secure_password123"
+  }'
+```
+
+**Расчет натальной карты**:
+```bash
+curl -X POST "https://api.astroloh.com/astrology/natal-chart" \
+  -H "Authorization: Bearer <your_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "1990-01-01",
+    "time": "12:00",
+    "latitude": 55.7558,
+    "longitude": 37.6176,
+    "timezone": "Europe/Moscow"
+  }'
+```
 
 ## Разработка
 

@@ -6,6 +6,7 @@ import hashlib
 import logging
 import re
 from typing import Any, Dict, List, Tuple
+from app.utils.astro_time_utils import utcnow
 
 from app.models.yandex_models import (
     ProcessedRequest,
@@ -755,9 +756,9 @@ class IntentRecognizer:
                 )
 
         # Извлекаем относительные даты
-        from datetime import date, timedelta
+        from datetime import timedelta
 
-        today = date.today()
+        today = utcnow().date()
 
         if re.search(r"сегодня", text):
             today_str = today.strftime("%d.%m.%Y")

@@ -15,6 +15,7 @@ from app.services.astro_cache_service import astro_cache
 from app.services.deployment_monitor import deployment_monitor
 from app.services.feature_flag_service import feature_flags
 from app.services.performance_monitor import performance_monitor
+from app.utils.astro_time_utils import utcnow, current_timestamp
 
 
 class RollbackTrigger(Enum):
@@ -142,7 +143,7 @@ class RollbackSystem:
             dashboard = await deployment_monitor.get_deployment_dashboard()
 
             backup_data = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": current_timestamp(),
                 "feature_flags": feature_status,
                 "performance_stats": perf_stats,
                 "deployment_dashboard": dashboard,
@@ -153,7 +154,7 @@ class RollbackSystem:
 
             # Store backup in cache for persistence
             cache_result = astro_cache.set(
-                f"system_backup_{int(datetime.now().timestamp())}",
+                f"system_backup_{int(utcnow().timestamp())}",
                 backup_data,
                 ttl=86400 * 7,  # Keep for 7 days
             )
@@ -260,7 +261,7 @@ class RollbackSystem:
     ) -> Optional[RollbackPlan]:
         """Create a rollback plan based on trigger and strategy."""
         try:
-            rollback_id = f"rollback_{int(datetime.now().timestamp())}"
+            rollback_id = f"rollback_{int(utcnow().timestamp())}"
 
             # Determine affected features based on trigger
             affected_features = await self._identify_affected_features(
@@ -413,7 +414,7 @@ class RollbackSystem:
 
     async def execute_rollback(self, plan: RollbackPlan) -> RollbackEvent:
         """Execute a rollback plan."""
-        start_time = datetime.now()
+        start_time = utcnow()
         rollback_event = RollbackEvent(
             rollback_id=plan.rollback_id,
             timestamp=start_time,
@@ -457,7 +458,7 @@ class RollbackSystem:
             rollback_event.success = success
 
             # Calculate recovery time
-            recovery_time = (datetime.now() - start_time).total_seconds()
+            recovery_time = (utcnow() - start_time).total_seconds()
             rollback_event.recovery_time = recovery_time
 
             # Record rollback event
@@ -496,7 +497,7 @@ class RollbackSystem:
             logger.error(f"ROLLBACK_EXECUTION_ERROR: {e}")
             rollback_event.error_message = str(e)
             rollback_event.recovery_time = (
-                datetime.now() - start_time
+                utcnow() - start_time
             ).total_seconds()
             self.rollback_history.append(rollback_event)
             return rollback_event
@@ -616,7 +617,7 @@ class RollbackSystem:
 
     async def _is_circuit_breaker_active(self) -> bool:
         """Check if circuit breaker is preventing rollbacks."""
-        now = datetime.now()
+        now = utcnow()
 
         # Reset counter if more than an hour has passed
         if self.circuit_breaker[
@@ -643,7 +644,7 @@ class RollbackSystem:
 
     async def _update_circuit_breaker(self):
         """Update circuit breaker state after rollback."""
-        now = datetime.now()
+        now = utcnow()
         self.circuit_breaker["last_rollback_time"] = now
         self.circuit_breaker["rollback_count"] += 1
 
@@ -659,7 +660,7 @@ class RollbackSystem:
         )
 
         # Create manual rollback plan
-        rollback_id = f"manual_rollback_{int(datetime.now().timestamp())}"
+        rollback_id = f"manual_rollback_{int(utcnow().timestamp())}"
 
         rollback_steps = [
             {"action": "backup_state", "duration": 10},

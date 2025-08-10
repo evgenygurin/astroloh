@@ -7,6 +7,8 @@ import asyncio
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, Optional
 
+from app.utils.astro_time_utils import utcnow, current_timestamp
+
 from loguru import logger
 
 from app.services.astro_cache_service import astro_cache
@@ -107,7 +109,7 @@ class PrecomputeService:
         """Main background loop for pre-computation tasks."""
         while self.is_running:
             try:
-                current_time = datetime.now()
+                current_time = utcnow()
 
                 # Check each scheduled task
                 for task_name, schedule in self.precompute_schedule.items():
@@ -175,7 +177,7 @@ class PrecomputeService:
         """Pre-compute ephemeris data for the next 7 days."""
         logger.info("PRECOMPUTE_EPHEMERIS_START")
 
-        today = date.today()
+        today = utcnow().date()
         precomputed_count = 0
 
         for i in range(7):  # Next 7 days
@@ -206,7 +208,7 @@ class PrecomputeService:
                     "neptune": {"longitude": 0.0, "speed": 0.006},
                     "pluto": {"longitude": 0.0, "speed": 0.004},
                 },
-                "computed_at": datetime.now().isoformat(),
+                "computed_at": current_timestamp(),
                 "source": "precomputed",
             }
 
@@ -224,7 +226,7 @@ class PrecomputeService:
         precomputed_count = 0
 
         # Generate popular birth date combinations
-        datetime.now().year
+        utcnow().year
 
         # Create representative birth dates for each zodiac sign
         zodiac_dates = [
@@ -292,7 +294,7 @@ class PrecomputeService:
         """Pre-compute lunar phases for the next 30 days."""
         logger.info("PRECOMPUTE_LUNAR_START")
 
-        today = date.today()
+        today = utcnow().date()
         lunar_data = []
 
         # Generate lunar phase data for next 30 days
@@ -433,7 +435,7 @@ class PrecomputeService:
         # This would pre-compute transit forecasts for popular chart configurations
         # For now, we'll create placeholder data
 
-        today = date.today()
+        today = utcnow().date()
         forecast_data = {
             "date_range": f"{today.isoformat()} to {(today + timedelta(days=7)).isoformat()}",
             "popular_transits": [
@@ -450,7 +452,7 @@ class PrecomputeService:
                     "influence": "Emotional discipline and structure",
                 },
             ],
-            "precomputed_at": datetime.now().isoformat(),
+            "precomputed_at": current_timestamp(),
             "source": "precomputed",
         }
 
@@ -466,7 +468,7 @@ class PrecomputeService:
         """Manually trigger pre-computation of all popular data."""
         logger.info("PRECOMPUTE_MANUAL_ALL_START")
 
-        start_time = datetime.now()
+        start_time = utcnow()
         results = {}
 
         tasks = [
@@ -493,14 +495,14 @@ class PrecomputeService:
                 )
                 logger.error(f"PRECOMPUTE_MANUAL_ERROR: {task_name} - {e}")
 
-        elapsed_time = datetime.now() - start_time
+        elapsed_time = utcnow() - start_time
 
         logger.info(f"PRECOMPUTE_MANUAL_ALL_COMPLETE: {elapsed_time}")
 
         return {
             "results": results,
             "elapsed_time_seconds": elapsed_time.total_seconds(),
-            "completed_at": datetime.now().isoformat(),
+            "completed_at": current_timestamp(),
         }
 
     async def get_precompute_status(self) -> Dict[str, Any]:
@@ -534,7 +536,7 @@ class PrecomputeService:
     ) -> datetime:
         """Calculate when a task should run next."""
         if schedule["last_run"] is None:
-            return datetime.now()
+            return utcnow()
 
         return schedule["last_run"] + timedelta(
             hours=schedule["interval_hours"]

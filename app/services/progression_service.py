@@ -4,7 +4,8 @@
 """
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
+from app.utils.astro_time_utils import utcnow
 from typing import Any, Dict, List, Optional
 
 from app.models.transit_models import ProgressedPlanet, ProgressionInterpretation
@@ -64,7 +65,7 @@ class ProgressionService:
             include_interpretation: Включать интерпретацию
         """
         if target_date is None:
-            target_date = date.today()
+            target_date = utcnow().date()
 
         logger.info(f"PROGRESSION_SERVICE_SECONDARY_START: {target_date}")
 

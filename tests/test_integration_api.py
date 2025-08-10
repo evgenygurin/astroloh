@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from app.core.database import get_database
 from app.main import app
+from app.utils.astro_time_utils import utcnow
 
 
 class MockHelpers:
@@ -28,7 +29,7 @@ class MockHelpers:
         mock_user.id = uuid.uuid4()
         mock_user.yandex_user_id = user_id
         mock_user.data_consent = data_consent
-        mock_user.last_accessed = datetime.now(timezone.utc)
+        mock_user.last_accessed = utcnow()
         mock_user.zodiac_sign = zodiac_sign
         mock_user.gender = gender
         mock_user.encrypted_name = b"encrypted"

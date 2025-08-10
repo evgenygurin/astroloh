@@ -5,8 +5,10 @@
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict
+
+from app.utils.astro_time_utils import utcnow
 
 from app.core.logging_config import log_ai_operation, log_dialog_flow
 from app.models.yandex_models import (
@@ -132,7 +134,7 @@ class DialogHandler:
 
         # Создаем correlation ID для диалога (если не передан из webhook)
         dialog_correlation_id = str(uuid.uuid4())
-        start_time = datetime.now()
+        start_time = utcnow()
 
         # Контекст логирования для диалога
         log_context = {
@@ -247,12 +249,12 @@ class DialogHandler:
                 extra={**log_context, "step": "intent_recognition"},
             )
 
-            intent_start_time = datetime.now()
+            intent_start_time = utcnow()
             processed_request = self.intent_recognizer.recognize_intent(
                 clean_input, user_context
             )
             intent_processing_time = (
-                datetime.now() - intent_start_time
+                utcnow() - intent_start_time
             ).total_seconds()
 
             logger.info(
@@ -274,7 +276,7 @@ class DialogHandler:
                 extra={**log_context, "step": "conversation_processing"},
             )
 
-            conversation_start_time = datetime.now()
+            conversation_start_time = utcnow()
             conversation_result = (
                 await self.conversation_manager.process_conversation(
                     user_id=request.session.user_id,
@@ -283,7 +285,7 @@ class DialogHandler:
                 )
             )
             conversation_processing_time = (
-                datetime.now() - conversation_start_time
+                utcnow() - conversation_start_time
             ).total_seconds()
 
             if (
@@ -319,7 +321,7 @@ class DialogHandler:
                 extra={**log_context, "step": "response_generation"},
             )
 
-            response_start_time = datetime.now()
+            response_start_time = utcnow()
             response = await self._generate_contextual_response(
                 dialog_state,
                 response_context,
@@ -327,7 +329,7 @@ class DialogHandler:
                 request.session,
             )
             response_generation_time = (
-                datetime.now() - response_start_time
+                utcnow() - response_start_time
             ).total_seconds()
 
             logger.info(
@@ -863,7 +865,7 @@ class DialogHandler:
                 # Определяем тип даты на основе контекста запроса
                 from datetime import date
 
-                current_date = date.today()
+                current_date = utcnow().date()
 
                 # Если дата в будущем или сегодня, это дата прогноза
                 if parsed_date >= current_date:
@@ -907,7 +909,7 @@ class DialogHandler:
                     logger.info(
                         f"Starting AI horoscope generation for {zodiac_sign} on {parsed_date.isoformat()}"
                     )
-                    ai_start_time = datetime.now()
+                    ai_start_time = utcnow()
                     try:
                         horoscope = await self.ai_horoscope_service.generate_enhanced_horoscope(
                             zodiac_sign=zodiac_sign,
@@ -916,7 +918,7 @@ class DialogHandler:
                             forecast_date=parsed_date,  # Передаем дату прогноза
                         )
                         ai_duration = (
-                            datetime.now() - ai_start_time
+                            utcnow() - ai_start_time
                         ).total_seconds()
                         ai_generated = (
                             horoscope.get("ai_generated", False)
@@ -932,7 +934,7 @@ class DialogHandler:
                         )
                     except Exception as e:
                         ai_duration = (
-                            datetime.now() - ai_start_time
+                            utcnow() - ai_start_time
                         ).total_seconds()
                         logger.error(f"AI_HOROSCOPE_ERROR: {e}")
 
@@ -978,7 +980,7 @@ class DialogHandler:
                     logger.info(
                         f"Starting AI horoscope generation for {zodiac_sign}"
                     )
-                    ai_start_time = datetime.now()
+                    ai_start_time = utcnow()
                     try:
                         horoscope = await self.ai_horoscope_service.generate_enhanced_horoscope(
                             zodiac_sign=zodiac_sign,
@@ -986,7 +988,7 @@ class DialogHandler:
                             period=HoroscopePeriod.DAILY,
                         )
                         ai_duration = (
-                            datetime.now() - ai_start_time
+                            utcnow() - ai_start_time
                         ).total_seconds()
                         ai_generated = (
                             horoscope.get("ai_generated", False)
@@ -1002,7 +1004,7 @@ class DialogHandler:
                         )
                     except Exception as e:
                         ai_duration = (
-                            datetime.now() - ai_start_time
+                            utcnow() - ai_start_time
                         ).total_seconds()
                         logger.error(f"AI horoscope generation failed: {e}")
 
@@ -1091,12 +1093,12 @@ class DialogHandler:
             logger.info(
                 f"Starting AI compatibility analysis for {sign1} + {sign2}"
             )
-            ai_start_time = datetime.now()
+            ai_start_time = utcnow()
             try:
                 compatibility = await self.ai_horoscope_service.generate_compatibility_analysis(
                     sign1, sign2, use_ai=True
                 )
-                ai_duration = (datetime.now() - ai_start_time).total_seconds()
+                ai_duration = (utcnow() - ai_start_time).total_seconds()
 
                 log_ai_operation(
                     operation="compatibility",
@@ -1105,7 +1107,7 @@ class DialogHandler:
                     duration=ai_duration,
                 )
             except Exception as e:
-                ai_duration = (datetime.now() - ai_start_time).total_seconds()
+                ai_duration = (utcnow() - ai_start_time).total_seconds()
                 self.logger.error(f"AI compatibility analysis failed: {e}")
 
                 log_ai_operation(
@@ -1275,7 +1277,7 @@ class DialogHandler:
             from datetime import datetime
 
             # Получаем информацию о сегодняшнем лунном дне
-            today = datetime.now()
+            today = utcnow()
             logger.info(
                 f"INTENT_LUNAR_CALENDAR_CALCULATION: date={today.date()}"
             )
@@ -1592,7 +1594,7 @@ class DialogHandler:
             from datetime import date
 
             birth_date = date.fromisoformat(user_context.birth_date)
-            current_year = date.today().year
+            current_year = utcnow().date().year
             logger.info(
                 f"INTENT_SOLAR_RETURN_CALCULATION_START: birth_date={birth_date}, year={current_year}"
             )
@@ -1637,7 +1639,7 @@ class DialogHandler:
             from datetime import date
 
             birth_date = date.fromisoformat(user_context.birth_date)
-            current_date = date.today()
+            current_date = utcnow().date()
             logger.info(
                 f"INTENT_LUNAR_RETURN_CALCULATION_START: birth_date={birth_date}, month={current_date.month}, year={current_date.year}"
             )
@@ -2142,7 +2144,7 @@ class DialogHandler:
                 name="Вы",
                 birth_date=datetime.fromisoformat(user_context.birth_date)
                 if user_context.birth_date
-                else datetime.now(),
+                else utcnow(),
                 birth_time=datetime.fromisoformat(user_context.birth_time)
                 if user_context.birth_time
                 else None,
@@ -2156,7 +2158,7 @@ class DialogHandler:
                     user_context.partner_birth_date
                 )
                 if user_context.partner_birth_date
-                else datetime.now(),
+                else utcnow(),
                 birth_time=None,  # Пока не собираем время партнера
                 birth_place=None,  # Пока не собираем место партнера
                 zodiac_sign=user_context.partner_sign,

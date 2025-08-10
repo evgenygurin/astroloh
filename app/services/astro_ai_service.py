@@ -4,7 +4,9 @@ Provides sophisticated astrological consultations using professional-grade calcu
 """
 
 import logging
-from datetime import date, datetime
+from datetime import date
+
+from app.utils.astro_time_utils import current_timestamp, utcnow
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -79,7 +81,9 @@ class AstroAIService:
         Returns:
             Complete natal chart interpretation
         """
-        logger.info(f"ASTRO_AI_NATAL_START: {name}, focus={consultation_focus}")
+        logger.info(
+            f"ASTRO_AI_NATAL_START: {name}, focus={consultation_focus}"
+        )
 
         try:
             # Get comprehensive natal chart data from Kerykeion
@@ -127,7 +131,7 @@ class AstroAIService:
                 "consultation_type": ConsultationType.NATAL_CHART.value,
                 "service_info": {
                     "kerykeion_used": "error" not in chart_data,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": current_timestamp(),
                 },
             }
 
@@ -144,7 +148,9 @@ class AstroAIService:
         """Enhances chart data with AI-friendly analysis"""
         try:
             enhanced = {
-                "planetary_strengths": self._analyze_planetary_strengths(chart_data),
+                "planetary_strengths": self._analyze_planetary_strengths(
+                    chart_data
+                ),
                 "dominant_elements": self._get_dominant_elements(chart_data),
                 "key_aspects": self._identify_key_aspects(chart_data),
                 "house_emphasis": self._analyze_house_emphasis(chart_data),
@@ -158,7 +164,9 @@ class AstroAIService:
                 if subject:
                     enhanced[
                         "arabic_parts"
-                    ] = self.kerykeion_service.calculate_arabic_parts_extended(subject)
+                    ] = self.kerykeion_service.calculate_arabic_parts_extended(
+                        subject
+                    )
 
             return enhanced
 
@@ -231,7 +239,9 @@ class AstroAIService:
                 sign = planet_data.get("sign", "")
                 # Convert English sign names to Russian for lookup
                 sign_russian = self._get_russian_sign(sign)
-                dignity_score = dignity_scores[planet_name].get(sign_russian, 0)
+                dignity_score = dignity_scores[planet_name].get(
+                    sign_russian, 0
+                )
 
                 # Factor in aspects and house position
                 house = planet_data.get("house")
@@ -275,7 +285,9 @@ class AstroAIService:
 
         return house_strengths.get(planet, {}).get(house, 0)
 
-    def _get_dominant_elements(self, chart_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_dominant_elements(
+        self, chart_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Analyzes elemental balance"""
         element_dist = chart_data.get("element_distribution", {})
         quality_dist = chart_data.get("quality_distribution", {})
@@ -286,10 +298,12 @@ class AstroAIService:
 
         # Calculate percentages and find dominant element/quality
         element_percentages = {
-            elem: count / total_planets * 100 for elem, count in element_dist.items()
+            elem: count / total_planets * 100
+            for elem, count in element_dist.items()
         }
         quality_percentages = {
-            qual: count / total_planets * 100 for qual, count in quality_dist.items()
+            qual: count / total_planets * 100
+            for qual, count in quality_dist.items()
         }
 
         dominant_element = (
@@ -308,10 +322,14 @@ class AstroAIService:
             "quality_distribution": quality_percentages,
             "dominant_element": dominant_element,
             "dominant_quality": dominant_quality,
-            "element_balance": self._assess_elemental_balance(element_percentages),
+            "element_balance": self._assess_elemental_balance(
+                element_percentages
+            ),
         }
 
-    def _assess_elemental_balance(self, element_percentages: Dict[str, float]) -> str:
+    def _assess_elemental_balance(
+        self, element_percentages: Dict[str, float]
+    ) -> str:
         """Assesses the balance of elements"""
         if not element_percentages:
             return "unknown"
@@ -329,7 +347,9 @@ class AstroAIService:
         else:
             return "slightly_imbalanced"
 
-    def _identify_key_aspects(self, chart_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _identify_key_aspects(
+        self, chart_data: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Identifies the most important aspects"""
         aspects = chart_data.get("aspects", [])
         if not aspects:
@@ -351,7 +371,9 @@ class AstroAIService:
 
         return key_aspects
 
-    def _analyze_house_emphasis(self, chart_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_house_emphasis(
+        self, chart_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Analyzes which houses are emphasized"""
         planets = chart_data.get("planets", {})
         house_counts = {}
@@ -374,7 +396,9 @@ class AstroAIService:
             else None,
         }
 
-    def _identify_chart_patterns(self, chart_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _identify_chart_patterns(
+        self, chart_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Identifies chart patterns"""
         # Use existing chart shape analysis
         chart_shape = chart_data.get("chart_shape", {})
@@ -390,7 +414,9 @@ class AstroAIService:
 
         return patterns
 
-    def _detect_stelliums(self, planets: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _detect_stelliums(
+        self, planets: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Detects stelliums (3+ planets in same sign or house)"""
         sign_groups = {}
         house_groups = {}
@@ -505,13 +531,19 @@ class AstroAIService:
             )
 
             if not ai_response or "error" in ai_response:
-                logger.error("ASTRO_AI_GPT_ERROR: Failed to generate AI response")
+                logger.error(
+                    "ASTRO_AI_GPT_ERROR: Failed to generate AI response"
+                )
                 return {"error": "AI generation failed"}
 
             # Process and structure the response
             interpretation = {
-                "summary": ai_response.get("text", "")[:800],  # Limit for Alice
-                "key_insights": self._extract_key_insights(ai_response.get("text", "")),
+                "summary": ai_response.get("text", "")[
+                    :800
+                ],  # Limit for Alice
+                "key_insights": self._extract_key_insights(
+                    ai_response.get("text", "")
+                ),
                 "recommendations": self._extract_recommendations(
                     ai_response.get("text", "")
                 ),
@@ -520,8 +552,10 @@ class AstroAIService:
             }
 
             # Apply content filtering
-            filtered_content = await ai_content_filter.filter_astrological_content(
-                interpretation["summary"], ContentSafetyLevel.MODERATE
+            filtered_content = (
+                await ai_content_filter.filter_astrological_content(
+                    interpretation["summary"], ContentSafetyLevel.MODERATE
+                )
             )
 
             if filtered_content.get("is_safe", True):
@@ -529,7 +563,9 @@ class AstroAIService:
                     "filtered_text", interpretation["summary"]
                 )
             else:
-                logger.warning("ASTRO_AI_CONTENT_FILTERED: Unsafe content detected")
+                logger.warning(
+                    "ASTRO_AI_CONTENT_FILTERED: Unsafe content detected"
+                )
                 interpretation[
                     "summary"
                 ] = "Астрологический анализ требует дополнительной проверки"
@@ -575,7 +611,10 @@ class AstroAIService:
             key_aspects = enhanced_chart["key_aspects"][:3]  # Top 3
             if key_aspects:
                 aspects_text = "; ".join(
-                    [f"{asp['planets']} {asp['aspect']}" for asp in key_aspects]
+                    [
+                        f"{asp['planets']} {asp['aspect']}"
+                        for asp in key_aspects
+                    ]
                 )
                 prompt_parts.append(f"Ключевые аспекты: {aspects_text}")
 
@@ -583,7 +622,9 @@ class AstroAIService:
         if "life_themes" in enhanced_chart:
             themes = enhanced_chart["life_themes"][:3]  # Top 3
             if themes:
-                prompt_parts.append(f"Основные темы жизни: {', '.join(themes)}")
+                prompt_parts.append(
+                    f"Основные темы жизни: {', '.join(themes)}"
+                )
 
         # Add focus area if specified
         if focus:
@@ -620,7 +661,8 @@ class AstroAIService:
         for sentence in sentences[:5]:  # First 5 sentences
             sentence = sentence.strip()
             if len(sentence) > 20 and (
-                "сильный" in sentence.lower() or "особенность" in sentence.lower()
+                "сильный" in sentence.lower()
+                or "особенность" in sentence.lower()
             ):
                 insights.append(sentence + ".")
 
@@ -651,22 +693,24 @@ class AstroAIService:
         timezone: str,
     ) -> Dict[str, Any]:
         """Gets basic chart data when Kerykeion fails"""
-        from app.services.astrology_calculator import AstrologyCalculator
-
-        calc = AstrologyCalculator()
-        birth_date = birth_time.date()
-        zodiac_sign = calc.get_zodiac_sign_from_date(birth_date)
-
-        return {
-            "name": name,
-            "birth_info": {
-                "date": birth_date.isoformat(),
-                "time": birth_time.strftime("%H:%M"),
-            },
-            "zodiac_sign": zodiac_sign.value,
-            "data_source": "fallback",
-            "error": "Kerykeion unavailable",
-        }
+        try:
+            # Use basic astrology calculator as fallback
+            basic_chart = (
+                await self.astrology_calculator.calculate_natal_chart(
+                    birth_time,
+                    birth_place["latitude"],
+                    birth_place["longitude"],
+                )
+            )
+            return {
+                "planets": basic_chart.get("planets", {}),
+                "houses": basic_chart.get("houses", {}),
+                "aspects": basic_chart.get("aspects", []),
+                "data_source": "fallback_calculator",
+            }
+        except Exception as e:
+            logger.error(f"FALLBACK_CHART_ERROR: {e}")
+            return {"data_source": "minimal_fallback", "error": str(e)}
 
     async def generate_compatibility_analysis(
         self,
@@ -704,8 +748,10 @@ class AstroAIService:
 
             # Calculate detailed synastry using Kerykeion
             if self.kerykeion_service.is_available():
-                synastry_data = self.kerykeion_service.calculate_compatibility_detailed(
-                    chart1, chart2
+                synastry_data = (
+                    self.kerykeion_service.calculate_compatibility_detailed(
+                        chart1, chart2
+                    )
                 )
             else:
                 synastry_data = {"error": "Kerykeion unavailable"}
@@ -727,7 +773,7 @@ class AstroAIService:
                 "ai_analysis": ai_analysis,
                 "consultation_type": ConsultationType.COMPATIBILITY.value,
                 "data_source": "kerykeion_synastry",
-                "generation_timestamp": datetime.now().isoformat(),
+                "generation_timestamp": current_timestamp(),
             }
 
             logger.info("ASTRO_AI_COMPATIBILITY_SUCCESS")
@@ -765,16 +811,18 @@ class AstroAIService:
             if self.kerykeion_service.is_available():
                 current_transits = self.transit_service.get_current_transits(
                     natal_chart_data,
-                    datetime.now(),
+                    utcnow(),
                     include_minor_aspects=True,
                 )
                 period_forecast = self.transit_service.get_period_forecast(
                     natal_chart_data, days=forecast_period
                 )
-                important_transits = self.transit_service.get_important_transits(
-                    natal_chart_data,
-                    lookback_days=7,
-                    lookahead_days=forecast_period,
+                important_transits = (
+                    self.transit_service.get_important_transits(
+                        natal_chart_data,
+                        lookback_days=7,
+                        lookahead_days=forecast_period,
+                    )
                 )
             else:
                 # Fallback to basic transit calculation
@@ -803,7 +851,7 @@ class AstroAIService:
                 "ai_forecast": ai_forecast,
                 "consultation_type": ConsultationType.TRANSIT_ANALYSIS.value,
                 "data_source": "enhanced_transits",
-                "generation_timestamp": datetime.now().isoformat(),
+                "generation_timestamp": current_timestamp(),
             }
 
             logger.info("ASTRO_AI_TRANSIT_SUCCESS")
@@ -856,7 +904,7 @@ class AstroAIService:
                 "advice": ai_advice,
                 "context_used": context,
                 "data_source": "personalized_ai",
-                "generation_timestamp": datetime.now().isoformat(),
+                "generation_timestamp": current_timestamp(),
             }
 
             logger.info(f"ASTRO_AI_ADVICE_SUCCESS: {consultation_type.value}")
@@ -966,10 +1014,14 @@ class AstroAIService:
             return None
 
         # Apply content filtering and safety validation
-        validation = ai_content_filter.validate_content(raw_response, "general")
+        validation = ai_content_filter.validate_content(
+            raw_response, "general"
+        )
 
         if validation["safety_level"] == ContentSafetyLevel.BLOCKED:
-            logger.error(f"ASTRO_AI_NATAL_CONTENT_BLOCKED: {validation['issues']}")
+            logger.error(
+                f"ASTRO_AI_NATAL_CONTENT_BLOCKED: {validation['issues']}"
+            )
             return None
 
         # Use filtered content if available, otherwise original
@@ -1018,7 +1070,9 @@ class AstroAIService:
 
         overall_score = synastry_data.get("overall_score", 50)
         sun_moon_connections = synastry_data.get("sun_moon_connections", [])
-        venus_mars_connections = synastry_data.get("venus_mars_connections", [])
+        venus_mars_connections = synastry_data.get(
+            "venus_mars_connections", []
+        )
 
         prompt_parts = [
             f"Проанализируй совместимость для {relationship_type} отношений:",
@@ -1119,7 +1173,9 @@ class AstroAIService:
 
         # Add period forecast information
         if period_forecast.get("daily_forecasts"):
-            upcoming_events = period_forecast.get("upcoming_key_transits", [])[:2]
+            upcoming_events = period_forecast.get("upcoming_key_transits", [])[
+                :2
+            ]
             if upcoming_events:
                 prompt_parts.extend(
                     [
@@ -1245,7 +1301,9 @@ class AstroAIService:
         if user_context.get("mood"):
             prompt_parts.append(f"Настроение: {user_context['mood']}")
         if user_context.get("challenges"):
-            prompt_parts.append(f"Текущие вызовы: {user_context['challenges']}")
+            prompt_parts.append(
+                f"Текущие вызовы: {user_context['challenges']}"
+            )
 
         prompt_parts.extend(
             [
@@ -1281,8 +1339,12 @@ class AstroAIService:
             ConsultationType.SPIRITUAL_GUIDANCE: "духовность",
         }
 
-        filter_type = consultation_type_mapping.get(consultation_type, "general")
-        validation = ai_content_filter.validate_content(raw_response, filter_type)
+        filter_type = consultation_type_mapping.get(
+            consultation_type, "general"
+        )
+        validation = ai_content_filter.validate_content(
+            raw_response, filter_type
+        )
 
         if validation["safety_level"] == ContentSafetyLevel.BLOCKED:
             logger.error(
@@ -1312,12 +1374,16 @@ class AstroAIService:
         self, person_data: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Get or calculate natal chart data for a person"""
-        if not person_data.get("birth_datetime") or not person_data.get("birth_place"):
+        if not person_data.get("birth_datetime") or not person_data.get(
+            "birth_place"
+        ):
             logger.warning("ASTRO_AI_INSUFFICIENT_DATA: Missing birth data")
             return None
 
         try:
-            birth_datetime = datetime.fromisoformat(person_data["birth_datetime"])
+            birth_datetime = datetime.fromisoformat(
+                person_data["birth_datetime"]
+            )
             birth_place = person_data["birth_place"]
 
             return self.kerykeion_service.get_full_natal_chart_data(
@@ -1336,7 +1402,9 @@ class AstroAIService:
     ) -> Dict[str, Any]:
         """Generate basic natal interpretation without Kerykeion"""
         # Calculate zodiac sign from birth date
-        zodiac_sign = self.astro_calculator.get_zodiac_sign_from_date(birth_date)
+        zodiac_sign = self.astro_calculator.get_zodiac_sign_from_date(
+            birth_date
+        )
 
         # Generate basic AI interpretation
         system_prompt = """Ты — астролог, создающий базовые характеристики личности по знаку зодиака.
@@ -1370,7 +1438,7 @@ class AstroAIService:
             else str(zodiac_sign),
             "ai_interpretation": ai_interpretation,
             "data_source": "basic_zodiac",
-            "generation_timestamp": datetime.now().isoformat(),
+            "generation_timestamp": current_timestamp(),
         }
 
     async def _generate_basic_compatibility(
@@ -1386,16 +1454,22 @@ class AstroAIService:
 
         if not sign1 and person1_data.get("birth_date"):
             birth_date1 = date.fromisoformat(person1_data["birth_date"])
-            sign1 = self.astro_calculator.get_zodiac_sign_from_date(birth_date1)
+            sign1 = self.astro_calculator.get_zodiac_sign_from_date(
+                birth_date1
+            )
 
         if not sign2 and person2_data.get("birth_date"):
             birth_date2 = date.fromisoformat(person2_data["birth_date"])
-            sign2 = self.astro_calculator.get_zodiac_sign_from_date(birth_date2)
+            sign2 = self.astro_calculator.get_zodiac_sign_from_date(
+                birth_date2
+            )
 
         # Get basic compatibility score
         if hasattr(self.astro_calculator, "calculate_compatibility_score"):
-            compatibility_data = self.astro_calculator.calculate_compatibility_score(
-                sign1, sign2
+            compatibility_data = (
+                self.astro_calculator.calculate_compatibility_score(
+                    sign1, sign2
+                )
             )
         else:
             compatibility_data = {
@@ -1418,7 +1492,7 @@ class AstroAIService:
             "compatibility_score": compatibility_data.get("total_score", 70),
             "ai_analysis": ai_analysis,
             "data_source": "basic_signs",
-            "generation_timestamp": datetime.now().isoformat(),
+            "generation_timestamp": current_timestamp(),
         }
 
     async def is_enhanced_features_available(self) -> Dict[str, bool]:
@@ -1440,7 +1514,7 @@ class AstroAIService:
         return {
             "service_name": "AstroAIService",
             "version": "1.0.0",
-            "initialization_time": datetime.now().isoformat(),
+            "initialization_time": current_timestamp(),
             "feature_availability": availability,
             "supported_consultations": [ct.value for ct in ConsultationType],
             "kerykeion_capabilities": self.kerykeion_service.get_service_capabilities()

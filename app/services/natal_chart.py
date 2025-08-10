@@ -5,6 +5,7 @@
 
 import logging
 from datetime import date, datetime, time, timedelta
+from app.utils.astro_time_utils import utcnow
 from typing import Any, Dict, List, Optional
 
 import pytz
@@ -644,7 +645,7 @@ class NatalChartCalculator:
         """Вычисляет прогрессии натальной карты."""
 
         if progression_date is None:
-            progression_date = date.today()
+            progression_date = utcnow().date()
 
         if birth_time is None:
             birth_time = time(12, 0)
