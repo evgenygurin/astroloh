@@ -26,6 +26,8 @@ from app.api.yandex_dialogs import router as yandex_router
 from app.core.config import settings
 from app.core.database import close_database, init_database
 from app.core.sentry import init_sentry
+from app.core.sentry_async_support import init_sentry_async
+from app.core.sentry_database_monitoring import SQLAlchemyMonitor
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -47,9 +49,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         )
 
         # HTTP Strict Transport Security (HSTS)
-        response.headers[
-            "Strict-Transport-Security"
-        ] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
 
         # X-Content-Type-Options
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -142,8 +144,11 @@ async def health_check() -> dict[str, str]:
 @app.on_event("startup")
 async def startup_event() -> None:
     """Инициализация при запуске приложения."""
-    # Инициализируем Sentry первым
+    # Инициализируем Sentry первым (синхронная инициализация)
     init_sentry()
+    
+    # Затем инициализируем асинхронную поддержку Sentry
+    await init_sentry_async()
 
     # Импортируем и настраиваем логирование
     from app.core.logging_config import log_startup_info, setup_logging
@@ -160,10 +165,20 @@ async def startup_event() -> None:
         if settings.DATABASE_URL:
             await init_database()
             logger.info("Database initialized successfully")
+            
+            # Настройка расширенного мониторинга базы данных
+            try:
+                from app.core.database import engine
+                
+                # Инициализируем мониторинг SQLAlchemy
+                db_monitor = SQLAlchemyMonitor()
+                db_monitor.setup_engine_monitoring(engine)
+                logger.info("Database monitoring initialized successfully")
+                
+            except Exception as e:
+                logger.warning(f"Failed to initialize database monitoring: {e}")
         else:
-            logger.warning(
-                "DATABASE_URL not configured, running without database"
-            )
+            logger.warning("DATABASE_URL not configured, running without database")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
 
@@ -175,14 +190,10 @@ async def startup_event() -> None:
 
             logger.info("Initializing deployment and performance systems...")
             init_result = await startup_manager.initialize_performance_systems(
-                enable_cache_warmup=os.getenv("DISABLE_BACKGROUND_TASKS")
+                enable_cache_warmup=os.getenv("DISABLE_BACKGROUND_TASKS") != "true",
+                enable_background_monitoring=os.getenv("DISABLE_PERFORMANCE_MONITORING")
                 != "true",
-                enable_background_monitoring=os.getenv(
-                    "DISABLE_PERFORMANCE_MONITORING"
-                )
-                != "true",
-                enable_precomputation=os.getenv("DISABLE_PRECOMPUTATION")
-                != "true",
+                enable_precomputation=os.getenv("DISABLE_PRECOMPUTATION") != "true",
             )
 
             if init_result["success"]:
