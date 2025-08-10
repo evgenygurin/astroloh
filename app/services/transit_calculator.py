@@ -4,7 +4,7 @@
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from app.utils.astro_time_utils import utcnow
 from typing import Any, Dict, List, Optional
 
