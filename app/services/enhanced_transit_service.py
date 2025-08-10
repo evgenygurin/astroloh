@@ -2052,5 +2052,5 @@ class TransitService:
         return {
             "cache_type_cleared": cache_type,
             "entries_cleared": cleared_count,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": current_timestamp(),
         }

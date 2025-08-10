@@ -219,7 +219,7 @@ async def get_phase_recommendations(
         from datetime import datetime
 
         recommendations = lunar_service.get_lunar_recommendations(
-            activity_type=phase_name, target_date=datetime.now()
+            activity_type=phase_name, target_date=utcnow()
         )
 
         return {
@@ -256,7 +256,7 @@ async def get_lunar_day_info(
         # Get lunar day information (simplified)
         from datetime import datetime
 
-        day_info = lunar_service.get_lunar_day_info(datetime.now())
+        day_info = lunar_service.get_lunar_day_info(utcnow())
 
         return {
             "lunar_day": day,

@@ -496,8 +496,7 @@ class HybridRecommendationEngine:
 
         # Анализируем временные паттерны
         time_preferences = self._analyze_time_patterns(interactions)
-        current_hour = datetime.utcnow().hour
-
+        
         # Корректируем скоры на основе временных предпочтений
         current_hour = utcnow().hour
         for rec in recommendations:
