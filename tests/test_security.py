@@ -15,6 +15,7 @@ from app.services.encryption import (
 )
 from app.services.gdpr_compliance import GDPRComplianceService
 from app.services.user_manager import SessionManager, UserManager
+from app.utils.astro_time_utils import utcnow
 
 
 class TestEncryptionService:
@@ -133,8 +134,8 @@ class TestSecurityUtils:
 
     def test_session_expiry_check(self):
         """Test session expiry checking."""
-        expired_time = datetime.utcnow() - timedelta(hours=1)
-        valid_time = datetime.utcnow() + timedelta(hours=1)
+        expired_time = utcnow() - timedelta(hours=1)
+        valid_time = utcnow() + timedelta(hours=1)
 
         assert SecurityUtils.is_session_expired(expired_time)
         assert not SecurityUtils.is_session_expired(valid_time)
@@ -142,7 +143,7 @@ class TestSecurityUtils:
     def test_generate_session_expiry(self):
         """Test session expiry generation."""
         expiry = SecurityUtils.generate_session_expiry(24)
-        expected = datetime.utcnow() + timedelta(hours=24)
+        expected = utcnow() + timedelta(hours=24)
 
         # Allow 1 minute tolerance for test execution time
         assert abs((expiry - expected).total_seconds()) < 60
@@ -208,8 +209,8 @@ class TestDataProtectionManager:
         encryption = EncryptionService("test-secret-key-32-characters!!")
         manager = DataProtectionManager(encryption)
 
-        old_date = datetime.utcnow() - timedelta(days=400)
-        recent_date = datetime.utcnow() - timedelta(days=100)
+        old_date = utcnow() - timedelta(days=400)
+        recent_date = utcnow() - timedelta(days=100)
 
         assert manager.should_delete_user_data(old_date, 365)
         assert not manager.should_delete_user_data(recent_date, 365)
@@ -344,7 +345,7 @@ class TestSessionManager:
     async def test_get_active_session(self):
         """Test getting an active session."""
         mock_session = MagicMock()
-        mock_session.expires_at = datetime.utcnow() + timedelta(hours=1)
+        mock_session.expires_at = utcnow() + timedelta(hours=1)
 
         mock_db = MagicMock()
         # Configure async methods
@@ -369,7 +370,7 @@ class TestSessionManager:
     async def test_get_expired_session(self):
         """Test getting an expired session."""
         mock_session = MagicMock()
-        mock_session.expires_at = datetime.utcnow() - timedelta(hours=1)
+        mock_session.expires_at = utcnow() - timedelta(hours=1)
         mock_session.is_active = True
 
         mock_db = MagicMock()
@@ -420,8 +421,8 @@ class TestGDPRCompliance:
         mock_user = MagicMock()
         mock_user.id = uuid.uuid4()
         mock_user.yandex_user_id = "test_id"
-        mock_user.created_at = datetime.utcnow()
-        mock_user.last_accessed = datetime.utcnow()
+        mock_user.created_at = utcnow()
+        mock_user.last_accessed = utcnow()
         mock_user.data_consent = True
         mock_user.data_retention_days = 365
         mock_user.zodiac_sign = "Taurus"
@@ -439,7 +440,7 @@ class TestGDPRCompliance:
 
         mock_activity_result = MagicMock()
         mock_activity_result.scalar_one_or_none.return_value = (
-            datetime.utcnow()
+            utcnow()
         )
 
         # Configure side_effect to return different results for each call
