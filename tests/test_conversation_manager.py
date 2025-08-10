@@ -9,6 +9,7 @@ import pytest
 
 from app.models.database import User
 from app.services.conversation_manager import ConversationManager
+from app.utils.astro_time_utils import utcnow
 
 
 class TestConversationManager:
@@ -47,7 +48,7 @@ class TestConversationManager:
         mock_user = User(yandex_user_id="test_user_id", zodiac_sign="leo")
         # Set attributes manually since User doesn't have these in constructor
         mock_user.conversation_count = 5
-        mock_user.last_interaction = datetime.now()
+        mock_user.last_interaction = utcnow()
         mock_user.preferences = {"theme": "dark"}
         mock_user_manager.get_user_by_yandex_id.return_value = mock_user
 
@@ -117,7 +118,7 @@ class TestConversationManager:
 
     def test_calculate_personalization_level_with_recent_interaction(self):
         """Test personalization level with recent interaction."""
-        recent_interaction = datetime.now() - timedelta(hours=1)
+        recent_interaction = utcnow() - timedelta(hours=1)
         level = self.conversation_manager.calculate_personalization_level(
             10, recent_interaction
         )
@@ -168,15 +169,15 @@ class TestConversationManager:
         mock_conversations = [
             {
                 "intent": "horoscope",
-                "timestamp": datetime.now() - timedelta(days=1),
+                "timestamp": utcnow() - timedelta(days=1),
             },
             {
                 "intent": "compatibility",
-                "timestamp": datetime.now() - timedelta(days=2),
+                "timestamp": utcnow() - timedelta(days=2),
             },
             {
                 "intent": "horoscope",
-                "timestamp": datetime.now() - timedelta(days=3),
+                "timestamp": utcnow() - timedelta(days=3),
             },
         ]
 

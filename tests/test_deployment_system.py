@@ -3,12 +3,12 @@ Test deployment system functionality.
 Tests feature flags, deployment monitoring, and rollback automation.
 """
 
-from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from app.services.deployment_monitor import HealthStatus, deployment_monitor
+from app.utils.astro_time_utils import utcnow, current_timestamp
 from app.services.feature_flag_service import (
     FeatureRolloutPhase,
     KerykeionFeatureFlags,
@@ -278,11 +278,32 @@ class TestRollbackSystem:
         assert plan.rollback_id in rollback_system.active_rollbacks
 
     @patch("app.services.rollback_system.feature_flags")
+    @patch("app.services.rollback_system.asyncio.sleep")
+    @patch("app.services.rollback_system.deployment_monitor")
+    @patch("app.services.rollback_system.astro_cache")
     async def test_manual_rollback(
-        self, mock_feature_flags, clean_rollback_system
+        self,
+        mock_cache,
+        mock_deployment_monitor,
+        mock_sleep,
+        mock_feature_flags,
+        clean_rollback_system,
     ):
         """Test manual rollback execution."""
         mock_feature_flags.emergency_rollback.return_value = True
+        mock_sleep.return_value = None  # Skip all sleep delays
+
+        # Mock deployment monitor dashboard calls
+        mock_deployment_monitor.get_deployment_dashboard.return_value = {
+            "overall_health": {"score": 80, "status": "good"},
+            "health_checks": {},
+        }
+        mock_deployment_monitor.stop_monitoring.return_value = None
+        mock_deployment_monitor.start_monitoring.return_value = None
+
+        # Mock cache operations
+        mock_cache.set = AsyncMock(return_value=True)
+        mock_cache.clear_all_caches = AsyncMock(return_value=True)
 
         features_to_rollback = ["kerykeion_natal_charts", "kerykeion_synastry"]
 
@@ -306,7 +327,7 @@ class TestRollbackSystem:
         rollback_system.rollback_history = [
             RollbackEvent(
                 rollback_id="test1",
-                timestamp=datetime.now(),
+                timestamp=utcnow(),
                 trigger=RollbackTrigger.MANUAL,
                 strategy=RollbackStrategy.IMMEDIATE,
                 affected_features=["feature1"],
@@ -316,7 +337,7 @@ class TestRollbackSystem:
             ),
             RollbackEvent(
                 rollback_id="test2",
-                timestamp=datetime.now(),
+                timestamp=utcnow(),
                 trigger=RollbackTrigger.HIGH_ERROR_RATE,
                 strategy=RollbackStrategy.GRADUAL,
                 affected_features=["feature2"],
@@ -362,7 +383,7 @@ class TestIntegration:
         # Update feature metrics
         await feature_flags.update_feature_metrics(
             feature_name,
-            {"last_usage": datetime.now().isoformat(), "user_count": 1},
+            {"last_usage": current_timestamp(), "user_count": 1},
         )
 
         # Get feature metrics
@@ -425,7 +446,7 @@ async def test_deployment_system_startup():
         # Clean up any initialized services
         try:
             await startup_manager.shutdown_performance_systems()
-        except Exception as cleanup_error:
+        except Exception:
             # Ignore cleanup errors in tests as services may not be initialized
             pass
 

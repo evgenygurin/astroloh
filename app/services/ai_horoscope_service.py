@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.models.yandex_models import YandexZodiacSign
 from app.services.horoscope_generator import HoroscopeGenerator, HoroscopePeriod
 from app.services.yandex_gpt import yandex_gpt_client
+from app.utils.astro_time_utils import utcnow, current_timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ class AIHoroscopeService:
             Словарь с данными гороскопа
         """
         if target_date is None:
-            target_date = datetime.now()
+            target_date = utcnow()
 
         # Если указана дата прогноза, используем её вместо target_date
         if forecast_date is not None:
@@ -735,7 +736,7 @@ class AIHoroscopeService:
                 "advice", "Характеристика недоступна"
             ),
             "data_source": "basic_fallback",
-            "generation_timestamp": datetime.now().isoformat(),
+            "generation_timestamp": current_timestamp(),
         }
 
     async def check_ai_availability(self) -> bool:

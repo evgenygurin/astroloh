@@ -1055,7 +1055,7 @@ class KerykeionService:
             birth_date = birth_datetime.date()
             years_elapsed = (current_date.date() - birth_date).days / 365.25
             progressed_date = birth_date + timedelta(days=years_elapsed)
-            
+
             # Create progressed datetime maintaining birth time
             progressed_datetime = datetime.combine(
                 progressed_date, birth_datetime.time()
@@ -1063,9 +1063,14 @@ class KerykeionService:
 
             # Calculate natal chart
             natal_subject = self.create_astrological_subject(
-                name, birth_datetime, latitude, longitude, timezone, house_system
+                name,
+                birth_datetime,
+                latitude,
+                longitude,
+                timezone,
+                house_system,
             )
-            
+
             # Calculate progressed chart
             progressed_subject = self.create_astrological_subject(
                 f"{name} Progressed",
@@ -1084,11 +1089,11 @@ class KerykeionService:
             for planet in ["sun", "moon", "mercury", "venus", "mars"]:
                 natal_planet = getattr(natal_subject, planet, {})
                 prog_planet = getattr(progressed_subject, planet, {})
-                
+
                 if natal_planet and prog_planet:
                     natal_pos = natal_planet.get("pos", [0])[0]
                     prog_pos = prog_planet.get("pos", [0])[0]
-                    
+
                     progressed_planets[planet] = {
                         "natal_longitude": natal_pos,
                         "progressed_longitude": prog_pos,
@@ -1128,7 +1133,7 @@ class KerykeionService:
             natal_subject = self.create_astrological_subject(
                 name, birth_datetime, latitude, longitude, timezone
             )
-            
+
             if not natal_subject:
                 return {"error": "Failed to create natal subject"}
 
@@ -1139,8 +1144,10 @@ class KerykeionService:
             natal_sun_longitude = natal_sun.get("pos", [0])[0]
 
             # Calculate approximate return date (Sun's position at birth)
-            return_date = datetime(return_year, birth_datetime.month, birth_datetime.day)
-            
+            return_date = datetime(
+                return_year, birth_datetime.month, birth_datetime.day
+            )
+
             # Fine-tune to exact Sun return (this is simplified)
             # In production, you'd iterate to find exact longitude match
             return_datetime = return_date.replace(
@@ -1170,7 +1177,9 @@ class KerykeionService:
                 timezone,
             )
 
-            logger.info(f"KERYKEION_SERVICE_SOLAR_RETURN_SUCCESS: {name} {return_year}")
+            logger.info(
+                f"KERYKEION_SERVICE_SOLAR_RETURN_SUCCESS: {name} {return_year}"
+            )
             return {
                 "natal_sun_longitude": natal_sun_longitude,
                 "return_year": return_year,
@@ -1201,7 +1210,7 @@ class KerykeionService:
             natal_subject = self.create_astrological_subject(
                 name, birth_datetime, latitude, longitude, timezone
             )
-            
+
             if not natal_subject:
                 return {"error": "Failed to create natal subject"}
 

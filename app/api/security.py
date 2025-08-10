@@ -400,10 +400,11 @@ async def get_compliance_report(
         Compliance report
     """
     try:
-        from datetime import datetime, timedelta
+        from datetime import timedelta
+        from app.utils.astro_time_utils import utcnow
 
-        start_date = datetime.utcnow() - timedelta(days=days)
-        end_date = datetime.utcnow()
+        start_date = utcnow() - timedelta(days=days)
+        end_date = utcnow()
 
         gdpr_service = GDPRComplianceService(db)
         report = await gdpr_service.generate_compliance_report(

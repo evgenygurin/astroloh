@@ -135,6 +135,423 @@ astroloh/
 - `response_formatter.py`: Alice-compatible response formatting
 - `session_manager.py`: User session handling
 
+## Time Handling Utilities
+
+### Advanced Astrological Time Management (2025-08-10 - FULLY REFACTORED)
+
+**Core Module: `app/utils/astro_time_utils.py`**
+
+Comprehensive time handling utility designed specifically for astrological calculations with emphasis on security, precision, and timezone management.
+
+#### Key Features
+
+**Security-First Design:**
+
+- ✅ **Input sanitization** with regex validation against injection attacks
+- ✅ **String length limits** to prevent resource exhaustion
+- ✅ **Dangerous pattern detection** for HTML/SQL injection, path traversal, control characters
+- ✅ **Safe parsing** with comprehensive error handling
+
+**Precision Time Management:**
+
+- ✅ **Timezone-aware datetime** operations using Python 3.9+ `zoneinfo`
+- ✅ **Historical date support** with validation for astrological calculations (1000-3000 CE)
+- ✅ **Coordinate-based timezone detection** from longitude
+- ✅ **Local solar time calculations** for precise birth time accuracy
+- ✅ **Birth time validation** with future date protection
+
+**Performance Optimizations:**
+
+- ✅ **LRU caching** for timezone objects with 256 entry limit
+- ✅ **Batch operations** support for multiple datetime conversions
+- ✅ **Immutable data structures** for thread safety
+- ✅ **Builder pattern** for complex object construction
+
+#### Core Classes
+
+**1. AstroTimeUtils (Main Utility Class)**
+
+```python
+from app.utils.astro_time_utils import astro_time
+
+# Parse birth datetime with comprehensive validation
+astro_dt = astro_time.parse_birth_datetime(
+    date_input="15.08.1990",
+    time_input="14:30:00", 
+    timezone_input="Europe/Moscow",
+    coordinates=CoordinateInfo(55.7558, 37.6176)
+)
+
+# Convert timezone with validation
+utc_dt = astro_time.to_utc(astro_dt)
+
+# Calculate precision metadata
+precision = astro_time.calculate_birth_time_precision(astro_dt)
+```
+
+**2. TimezoneManager (Advanced Timezone Handling)**
+
+```python
+from app.utils.astro_time_utils import TimezoneManager
+
+tz_manager = TimezoneManager()
+
+# City name mapping with Russian support
+tz = tz_manager.get_timezone("москва")  # Returns Europe/Moscow
+tz = tz_manager.get_timezone("новосибирск")  # Returns Asia/Novosibirsk
+
+# Coordinate-based detection
+detected_tz = tz_manager.detect_timezone_from_coordinates(37.6176)
+```
+
+**3. DateTimeValidator (Security & Validation)**
+
+```python
+from app.utils.astro_time_utils import DateTimeValidator
+
+# Secure input sanitization
+clean_input = DateTimeValidator.sanitize_input("2023-08-15 14:30:00")
+
+# Multi-format parsing with fallbacks
+dt = DateTimeValidator.parse_datetime_string(
+    "15.08.2023 14:30", "Europe/Moscow"
+)
+
+# Birth datetime validation
+is_valid = DateTimeValidator.validate_birth_datetime(dt, coordinates)
+```
+
+**4. AstroDateTime (Immutable Time Object)**
+
+```python
+from app.utils.astro_time_utils import AstroDateTime, CoordinateInfo
+
+# Create timezone-aware astrological datetime
+astro_dt = AstroDateTime(
+    dt=datetime(1990, 8, 15, 14, 30, tzinfo=ZoneInfo("Europe/Moscow")),
+    timezone_name="Europe/Moscow",
+    coordinates=CoordinateInfo(55.7558, 37.6176),
+    source_format="string_input"
+)
+
+# UTC conversion
+utc_time = astro_dt.utc
+
+# Local solar time calculation
+solar_time = astro_dt.to_local_solar_time()
+solar_offset = astro_dt.local_solar_time_offset
+```
+
+**5. AstroDateTimeBuilder (Builder Pattern)**
+
+```python
+# Complex datetime construction with fluent interface
+astro_dt = (astro_time.create_astro_datetime_builder()
+    .date("1990-08-15")
+    .time("14:30:00")
+    .timezone("Europe/Moscow")
+    .coordinates(55.7558, 37.6176, 150.0)
+    .build())
+```
+
+#### Supported Input Formats
+
+**DateTime String Formats:**
+
+```python
+SUPPORTED_FORMATS = [
+    "%Y-%m-%d %H:%M:%S",      # 2023-08-15 14:30:00
+    "%Y-%m-%dT%H:%M:%S",      # 2023-08-15T14:30:00 (ISO)
+    "%Y-%m-%dT%H:%M:%SZ",     # 2023-08-15T14:30:00Z (UTC)
+    "%Y-%m-%dT%H:%M:%S%z",    # 2023-08-15T14:30:00+03:00
+    "%Y-%m-%d %H:%M",         # 2023-08-15 14:30
+    "%Y-%m-%d",               # 2023-08-15 (midnight)
+    "%d.%m.%Y %H:%M:%S",      # 15.08.2023 14:30:00 (European)
+    "%d.%m.%Y %H:%M",         # 15.08.2023 14:30
+    "%d.%m.%Y",               # 15.08.2023
+    "%d/%m/%Y %H:%M:%S",      # 15/08/2023 14:30:00
+    "%d/%m/%Y %H:%M",         # 15/08/2023 14:30
+    "%d/%m/%Y",               # 15/08/2023
+]
+```
+
+**Russian City Mappings:**
+
+```python
+RUSSIAN_CITIES = {
+    "москва": "Europe/Moscow",
+    "санкт-петербург": "Europe/Moscow", 
+    "новосибирск": "Asia/Novosibirsk",
+    "екатеринбург": "Asia/Yekaterinburg",
+    "сочи": "Europe/Moscow",
+    # ... 50+ major Russian cities
+}
+```
+
+#### Security Validation Patterns
+
+**Dangerous Input Detection:**
+
+```python
+DANGEROUS_PATTERNS = [
+    r"[<>\"'`]",              # HTML/SQL injection chars
+    r"\\x[0-9a-fA-F]{2}",     # Hex escapes
+    r"\\[0-7]{3}",            # Octal escapes  
+    r"\.\./",                 # Path traversal
+    r"[\r\n\0]",              # Control characters
+]
+```
+
+**Usage in Astrological Services:**
+
+```python
+# Integration with natal chart calculations
+def calculate_birth_chart(birth_data):
+    try:
+        # Parse and validate birth time
+        astro_dt = astro_time.parse_birth_datetime(
+            birth_data["date"],
+            birth_data["time"], 
+            birth_data["timezone"],
+            birth_data.get("coordinates")
+        )
+        
+        # Calculate precision metadata
+        precision = astro_time.calculate_birth_time_precision(astro_dt)
+        
+        # Use UTC for calculations
+        utc_dt = astro_time.to_utc(astro_dt)
+        
+        return {
+            "birth_datetime": utc_dt.dt,
+            "precision": precision,
+            "timezone": astro_dt.timezone_name,
+            "coordinates": astro_dt.coordinates
+        }
+        
+    except (InvalidDateTimeError, InvalidTimezoneError, CoordinateTimeError) as e:
+        logger.error(f"TIME_VALIDATION_ERROR: {e}")
+        return {"error": str(e)}
+```
+
+#### Testing Coverage
+
+**Comprehensive Test Suite: `tests/test_astro_time_utils.py`**
+
+- ✅ **Security testing** with malicious input validation
+- ✅ **Timezone validation** including Russian city mappings
+- ✅ **Historical date handling** with edge cases
+- ✅ **Coordinate validation** with geographic boundaries
+- ✅ **Performance testing** with batch operations and caching
+- ✅ **Integration scenarios** with real-world astrological use cases
+- ✅ **Error handling** with graceful fallbacks
+
+**Key Test Categories:**
+
+```bash
+# Run time utility tests
+pytest tests/test_astro_time_utils.py -v
+
+# Security tests
+pytest tests/test_astro_time_utils.py::TestDateTimeValidator::test_sanitize_dangerous_input -v
+
+# Performance tests  
+pytest tests/test_astro_time_utils.py::TestPerformance -v
+
+# Integration tests
+pytest tests/test_astro_time_utils.py::TestIntegrationScenarios -v
+```
+
+#### Best Practices for Time Handling
+
+**1. Always Use AstroTimeUtils:**
+
+```python
+# ✅ Correct: Use centralized time utility
+from app.utils.astro_time_utils import astro_time
+
+astro_dt = astro_time.parse_birth_datetime(user_input)
+
+# ❌ Incorrect: Direct datetime manipulation
+dt = datetime.strptime(user_input, "%Y-%m-%d")  # No validation!
+```
+
+**2. Validate All Time Inputs:**
+
+```python
+# ✅ Correct: Comprehensive validation
+try:
+    astro_dt = astro_time.parse_birth_datetime(
+        date_input, time_input, timezone_input, coordinates
+    )
+except (InvalidDateTimeError, InvalidTimezoneError) as e:
+    return {"error": "Invalid time data", "details": str(e)}
+```
+
+**3. Use Coordinates for Accuracy:**
+
+```python
+# ✅ Correct: Coordinate-based timezone detection  
+coordinates = CoordinateInfo(latitude, longitude)
+astro_dt = astro_time.parse_birth_datetime(
+    date_input, time_input, coordinates=coordinates
+)
+
+# Access local solar time for precise calculations
+solar_time = astro_dt.to_local_solar_time()
+```
+
+**4. Cache-Friendly Operations:**
+
+```python
+# ✅ Correct: Use batch operations for multiple dates
+birth_dates = [...]
+converted_dates = astro_time.batch_convert_timezones(birth_dates, "UTC")
+```
+
+#### Global Instance Usage
+
+**Immediate Access:**
+
+```python
+# Global instance available throughout application
+from app.utils.astro_time_utils import astro_time
+
+# Ready to use - no initialization required
+result = astro_time.parse_birth_datetime("1990-08-15 14:30:00")
+```
+
+**Thread Safety:**
+
+- All operations use immutable data structures
+- Thread-safe timezone caching with LRU cache
+- Safe for concurrent use in async environments
+
+#### Integration with Alice Voice Interface
+
+**Voice-Optimized Parsing:**
+
+```python
+# Handle voice recognition errors
+def parse_voice_date(voice_input):
+    # Preprocess common speech recognition errors
+    cleaned = voice_input.replace("гороскоп ля", "гороскоп для")
+    
+    try:
+        return astro_time.parse_birth_datetime(cleaned)
+    except InvalidDateTimeError:
+        return suggest_correction(voice_input)
+```
+
+**Russian Language Support:**
+
+```python
+# Support Russian date formats and city names
+astro_dt = astro_time.parse_birth_datetime(
+    "15.08.1990",           # European format
+    "14:30",               # 24-hour time
+    "москва"               # Russian city name
+)
+```
+
+This time handling system provides the foundation for all temporal operations in the astrological application, ensuring accuracy, security, and proper timezone management essential for precise astrological calculations.
+
+## Time Handling Refactoring Status (2025-08-10)
+
+**🎯 OBJECTIVE**: Replace ALL external datetime library usage with centralized `astro_time_utils.py` methods throughout the entire application.
+
+### ✅ Completed Refactoring
+
+**Models Layer:**
+- ✅ `app/models/database.py` - All SQLAlchemy default timestamps now use `db_timestamp_default()`
+- ✅ `app/models/iot_models.py` - Database timestamp lambdas replaced
+- ✅ `app/models/time_models.py` - Already properly integrated (no changes needed)
+- ✅ `app/utils/validators.py` - `date.today()` calls replaced with `utcnow().date()`
+
+**API Layer:**
+- ✅ `app/main.py` - Health check endpoint uses `current_timestamp()`
+- ✅ `app/api/auth.py` - JWT expiry and user timestamps use `utcnow()`
+- ✅ `app/api/yandex_dialogs.py` - Request timing uses `utcnow()`
+- ✅ `app/api/security.py` - Report date ranges use `utcnow()`
+
+**Services Layer (Partially Complete):**
+- ✅ `app/services/astro_ai_service.py` - Timestamps and generation times
+- ✅ `app/services/session_manager.py` - Session activity timestamps  
+- ✅ `app/services/conversation_manager.py` - Conversation timing
+- ✅ `app/services/performance_monitor.py` - Monitoring timestamps
+- ✅ `app/services/feature_flag_service.py` - Feature flag timestamps
+- 🔄 **35+ other service files** - Need systematic replacement
+
+### 🚀 New Helper Functions Added
+
+Essential functions for common datetime patterns:
+
+```python
+from app.utils.astro_time_utils import (
+    utcnow,              # Replacement for datetime.utcnow()
+    now,                 # Replacement for datetime.now() 
+    current_timestamp,   # ISO timestamp string
+    database_timestamp,  # UTC datetime for DB operations
+    db_timestamp_default, # Lambda factory for SQLAlchemy defaults
+    create_astro_datetime_now  # Current time as AstroDateTime
+)
+```
+
+### 📋 Refactoring Rules
+
+**CRITICAL**: Throughout the application:
+
+1. **Never use direct datetime imports** (except in `astro_time_utils.py`)
+2. **Replace `datetime.now()`** → `utcnow()` or `now(tz)`  
+3. **Replace `datetime.utcnow()`** → `utcnow()`
+4. **Use `db_timestamp_default()`** for SQLAlchemy defaults
+5. **Use `current_timestamp()`** for ISO strings
+6. **Always import from astro_time_utils**: `from app.utils.astro_time_utils import utcnow`
+
+**Database Pattern:**
+```python
+# OLD - Avoid this pattern
+from datetime import datetime, timezone
+created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+# NEW - Use this pattern  
+from app.utils.astro_time_utils import db_timestamp_default
+created_at = Column(DateTime, default=db_timestamp_default())
+```
+
+**API Pattern:**
+```python  
+# OLD - Avoid this pattern
+from datetime import datetime
+return {"timestamp": datetime.utcnow().isoformat()}
+
+# NEW - Use this pattern
+from app.utils.astro_time_utils import current_timestamp
+return {"timestamp": current_timestamp()}
+```
+
+### ✅ Comprehensive Test Suite
+
+Enhanced test suite covers:
+- ✅ All helper functions (`utcnow`, `current_timestamp`, etc.)
+- ✅ Type safety and consistency checks
+- ✅ Performance and caching validation
+- ✅ Security input validation
+- ✅ Real-world integration scenarios
+- ✅ Error handling and edge cases
+
+Run tests: `pytest tests/test_astro_time_utils.py -v`
+
+### 🎯 Next Phase
+
+Continue systematic replacement of remaining service files to achieve 100% centralization of datetime operations through `astro_time_utils.py`.
+
+Priority services for completion:
+- `astrology_calculator.py` - Core calculations
+- `kerykeion_service.py` - Professional astrology
+- `dialog_handler.py` - User interactions
+- `ai_horoscope_service.py` - AI consultations
+
 ## Astronomical Calculation System
 
 ### Multi-Backend Architecture with Enhanced Kerykeion Integration

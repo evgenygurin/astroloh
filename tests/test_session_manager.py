@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from app.models.yandex_models import UserContext, YandexIntent, YandexSession
 from app.services.session_manager import SessionManager
+from app.utils.astro_time_utils import utcnow
 
 
 class TestSessionManager:
@@ -127,7 +128,7 @@ class TestSessionManager:
         session_key = (
             f"{self.test_session.user_id}:{self.test_session.session_id}"
         )
-        old_time = (datetime.utcnow() - timedelta(hours=2)).isoformat()
+        old_time = (utcnow() - timedelta(hours=2)).isoformat()
         self.session_manager._sessions[session_key]["last_activity"] = old_time
 
         # Очищаем устаревшие сессии

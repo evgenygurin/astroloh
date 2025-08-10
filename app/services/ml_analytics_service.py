@@ -8,6 +8,8 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
+from app.utils.astro_time_utils import utcnow
+
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -60,7 +62,7 @@ class PreferenceLearningEngine:
         """Собирает данные о поведении пользователя."""
 
         # Взаимодействия за последние 3 месяца
-        cutoff_date = datetime.utcnow() - timedelta(days=90)
+        cutoff_date = utcnow() - timedelta(days=90)
 
         interactions_result = await self.db.execute(
             select(UserInteraction)
@@ -269,7 +271,7 @@ class PreferenceLearningEngine:
             request_dates = [req.processed_at.date() for req in requests]
             unique_dates = len(set(request_dates))
             total_days = (
-                datetime.utcnow().date() - min(request_dates)
+                utcnow().date() - min(request_dates)
             ).days + 1
             patterns["usage_frequency"] = unique_dates / total_days
         else:
@@ -368,7 +370,7 @@ class PreferenceLearningEngine:
         existing_prefs.update(learned_preferences)
         preferences.preferences = existing_prefs
 
-        preferences.updated_at = datetime.utcnow()
+        preferences.updated_at = utcnow()
 
         await self.db.commit()
 
@@ -419,7 +421,7 @@ class ChurnPredictionModel:
         """Извлекает признаки для предсказания оттока."""
 
         # Временные рамки для анализа
-        now = datetime.utcnow()
+        now = utcnow()
         last_week = now - timedelta(days=7)
         last_month = now - timedelta(days=30)
 
@@ -654,7 +656,7 @@ class EngagementOptimizer:
         """Анализирует текущий уровень вовлеченности."""
 
         # Период анализа - последние 30 дней
-        cutoff_date = datetime.utcnow() - timedelta(days=30)
+        cutoff_date = utcnow() - timedelta(days=30)
 
         # Получаем метрики активности
         interactions_result = await self.db.execute(
@@ -1082,7 +1084,7 @@ class AnomalyDetectionSystem:
         """Собирает данные для выявления аномалий."""
 
         # Анализируем последние 60 дней
-        cutoff_date = datetime.utcnow() - timedelta(days=60)
+        cutoff_date = utcnow() - timedelta(days=60)
 
         # Получаем взаимодействия по дням
         interactions_result = await self.db.execute(
@@ -1127,7 +1129,7 @@ class AnomalyDetectionSystem:
         return {
             "daily_data": daily_data,
             "total_interactions": len(interactions),
-            "date_range": (cutoff_date, datetime.utcnow()),
+            "date_range": (cutoff_date, utcnow()),
         }
 
     def _detect_activity_anomalies(
@@ -1313,7 +1315,7 @@ class AnomalyDetectionSystem:
             if len(dates) >= 3:  # Был активен минимум 3 дня
                 sorted_dates = sorted(dates)
                 last_date = datetime.fromisoformat(sorted_dates[-1]).date()
-                days_since_last = (datetime.utcnow().date() - last_date).days
+                days_since_last = (utcnow().date() - last_date).days
 
                 if days_since_last > 14:  # Не использовался больше 2 недель
                     anomalies.append(

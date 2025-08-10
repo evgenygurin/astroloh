@@ -3,7 +3,6 @@
 
 import logging
 import sys
-from datetime import datetime
 
 import pytz
 
@@ -12,6 +11,7 @@ sys.path.insert(0, "/Users/laptop/dev/astroloh")
 
 from app.models.yandex_models import YandexZodiacSign
 from app.services.astrology_calculator import AstrologyCalculator
+from app.utils.astro_time_utils import utcnow
 
 # Configure logging
 logging.basicConfig(
@@ -91,7 +91,7 @@ def test_basic_functionality():
     print("Testing Moon Phase Calculation")
     print("-" * 30)
 
-    moon_phase = calculator.calculate_moon_phase(datetime.now())
+    moon_phase = calculator.calculate_moon_phase(utcnow())
     print(
         f"✓ Phase: {moon_phase['phase_name']} {moon_phase.get('moon_emoji', '')}"
     )
@@ -116,7 +116,7 @@ def test_basic_functionality():
     print("Testing Planetary Hours")
     print("-" * 30)
 
-    planetary_hours = calculator.get_planetary_hours(datetime.now())
+    planetary_hours = calculator.get_planetary_hours(utcnow())
     print(f"✓ Day ruler: {planetary_hours['day_ruler']}")
     print(f"✓ Current hour ruler: {planetary_hours['current_hour_ruler']}")
     print(f"✓ Favorable hours: {planetary_hours['favorable_hours']}")

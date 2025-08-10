@@ -6,6 +6,8 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
+from app.utils.astro_time_utils import utcnow, current_timestamp
+
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -140,7 +142,7 @@ class GDPRComplianceService:
 
         export_data = {
             "export_metadata": {
-                "export_date": datetime.utcnow().isoformat(),
+                "export_date": current_timestamp(),
                 "format": format_type,
                 "gdpr_article": "Article 20 - Right to data portability",
             },
@@ -296,7 +298,7 @@ class GDPRComplianceService:
                 await self.db.execute(
                     update(User)
                     .where(User.id == user_id)
-                    .values(**updates, updated_at=datetime.utcnow())
+                    .values(**updates, updated_at=utcnow())
                 )
                 await self.db.commit()
 
@@ -376,9 +378,9 @@ class GDPRComplianceService:
             Отчет о соответствии
         """
         if not start_date:
-            start_date = datetime.utcnow() - timedelta(days=30)
+            start_date = utcnow() - timedelta(days=30)
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = utcnow()
 
         # Статистика пользователей
         total_users_result = await self.db.execute(select(func.count(User.id)))
@@ -428,7 +430,7 @@ class GDPRComplianceService:
                 "data_minimization": "Сбор только необходимых данных",
                 "pseudonymization": "Хеширование IP и User-Agent",
             },
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": current_timestamp(),
         }
 
         return report
@@ -473,7 +475,7 @@ class GDPRComplianceService:
             description=description,
             success=success,
             error_message=error_message,
-            timestamp=datetime.utcnow(),
+            timestamp=utcnow(),
         )
 
         self.db.add(log_entry)

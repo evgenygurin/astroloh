@@ -5,13 +5,14 @@
 
 import logging
 import math
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import pytz
 
 from app.models.yandex_models import YandexZodiacSign
+from app.utils.astro_time_utils import utcnow
 
 # Попытка импорта kerykeion и связанных библиотек
 try:
@@ -1209,7 +1210,7 @@ class AstrologyCalculator:
     ) -> Dict[str, Any]:
         """Вычисляет транзиты к натальной карте"""
         if transit_date is None:
-            transit_date = datetime.now(pytz.UTC)
+            transit_date = utcnow()
 
         # Получаем текущие позиции планет
         transit_positions = self.calculate_planet_positions(transit_date)
@@ -1292,7 +1293,7 @@ class AstrologyCalculator:
     ) -> Dict[str, Any]:
         """Вычисляет прогрессии"""
         if target_date is None:
-            target_date = datetime.now(pytz.UTC)
+            target_date = utcnow()
 
         age_days = (target_date - natal_chart.birth_datetime).days
 
@@ -1348,7 +1349,7 @@ class AstrologyCalculator:
     ) -> NatalChart:
         """Вычисляет солнечное возвращение (соляр)"""
         if year is None:
-            year = datetime.now().year
+            year = utcnow().year
 
         # Находим момент, когда Солнце возвращается в натальное положение
         natal_sun = natal_chart.planets.get("Sun", {}).get("longitude", 0)
@@ -1386,7 +1387,7 @@ class AstrologyCalculator:
     ) -> NatalChart:
         """Вычисляет лунное возвращение (лунар)"""
         if target_date is None:
-            target_date = datetime.now(pytz.UTC)
+            target_date = utcnow()
 
         # Находим момент, когда Луна возвращается в натальное положение
         natal_moon = natal_chart.planets.get("Moon", {}).get("longitude", 0)

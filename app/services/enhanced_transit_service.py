@@ -7,6 +7,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
+from app.utils.astro_time_utils import utcnow, current_timestamp, now
+
 import pytz
 
 from app.services.astro_cache_service import astro_cache
@@ -116,9 +118,11 @@ class TransitService:
         Получает текущие транзиты используя Kerykeion с полными возможностями.
         """
         if transit_date is None:
-            transit_date = datetime.now(pytz.timezone(timezone))
+            transit_date = utcnow()
 
-        logger.info(f"ENHANCED_TRANSIT_KERYKEION_START: {name} for {transit_date}")
+        logger.info(
+            f"ENHANCED_TRANSIT_KERYKEION_START: {name} for {transit_date}"
+        )
 
         try:
             # Создаем натальную карту
@@ -131,12 +135,14 @@ class TransitService:
                 return {"error": "Failed to create natal chart"}
 
             # Создаем транзитную карту на указанную дату
-            transit_subject = self.kerykeion_service.create_astrological_subject(
-                f"{name} Transits",
-                transit_date,
-                latitude,
-                longitude,
-                timezone,
+            transit_subject = (
+                self.kerykeion_service.create_astrological_subject(
+                    f"{name} Transits",
+                    transit_date,
+                    latitude,
+                    longitude,
+                    timezone,
+                )
             )
 
             if not transit_subject:
@@ -144,7 +150,18 @@ class TransitService:
 
             # Получаем позиции транзитных планет
             transit_planets = {}
-            for planet in ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"]:
+            for planet in [
+                "sun",
+                "moon",
+                "mercury",
+                "venus",
+                "mars",
+                "jupiter",
+                "saturn",
+                "uranus",
+                "neptune",
+                "pluto",
+            ]:
                 transit_planet = getattr(transit_subject, planet, {})
                 if transit_planet:
                     transit_planets[planet] = {
@@ -152,7 +169,7 @@ class TransitService:
                         "sign": transit_planet.get("sign", "Unknown"),
                         "house": transit_planet.get("house", None),
                         "retrograde": transit_planet.get("retrograde", False),
-                        "speed": transit_planet.get("speed", 0)
+                        "speed": transit_planet.get("speed", 0),
                     }
 
             # Анализируем транзитные аспекты к натальным планетам
@@ -164,7 +181,7 @@ class TransitService:
                     aspect = self._calculate_transit_aspect(
                         transit_data["longitude"],
                         natal_data_planet.get("longitude", 0),
-                        include_minor_aspects
+                        include_minor_aspects,
                     )
 
                     if aspect:
@@ -173,7 +190,7 @@ class TransitService:
                             transit_data["longitude"],
                             natal_data_planet.get("longitude", 0),
                             transit_data["speed"],
-                            aspect["angle"]
+                            aspect["angle"],
                         )
 
                         transit_entry = {
@@ -181,37 +198,46 @@ class TransitService:
                             "natal_planet": natal_planet,
                             "aspect": aspect,
                             "transit_sign": transit_data["sign"],
-                            "natal_sign": natal_data_planet.get("sign", "Unknown"),
+                            "natal_sign": natal_data_planet.get(
+                                "sign", "Unknown"
+                            ),
                             "applying": is_applying,
                             "retrograde": transit_data["retrograde"],
                             "interpretation": self._get_transit_interpretation(
-                                transit_planet, natal_planet, aspect["name"], is_applying
+                                transit_planet,
+                                natal_planet,
+                                aspect["name"],
+                                is_applying,
                             ),
                             "strength": self._calculate_transit_strength(
                                 aspect["orb"], aspect["max_orb"], is_applying
-                            )
+                            ),
                         }
-                        
+
                         transits.append(transit_entry)
 
             # Сортируем по силе аспекта
             transits.sort(key=lambda x: x["aspect"]["orb"])
 
             # Анализируем транзиты по домам
-            house_transits = self._analyze_house_transits(transit_planets, natal_data.get("houses", {}))
+            house_transits = self._analyze_house_transits(
+                transit_planets, natal_data.get("houses", {})
+            )
 
             # Находим важные транзиты
-            important_transits = [t for t in transits if t["aspect"]["orb"] <= 3]
+            important_transits = [
+                t for t in transits if t["aspect"]["orb"] <= 3
+            ]
 
             result = {
                 "natal_info": {
                     "name": name,
                     "birth_datetime": birth_datetime.isoformat(),
-                    "location": f"{latitude}, {longitude}"
+                    "location": f"{latitude}, {longitude}",
                 },
                 "transit_info": {
                     "date": transit_date.isoformat(),
-                    "timezone": timezone
+                    "timezone": timezone,
                 },
                 "transits": transits[:20],  # Топ-20 транзитов
                 "important_transits": important_transits,
@@ -220,16 +246,22 @@ class TransitService:
                 "summary": {
                     "total_aspects": len(transits),
                     "important_aspects": len(important_transits),
-                    "applying_aspects": len([t for t in transits if t["applying"]]),
-                    "separating_aspects": len([t for t in transits if not t["applying"]])
+                    "applying_aspects": len(
+                        [t for t in transits if t["applying"]]
+                    ),
+                    "separating_aspects": len(
+                        [t for t in transits if not t["applying"]]
+                    ),
                 },
                 "service_info": {
                     "method": "Kerykeion Enhanced",
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": current_timestamp(),
+                },
             }
 
-            logger.info(f"ENHANCED_TRANSIT_KERYKEION_SUCCESS: Found {len(transits)} transits")
+            logger.info(
+                f"ENHANCED_TRANSIT_KERYKEION_SUCCESS: Found {len(transits)} transits"
+            )
             return result
 
         except Exception as e:
@@ -252,7 +284,7 @@ class TransitService:
             include_minor_aspects: Включать минорные аспекты
         """
         if transit_date is None:
-            transit_date = datetime.now(pytz.UTC)
+            transit_date = utcnow()
 
         # Start performance monitoring
         op_id = performance_monitor.start_operation(
@@ -344,7 +376,7 @@ class TransitService:
         Used for performance testing and fallback scenarios.
         """
         if transit_date is None:
-            transit_date = datetime.now(pytz.UTC)
+            transit_date = utcnow()
 
         return self._get_basic_transits(natal_chart, transit_date)
 
@@ -615,7 +647,10 @@ class TransitService:
         return aspects
 
     def _calculate_transit_aspect(
-        self, transit_longitude: float, natal_longitude: float, include_minor: bool
+        self,
+        transit_longitude: float,
+        natal_longitude: float,
+        include_minor: bool,
     ) -> Optional[Dict[str, Any]]:
         """Вычисляет аспект между транзитной и натальной планетой"""
         angle = abs(transit_longitude - natal_longitude)
@@ -626,8 +661,11 @@ class TransitService:
         aspect_definitions = self.transit_orbs
         if not include_minor:
             # Только мажорные аспекты
-            aspect_definitions = {angle: orb for angle, orb in self.transit_orbs.items() 
-                                if angle in [0, 60, 90, 120, 180]}
+            aspect_definitions = {
+                angle: orb
+                for angle, orb in self.transit_orbs.items()
+                if angle in [0, 60, 90, 120, 180]
+            }
 
         for aspect_angle, max_orb in aspect_definitions.items():
             orb = abs(angle - aspect_angle)
@@ -637,13 +675,16 @@ class TransitService:
                     "name": self._get_aspect_name(aspect_angle),
                     "orb": orb,
                     "max_orb": max_orb,
-                    "exact_angle": angle
+                    "exact_angle": angle,
                 }
         return None
 
     def _is_transit_applying(
-        self, transit_longitude: float, natal_longitude: float, 
-        transit_speed: float, aspect_angle: float
+        self,
+        transit_longitude: float,
+        natal_longitude: float,
+        transit_speed: float,
+        aspect_angle: float,
     ) -> bool:
         """Определяет, приближается ли транзитный аспект"""
         current_angle = abs(transit_longitude - natal_longitude)
@@ -660,7 +701,7 @@ class TransitService:
     ) -> str:
         """Рассчитывает силу транзита"""
         orb_percent = orb / max_orb
-        
+
         if orb <= 1:
             strength = "Very Strong"
         elif orb_percent <= 0.3:
@@ -669,35 +710,57 @@ class TransitService:
             strength = "Moderate"
         else:
             strength = "Weak"
-            
+
         if is_applying:
             strength += " (Applying)"
         else:
             strength += " (Separating)"
-            
+
         return strength
 
     def _get_transit_interpretation(
-        self, transit_planet: str, natal_planet: str, aspect: str, is_applying: bool
+        self,
+        transit_planet: str,
+        natal_planet: str,
+        aspect: str,
+        is_applying: bool,
     ) -> str:
         """Получает интерпретацию транзита"""
         base_interpretations = {
-            ("jupiter", "sun", "Trine"): "Период роста и расширения возможностей",
-            ("saturn", "sun", "Square"): "Испытания и ограничения в самовыражении", 
-            ("uranus", "moon", "Opposition"): "Эмоциональная нестабильность и перемены",
-            ("neptune", "venus", "Conjunction"): "Иллюзии в любви и творчестве",
-            ("pluto", "mars", "Square"): "Интенсивная трансформация энергии"
+            (
+                "jupiter",
+                "sun",
+                "Trine",
+            ): "Период роста и расширения возможностей",
+            (
+                "saturn",
+                "sun",
+                "Square",
+            ): "Испытания и ограничения в самовыражении",
+            (
+                "uranus",
+                "moon",
+                "Opposition",
+            ): "Эмоциональная нестабильность и перемены",
+            (
+                "neptune",
+                "venus",
+                "Conjunction",
+            ): "Иллюзии в любви и творчестве",
+            ("pluto", "mars", "Square"): "Интенсивная трансформация энергии",
         }
-        
+
         key = (transit_planet, natal_planet, aspect)
-        interpretation = base_interpretations.get(key, 
-            f"{aspect} транзит {transit_planet.capitalize()} к натальному {natal_planet.capitalize()}")
-        
+        interpretation = base_interpretations.get(
+            key,
+            f"{aspect} транзит {transit_planet.capitalize()} к натальному {natal_planet.capitalize()}",
+        )
+
         if is_applying:
             interpretation += " (нарастает)"
         else:
             interpretation += " (ослабевает)"
-            
+
         return interpretation
 
     def _analyze_house_transits(
@@ -705,34 +768,42 @@ class TransitService:
     ) -> Dict[str, Any]:
         """Анализирует транзиты по домам"""
         house_transits = {}
-        
+
         for planet_name, planet_data in transit_planets.items():
             planet_longitude = planet_data["longitude"]
-            
+
             # Находим дом для транзитной планеты
             for house_num in range(1, 13):
                 if house_num in natal_houses:
-                    house_start = natal_houses[house_num].get("cusp_longitude", 0)
+                    house_start = natal_houses[house_num].get(
+                        "cusp_longitude", 0
+                    )
                     next_house = house_num + 1 if house_num < 12 else 1
-                    house_end = natal_houses.get(next_house, {}).get("cusp_longitude", 0)
-                    
+                    house_end = natal_houses.get(next_house, {}).get(
+                        "cusp_longitude", 0
+                    )
+
                     # Обработка перехода через 0°
                     if house_end < house_start:
                         house_end += 360
                         if planet_longitude < house_start:
                             planet_longitude += 360
-                    
+
                     if house_start <= planet_longitude < house_end:
                         if house_num not in house_transits:
                             house_transits[house_num] = []
-                        house_transits[house_num].append({
-                            "planet": planet_name,
-                            "longitude": planet_data["longitude"],
-                            "sign": planet_data["sign"],
-                            "interpretation": self._get_house_transit_meaning(planet_name, house_num)
-                        })
+                        house_transits[house_num].append(
+                            {
+                                "planet": planet_name,
+                                "longitude": planet_data["longitude"],
+                                "sign": planet_data["sign"],
+                                "interpretation": self._get_house_transit_meaning(
+                                    planet_name, house_num
+                                ),
+                            }
+                        )
                         break
-                        
+
         return house_transits
 
     def _get_house_transit_meaning(self, planet: str, house_num: int) -> str:
@@ -749,9 +820,9 @@ class TransitService:
             9: "влияет на философию и дальние путешествия",
             10: "влияет на карьеру и репутацию",
             11: "влияет на дружбу и надежды",
-            12: "влияет на подсознание и духовность"
+            12: "влияет на подсознание и духовность",
         }
-        
+
         meaning = house_meanings.get(house_num, "неизвестное влияние")
         return f"{planet.capitalize()} {meaning}"
 
@@ -771,7 +842,7 @@ class TransitService:
             start_date: Начальная дата (по умолчанию сегодня)
         """
         if start_date is None:
-            start_date = datetime.now(pytz.UTC)
+            start_date = utcnow()
 
         # Start performance monitoring
         op_id = performance_monitor.start_operation(
@@ -922,7 +993,7 @@ class TransitService:
             lookback_days: Дни назад для анализа
             lookahead_days: Дни вперед для прогноза
         """
-        today = datetime.now(pytz.UTC)
+        today = utcnow()
         start_date = today - timedelta(days=lookback_days)
         end_date = today + timedelta(days=lookahead_days)
 
@@ -1094,7 +1165,7 @@ class TransitService:
         Used for performance testing.
         """
         if start_date is None:
-            start_date = datetime.now(pytz.UTC)
+            start_date = utcnow()
 
         daily_forecasts = []
         for i in range(days):
@@ -1123,7 +1194,7 @@ class TransitService:
         Internal method to calculate important transits synchronously.
         Used for performance testing.
         """
-        today = datetime.now(pytz.UTC)
+        today = utcnow()
         major_transits = []
 
         # Simulate finding major transits
@@ -1981,5 +2052,5 @@ class TransitService:
         return {
             "cache_type_cleared": cache_type,
             "entries_cleared": cleared_count,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": current_timestamp(),
         }

@@ -15,6 +15,7 @@ from app.services.astro_cache_service import astro_cache
 from app.services.async_kerykeion_service import AsyncKerykeionService
 from app.services.enhanced_transit_service import TransitService
 from app.services.kerykeion_service import KERYKEION_AVAILABLE, KerykeionService
+from app.utils.astro_time_utils import utcnow
 
 
 @pytest.mark.performance
@@ -209,8 +210,8 @@ class TestAsyncKerykeionServicePerformance:
             for _ in range(5):
                 start_time = time.perf_counter()
 
-                result = await service.calculate_natal_chart_async(
-                    **birth_data
+                result = await service.get_full_natal_chart_data(
+                    name="Test Performance", **birth_data
                 )
 
                 end_time = time.perf_counter()
@@ -258,8 +259,10 @@ class TestAsyncKerykeionServicePerformance:
 
             # Run concurrent calculations
             tasks = [
-                service.calculate_natal_chart_async(**birth_data)
-                for birth_data in birth_data_sets
+                service.get_full_natal_chart_data(
+                    name=f"Concurrent Test {i}", **birth_data
+                )
+                for i, birth_data in enumerate(birth_data_sets)
             ]
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -290,20 +293,25 @@ class TestAsyncKerykeionServicePerformance:
 
         with patch.object(
             service.kerykeion_service, "get_full_natal_chart_data"
-        ) as mock_calc:
+        ) as mock_calc, patch.object(
+            service, "is_available"
+        ) as mock_available:
+            mock_available.return_value = True
             mock_calc.return_value = {
                 "planets": {},
                 "houses": {},
                 "aspects": [],
             }
 
-            # Perform calculations
+            # Perform calculations with different parameters to avoid cache hits
             for i in range(5):
-                await service.calculate_natal_chart_async(
-                    birth_datetime=datetime(1990, 8, 15, 14, 30),
-                    latitude=55.7558,
-                    longitude=37.6176,
+                await service.get_full_natal_chart_data(
+                    name=f"Test Subject {i}",
+                    birth_datetime=datetime(1990 + i, 8, 15, 14, 30),
+                    latitude=55.7558 + i * 0.1,
+                    longitude=37.6176 + i * 0.1,
                     timezone="Europe/Moscow",
+                    use_cache=False,  # Disable cache to ensure async operations count
                 )
 
         final_stats = await service.get_performance_stats()
@@ -520,7 +528,7 @@ class TestSystemLoadTesting:
                 tasks.append(
                     services["transit"].get_current_transits_async(
                         natal_chart=sample_natal_chart,
-                        transit_date=datetime.now(),
+                        transit_date=utcnow(),
                     )
                 )
 

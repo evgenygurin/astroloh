@@ -127,11 +127,11 @@ async def root() -> dict[str, str | list[str]]:
 @app.get("/health")
 async def health_check() -> dict[str, str]:
     """Эндпоинт для проверки здоровья сервиса."""
-    from datetime import datetime
+    from app.utils.astro_time_utils import current_timestamp
 
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": current_timestamp(),
         "version": "1.0.0",
     }
 

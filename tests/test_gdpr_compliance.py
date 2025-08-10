@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.services.gdpr_compliance import GDPRComplianceService
+from app.utils.astro_time_utils import utcnow
 
 
 class TestGDPRComplianceService:
@@ -38,8 +39,8 @@ class TestGDPRComplianceService:
         # Mock user data
         mock_user = MagicMock()
         mock_user.yandex_user_id = "test_user"
-        mock_user.created_at = datetime.now()
-        mock_user.last_accessed = datetime.now()
+        mock_user.created_at = utcnow()
+        mock_user.last_accessed = utcnow()
         mock_user.data_consent = True
         mock_user.data_retention_days = 365
         mock_user.zodiac_sign = "leo"
@@ -54,7 +55,7 @@ class TestGDPRComplianceService:
         mock_result_2.scalar.return_value = 10
 
         mock_result_3 = MagicMock()
-        mock_result_3.scalar_one_or_none.return_value = datetime.now()
+        mock_result_3.scalar_one_or_none.return_value = utcnow()
 
         self.mock_db.execute.side_effect = [
             mock_result_1,
@@ -112,7 +113,7 @@ class TestGDPRComplianceService:
         # Mock summary data
         mock_summary = {
             "user_id": str(user_id),
-            "registration_date": datetime.now().isoformat(),
+            "registration_date": utcnow().isoformat(),
             "data_consent": True,
         }
 
@@ -325,8 +326,8 @@ class TestGDPRComplianceService:
     @pytest.mark.asyncio
     async def test_generate_compliance_report(self):
         """Test generating compliance report."""
-        start_date = datetime.now() - timedelta(days=30)
-        end_date = datetime.now()
+        start_date = utcnow() - timedelta(days=30)
+        end_date = utcnow()
 
         # Mock the execute calls with different results
         mock_result_1 = MagicMock()
@@ -415,7 +416,7 @@ class TestGDPRComplianceService:
         for i in range(3):
             req = MagicMock()
             req.request_type = f"daily_{i}"
-            req.processed_at = datetime.now() - timedelta(days=i)
+            req.processed_at = utcnow() - timedelta(days=i)
             req.encrypted_target_date = b"encrypted" if i % 2 == 0 else None
             req.encrypted_partner_data = b"partner_data" if i == 1 else None
             mock_requests.append(req)

@@ -9,6 +9,7 @@ import pytest
 
 from app.models.yandex_models import YandexZodiacSign
 from app.services.user_manager import UserManager
+from app.utils.astro_time_utils import utcnow
 
 
 class TestUserManager:
@@ -298,8 +299,8 @@ class TestUserManager:
     async def test_get_user_statistics(self):
         """Test getting user statistics."""
         mock_user = MagicMock()
-        mock_user.created_at = datetime.now() - timedelta(days=30)
-        mock_user.last_accessed = datetime.now() - timedelta(days=1)
+        mock_user.created_at = utcnow() - timedelta(days=30)
+        mock_user.last_accessed = utcnow() - timedelta(days=1)
 
         # Mock session count - return list with 5 sessions
         mock_sessions = [MagicMock() for _ in range(5)]
@@ -319,7 +320,7 @@ class TestUserManager:
         """Test checking if user is active."""
         # Active user
         active_user = MagicMock()
-        active_user.last_accessed = datetime.now() - timedelta(days=5)
+        active_user.last_accessed = utcnow() - timedelta(days=5)
 
         assert await self.user_manager.is_user_active(
             active_user, days_threshold=30
@@ -327,7 +328,7 @@ class TestUserManager:
 
         # Inactive user
         inactive_user = MagicMock()
-        inactive_user.last_accessed = datetime.now() - timedelta(days=50)
+        inactive_user.last_accessed = utcnow() - timedelta(days=50)
 
         assert not await self.user_manager.is_user_active(
             inactive_user, days_threshold=30

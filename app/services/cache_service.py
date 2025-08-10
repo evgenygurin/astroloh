@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from loguru import logger
+from app.utils.astro_time_utils import utcnow
 
 try:
     import redis.asyncio as redis
@@ -66,7 +67,7 @@ class CacheService:
             else:
                 # Use memory cache
                 if key in self.cache_expiry:
-                    if datetime.utcnow() > self.cache_expiry[key]:
+                    if utcnow() > self.cache_expiry[key]:
                         # Expired
                         await self.delete(key)
                         return None
@@ -97,9 +98,9 @@ class CacheService:
 
                 self.memory_cache[key] = {
                     "value": value,
-                    "created_at": datetime.utcnow(),
+                    "created_at": utcnow(),
                 }
-                self.cache_expiry[key] = datetime.utcnow() + timedelta(
+                self.cache_expiry[key] = utcnow() + timedelta(
                     seconds=expiry_seconds
                 )
                 return True
@@ -196,7 +197,7 @@ class CacheService:
         while True:
             try:
                 await asyncio.sleep(300)  # Cleanup every 5 minutes
-                now = datetime.utcnow()
+                now = utcnow()
                 expired_keys = [
                     key
                     for key, expiry in self.cache_expiry.items()
