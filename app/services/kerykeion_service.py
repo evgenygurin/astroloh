@@ -4,7 +4,7 @@ This service extends the basic astrology calculator with Kerykeion-specific feat
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
