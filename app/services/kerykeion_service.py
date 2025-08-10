@@ -280,18 +280,25 @@ class KerykeionService:
                             "quality": planet_info.get("quality", ""),
                         }
 
-            # Extract houses data
+            # Extract houses data - Kerykeion 4.x uses first_house, second_house, etc.
             houses_data = {}
-            for i in range(1, 13):
-                house_attr = f"house{i}"
-                if hasattr(subject, house_attr):
-                    house_info = getattr(subject, house_attr)
+            house_names = [
+                'first_house', 'second_house', 'third_house', 'fourth_house', 
+                'fifth_house', 'sixth_house', 'seventh_house', 'eighth_house', 
+                'ninth_house', 'tenth_house', 'eleventh_house', 'twelfth_house'
+            ]
+            
+            for i, house_name in enumerate(house_names, 1):
+                if hasattr(subject, house_name):
+                    house_info = getattr(subject, house_name)
                     if house_info:
                         houses_data[i] = {
-                            "cusp_longitude": house_info.get("pos", [0])[0],
-                            "sign": house_info.get("sign", "Unknown"),
-                            "sign_num": house_info.get("sign_num", 0),
-                            "degree_in_sign": house_info.get("deg_in_sign", 0),
+                            "cusp_longitude": house_info.position,
+                            "sign": house_info.sign,
+                            "sign_num": house_info.sign_num,
+                            "degree_in_sign": house_info.position % 30,  # Calculate degree within sign
+                            "element": house_info.element,
+                            "quality": house_info.quality,
                         }
 
             # Add angles (ASC, MC, DSC, IC)
