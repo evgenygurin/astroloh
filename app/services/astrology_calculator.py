@@ -1210,7 +1210,7 @@ class AstrologyCalculator:
     ) -> Dict[str, Any]:
         """Вычисляет транзиты к натальной карте"""
         if transit_date is None:
-            transit_date = datetime.now(pytz.UTC)
+            transit_date = utcnow()
 
         # Получаем текущие позиции планет
         transit_positions = self.calculate_planet_positions(transit_date)
@@ -1293,7 +1293,7 @@ class AstrologyCalculator:
     ) -> Dict[str, Any]:
         """Вычисляет прогрессии"""
         if target_date is None:
-            target_date = datetime.now(pytz.UTC)
+            target_date = utcnow()
 
         age_days = (target_date - natal_chart.birth_datetime).days
 
@@ -1387,7 +1387,7 @@ class AstrologyCalculator:
     ) -> NatalChart:
         """Вычисляет лунное возвращение (лунар)"""
         if target_date is None:
-            target_date = datetime.now(pytz.UTC)
+            target_date = utcnow()
 
         # Находим момент, когда Луна возвращается в натальное положение
         natal_moon = natal_chart.planets.get("Moon", {}).get("longitude", 0)

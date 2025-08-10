@@ -58,7 +58,7 @@ class HealthCheck:
     value: float
     threshold: float
     message: str
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=utcnow)
 
 
 class DeploymentMonitor:

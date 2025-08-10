@@ -4,7 +4,8 @@
 """
 
 import logging
-from datetime import date, datetime
+from datetime import datetime
+from app.utils.astro_time_utils import utcnow
 from typing import Any, Dict, List, Optional
 
 import pytz
@@ -68,7 +69,7 @@ class TransitCalculator:
         """Вычисляет текущие транзиты к натальной карте."""
 
         if transit_date is None:
-            transit_date = datetime.now(pytz.UTC)
+            transit_date = utcnow()
 
         # Получаем текущие позиции планет
         current_positions = self.astro_calc.calculate_planet_positions(
@@ -797,7 +798,7 @@ class TransitCalculator:
             "TRANSIT_CALCULATOR_COMPREHENSIVE: Full transit analysis"
         )
 
-        current_date = datetime.now(pytz.UTC)
+        current_date = utcnow()
         current_year = current_date.year
         current_month = current_date.month
 
