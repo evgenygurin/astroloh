@@ -9,6 +9,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 from loguru import logger
 
+from app.utils.astro_time_utils import current_timestamp
+
 try:
     import paho.mqtt.client as mqtt
 

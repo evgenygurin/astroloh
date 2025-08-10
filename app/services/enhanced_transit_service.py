@@ -118,7 +118,7 @@ class TransitService:
         Получает текущие транзиты используя Kerykeion с полными возможностями.
         """
         if transit_date is None:
-            transit_date = now(pytz.timezone(timezone))
+            transit_date = utcnow()
 
         logger.info(
             f"ENHANCED_TRANSIT_KERYKEION_START: {name} for {transit_date}"

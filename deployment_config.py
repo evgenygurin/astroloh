@@ -5,10 +5,11 @@ Configures deployment monitoring, feature flags, and rollback automation.
 
 import asyncio
 import os
-from datetime import datetime
 from typing import Any, Dict
 
 from loguru import logger
+
+from app.utils.astro_time_utils import current_timestamp, utcnow
 
 from app.services.deployment_monitor import deployment_monitor
 from app.services.feature_flag_service import (
@@ -26,9 +27,9 @@ class ProductionDeploymentConfig:
 
     def __init__(self):
         self.deployment_id = (
-            f"kerykeion_deploy_{int(datetime.now().timestamp())}"
+            f"kerykeion_deploy_{int(utcnow().timestamp())}"
         )
-        self.deployment_start_time = datetime.now()
+        self.deployment_start_time = utcnow()
         self.current_phase = "preparation"
         self.phase_progress = {}
 
@@ -113,7 +114,7 @@ class ProductionDeploymentConfig:
 
         initialization_results = {
             "deployment_id": self.deployment_id,
-            "initialization_time": datetime.now().isoformat(),
+            "initialization_time": current_timestamp(),
             "systems_initialized": [],
             "errors": [],
         }
@@ -313,9 +314,9 @@ class ProductionDeploymentConfig:
                     f"DEPLOYMENT_EXECUTE_FAILED: Deployment {self.deployment_id} failed"
                 )
 
-            deployment_result["end_time"] = datetime.now().isoformat()
+            deployment_result["end_time"] = current_timestamp()
             deployment_result["total_duration_minutes"] = (
-                datetime.now() - self.deployment_start_time
+                utcnow() - self.deployment_start_time
             ).total_seconds() / 60
 
             return deployment_result
@@ -334,7 +335,7 @@ class ProductionDeploymentConfig:
         self, phase_name: str, phase_config: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute a single deployment phase."""
-        phase_start_time = datetime.now()
+        phase_start_time = utcnow()
 
         phase_result = {
             "phase": phase_name,
@@ -407,7 +408,7 @@ class ProductionDeploymentConfig:
                 health_checks = dashboard.get("health_checks", {})
 
                 interval_metrics = {
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": current_timestamp(),
                     "interval": i + 1,
                     "health_score": dashboard.get("overall_health", {}).get(
                         "score", 0
@@ -531,9 +532,9 @@ class ProductionDeploymentConfig:
                     "error_message"
                 ] = "No metrics collected during monitoring period"
 
-            phase_result["end_time"] = datetime.now().isoformat()
+            phase_result["end_time"] = current_timestamp()
             phase_result["duration_minutes"] = (
-                datetime.now() - phase_start_time
+                utcnow() - phase_start_time
             ).total_seconds() / 60
 
             return phase_result
@@ -541,7 +542,7 @@ class ProductionDeploymentConfig:
         except Exception as e:
             logger.error(f"DEPLOYMENT_PHASE_ERROR: {phase_name}: {e}")
             phase_result["error_message"] = str(e)
-            phase_result["end_time"] = datetime.now().isoformat()
+            phase_result["end_time"] = current_timestamp()
             return phase_result
 
     async def _handle_deployment_failure(
@@ -613,7 +614,7 @@ class ProductionDeploymentConfig:
             "current_phase": self.current_phase,
             "phase_progress": self.phase_progress,
             "elapsed_time_minutes": (
-                datetime.now() - self.deployment_start_time
+                utcnow() - self.deployment_start_time
             ).total_seconds()
             / 60,
             "deployment_phases": {
@@ -683,7 +684,7 @@ async def main():
         return {
             "deployment_successful": False,
             "error": str(e),
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": current_timestamp(),
         }
 
 

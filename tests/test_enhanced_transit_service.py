@@ -12,6 +12,7 @@ from app.services.enhanced_transit_service import (
     KERYKEION_TRANSITS_AVAILABLE,
     TransitService,
 )
+from app.utils.astro_time_utils import utcnow
 
 
 @pytest.mark.unit
@@ -122,7 +123,7 @@ class TestEnhancedTransitServiceAsync:
 
             result = await service.get_current_transits(
                 natal_chart=sample_natal_chart,
-                transit_date=datetime.now(),
+                transit_date=utcnow(),
                 include_minor_aspects=True,
             )
 
@@ -163,7 +164,7 @@ class TestEnhancedTransitServiceAsync:
             result = await service.get_period_forecast(
                 natal_chart=sample_natal_chart,
                 days=7,
-                start_date=datetime.now(),
+                start_date=utcnow(),
             )
 
             assert result is not None
@@ -191,7 +192,7 @@ class TestEnhancedTransitServiceAsync:
                         "aspect_type": "conjunction",
                         "orb": 1.0,
                         "applying": True,
-                        "exact_date": datetime.now() + timedelta(days=30),
+                        "exact_date": utcnow() + timedelta(days=30),
                         "significance": "high",
                     }
                 ],
@@ -297,7 +298,7 @@ class TestEnhancedTransitServiceCaching:
 
             await service.get_current_transits(
                 natal_chart=sample_natal_chart,
-                transit_date=datetime.now(),
+                transit_date=utcnow(),
                 use_cache=True,
             )
 
@@ -351,7 +352,7 @@ class TestEnhancedTransitServiceWithKerykeion:
         """Test Kerykeion-based transit calculations"""
         # Test the actual Kerykeion transit method that exists
         result = service._get_kerykeion_transits(
-            natal_chart=sample_natal_chart, transit_date=datetime.now()
+            natal_chart=sample_natal_chart, transit_date=utcnow()
         )
 
         # Should return meaningful transit data or error handling
@@ -364,8 +365,8 @@ class TestEnhancedTransitServiceWithKerykeion:
         """Test integration with Kerykeion EphemerisDataFactory"""
         # Test that the service can work with ephemeris data
         ephemeris_data = service._get_ephemeris_data(
-            start_date=datetime.now(),
-            end_date=datetime.now() + timedelta(days=7),
+            start_date=utcnow(),
+            end_date=utcnow() + timedelta(days=7),
         )
 
         assert ephemeris_data is not None
@@ -414,7 +415,7 @@ class TestEnhancedTransitServiceFallback:
             }
 
             result = await service_without_kerykeion.get_current_transits(
-                natal_chart=sample_natal_chart, transit_date=datetime.now()
+                natal_chart=sample_natal_chart, transit_date=utcnow()
             )
 
             assert result is not None
@@ -479,7 +480,7 @@ class TestEnhancedTransitServicePerformance:
             start_time = time.time()
 
             result = await service.get_current_transits_async(
-                natal_chart=sample_natal_chart, transit_date=datetime.now()
+                natal_chart=sample_natal_chart, transit_date=utcnow()
             )
 
             end_time = time.time()
@@ -498,7 +499,7 @@ class TestEnhancedTransitServicePerformance:
         with patch.object(service, "_calculate_period_forecast") as mock_calc:
             mock_calc.return_value = {
                 "forecast_days": [
-                    {"date": datetime.now().date(), "energy_level": 75}
+                    {"date": utcnow().date(), "energy_level": 75}
                 ],
                 "overall_energy": 75,
             }
@@ -581,7 +582,7 @@ class TestEnhancedTransitServiceIntegration:
 
         result = await service.get_current_transits_async(
             natal_chart=natal_chart,
-            transit_date=datetime.now(),
+            transit_date=utcnow(),
             use_cache=False,  # Ensure fresh calculation
         )
 

@@ -22,6 +22,7 @@ from app.models.database import (
     UserSession,
 )
 from app.services.encryption import EncryptionError, SecurityUtils, data_protection
+from app.utils.astro_time_utils import utcnow
 
 
 class UserManager:
