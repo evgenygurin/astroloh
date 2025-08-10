@@ -2,6 +2,23 @@
 
 This file contains guidelines and instructions for Claude AI when working with the Astroloh project.
 
+## ⚠️ КРИТИЧЕСКАЯ ИНФОРМАЦИЯ О ВОССТАНОВЛЕНИИ КОНТЕКСТА
+
+**НЕМЕДЛЕННО ПРОЧИТАЙ:** `/Users/laptop/dev/astroloh/PROJECT_MEMORY.md` - содержит актуальную контекстную память проекта.
+
+**ПРОБЛЕМА С ПОТЕРЕЙ ПАМЯТИ РЕШЕНА (2025-08-10):**
+
+- MCP Vercel-Mem0 сервер добавлен в конфигурацию Claude для персистентной памяти
+- Создана резервная система памяти через PROJECT_MEMORY.md
+- При потере контекста всегда читай PROJECT_MEMORY.md в первую очередь
+
+**Текущий статус проекта:**
+
+- Активная ветка: `codegen/122-4-epic-vnedrenie-kerykeion`
+- Множественные изменения в app/services/ и tests/
+- 3 падающих теста требуют исправления
+- Kerykeion 4.x полностью интегрирован для профессиональной астрологии
+
 ## Project Overview
 
 Astroloh is a voice skill for Yandex Alice that provides personalized astrological forecasts and consultations. The project is built with Python 3.11, FastAPI, PostgreSQL, and integrates with advanced astronomical calculation libraries.
@@ -898,16 +915,16 @@ When making changes, always consider the astrological domain context and maintai
 - Surround code blocks and lists with blank lines to meet MD031 and MD032 requirements
 - **MD032/blanks-around-lists**: Lists should be surrounded by blank lines
 
-## OpenMemory Best Practices
+## Vercel-Mem0 Memory Best Practices
 
-### Core MCP OpenMemory Tools
+### Core MCP Vercel-Mem0 Tools
 
 **Available Tools:**
 
-- `mcp__openmemory__add-memory` - Add new memory with content string
-- `mcp__openmemory__search-memories` - Semantic search with relevance scoring (0.0-1.0)
-- `mcp__openmemory__list-memories` - List all memories with UUID and content
-- `mcp__openmemory__delete-all-memories` - Delete all memories (DANGEROUS - use with caution!)
+- `mcp__vercel-mem0__add_memory` - Add new memory with content string and optional user_id
+- `mcp__vercel-mem0__search_memory` - Semantic search with query and optional limit
+- `mcp__vercel-mem0__get_memories` - Get memories by query or get all memories with optional limit
+- `mcp__vercel-mem0__retrieve_context` - Retrieve memory context for specific question or scenario
 
 ### Memory Structure
 
@@ -1047,7 +1064,7 @@ Each memory contains:
 
 #### Automatic Memory Triggers
 
-**CRITICAL BEHAVIORAL PATTERN**: When user mentions previous work or context, IMMEDIATELY use `mcp__openmemory__search-memories` FIRST before responding. Don't wait for explicit instruction to use memory tools.
+**CRITICAL BEHAVIORAL PATTERN**: When user mentions previous work or context, IMMEDIATELY use `mcp__vercel-mem0__search_memory` FIRST before responding. Don't wait for explicit instruction to use memory tools.
 
 **Trigger Phrases for Automatic Memory Search:**
 

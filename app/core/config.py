@@ -83,6 +83,13 @@ class Settings(BaseSettings):
     ALERT_FALLBACK_RATE_PERCENT: float = 25.0  # Max fallback usage
     ALERT_USER_SATISFACTION_MIN: float = 7.0  # Min satisfaction score
 
+    # Sentry настройки
+    SENTRY_DSN: Optional[str] = None
+    SENTRY_ENVIRONMENT: str = "development"
+    SENTRY_RELEASE: Optional[str] = None
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1  # 10% трейсов
+    SENTRY_PROFILES_SAMPLE_RATE: float = 0.1  # 10% профилей
+
     @model_validator(mode="before")
     @classmethod
     def validate_fields(cls, values):

@@ -40,6 +40,7 @@ dependencies = [
     "pytz>=2022.7",
     # Логирование и мониторинг
     "loguru==0.7.2",
+    "sentry-sdk[fastapi]==2.34.1",
     # Переменные окружения
     "python-dotenv==1.0.0",
     "swisseph>=0.0.0.dev1",

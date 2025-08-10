@@ -13,7 +13,7 @@ asyncpg==0.29.0
 psycopg[binary]==3.2.4
 
 # Астрологические вычисления
-kerykeion
+kerykeion>=4.0.0
 slowapi
 
 # Шифрование и безопасность
@@ -36,7 +36,8 @@ python-dateutil==2.8.2
 pytz==2023.3
 
 # Логирование и мониторинг
-loguru==0.7.2
+loguru>=0.7.2
+sentry-sdk[fastapi]>=2.34.1
 
 # Тестирование
 pytest==7.4.3
@@ -65,4 +66,10 @@ pytest-mock==3.12.0
 pytest-xdist==3.5.0
 
 psutil
-redis
+redis>=4.0.0
+
+# Kerykeion integration dependencies
+# (These are automatically installed with kerykeion but listed for clarity)
+# swisseph - Swiss Ephemeris for astronomical calculations
+# requests - HTTP library for online city lookup
+# pytz - Timezone handling (already included above)

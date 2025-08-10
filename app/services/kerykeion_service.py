@@ -10,14 +10,15 @@ from typing import Any, Dict, List, Optional
 
 import pytz
 
+from app.core.sentry import monitor_operation
+
 logger = logging.getLogger(__name__)
 
 # Try to import Kerykeion with detailed error handling
 try:
     # Updated imports for Kerykeion 4.x
-    from kerykeion import KerykeionSubject as AstrologicalSubject
-    from kerykeion import KrInstance as NatalChart
-    from kerykeion import MakeSvgInstance as KerykeionChartSVG
+    from kerykeion import AstrologicalSubject, KerykeionChartSVG
+    from kerykeion import Report as NatalChart
 
     KERYKEION_AVAILABLE = True
     logger.info(
@@ -79,6 +80,31 @@ class AspectColor(Enum):
 
 class KerykeionService:
     """Advanced astrological service using Kerykeion library"""
+
+    # House system mapping for Kerykeion 4.x
+    HOUSE_SYSTEM_MAPPING = {
+        HouseSystem.PLACIDUS: "P",
+        HouseSystem.KOCH: "K",
+        HouseSystem.EQUAL: "A",
+        HouseSystem.WHOLE_SIGN: "W",
+        HouseSystem.REGIOMONTANUS: "R",
+        HouseSystem.CAMPANUS: "C",
+        HouseSystem.TOPOCENTRIC: "T",
+        HouseSystem.ALCABITUS: "B",
+        HouseSystem.MORINUS: "M",
+        HouseSystem.PORPHYRIUS: "O",
+        HouseSystem.VEHLOW: "V",
+        HouseSystem.MERIDIAN: "X",
+        HouseSystem.AZIMUTHAL: "H",
+        HouseSystem.POLICH_PAGE: "U",
+        HouseSystem.NATURAL_GRADUATION: "N",
+    }
+
+    # Zodiac type mapping for Kerykeion 4.x
+    ZODIAC_TYPE_MAPPING = {
+        ZodiacType.TROPICAL: "Tropic",
+        ZodiacType.SIDEREAL: "Sidereal",
+    }
 
     def __init__(self):
         self.available = KERYKEION_AVAILABLE
@@ -143,6 +169,14 @@ class KerykeionService:
                 if birth_datetime.tzinfo is None:
                     birth_datetime = pytz.UTC.localize(birth_datetime)
 
+            # Map house system and zodiac type to Kerykeion 4.x format
+            houses_system_id = self.HOUSE_SYSTEM_MAPPING.get(
+                house_system, "P"
+            )  # Default to Placidus
+            zodiac_type_str = self.ZODIAC_TYPE_MAPPING.get(
+                zodiac_type, "Tropic"
+            )  # Default to Tropical
+
             subject = AstrologicalSubject(
                 name=name,
                 year=birth_datetime.year,
@@ -155,12 +189,18 @@ class KerykeionService:
                 tz_str=str(birth_datetime.tzinfo),
                 city=city,
                 nation=nation,
-                zodiac_type=zodiac_type.value,
-                sidereal_mode="FAGAN_BRADLEY",  # Default sidereal mode
-                house_system=house_system.value,
+                zodiac_type=zodiac_type_str,
+                houses_system_identifier=houses_system_id,
+                sidereal_mode="FAGAN_BRADLEY"
+                if zodiac_type == ZodiacType.SIDEREAL
+                else None,
+                online=True,  # Enable online city lookup
+                cache_expire_after_days=30,
             )
 
-            logger.info(f"KERYKEION_SERVICE_CREATE_SUBJECT_SUCCESS: {name}")
+            logger.info(
+                f"KERYKEION_SERVICE_CREATE_SUBJECT_SUCCESS: {name} created with {houses_system_id} houses, {zodiac_type_str} zodiac"
+            )
             return subject
 
         except Exception as e:
@@ -248,18 +288,35 @@ class KerykeionService:
                             "quality": planet_info.get("quality", ""),
                         }
 
-            # Extract houses data
+            # Extract houses data - Kerykeion 4.x uses first_house, second_house, etc.
             houses_data = {}
-            for i in range(1, 13):
-                house_attr = f"house{i}"
-                if hasattr(subject, house_attr):
-                    house_info = getattr(subject, house_attr)
+            house_names = [
+                "first_house",
+                "second_house",
+                "third_house",
+                "fourth_house",
+                "fifth_house",
+                "sixth_house",
+                "seventh_house",
+                "eighth_house",
+                "ninth_house",
+                "tenth_house",
+                "eleventh_house",
+                "twelfth_house",
+            ]
+
+            for i, house_name in enumerate(house_names, 1):
+                if hasattr(subject, house_name):
+                    house_info = getattr(subject, house_name)
                     if house_info:
                         houses_data[i] = {
-                            "cusp_longitude": house_info.get("pos", [0])[0],
-                            "sign": house_info.get("sign", "Unknown"),
-                            "sign_num": house_info.get("sign_num", 0),
-                            "degree_in_sign": house_info.get("deg_in_sign", 0),
+                            "cusp_longitude": house_info.position,
+                            "sign": house_info.sign,
+                            "sign_num": house_info.sign_num,
+                            "degree_in_sign": house_info.position
+                            % 30,  # Calculate degree within sign
+                            "element": house_info.element,
+                            "quality": house_info.quality,
                         }
 
             # Add angles (ASC, MC, DSC, IC)
@@ -287,7 +344,7 @@ class KerykeionService:
 
             # Get additional chart information
             chart_info = {
-                "timezone": str(subject.tz),
+                "timezone": str(subject.tz_str),
                 "julian_day": getattr(subject, "julian_day", None),
                 "house_system": house_system.value,
                 "zodiac_type": zodiac_type.value,
@@ -320,6 +377,7 @@ class KerykeionService:
             logger.error(f"KERYKEION_SERVICE_FULL_CHART_ERROR: {e}")
             return {"error": f"Chart calculation failed: {str(e)}"}
 
+    @monitor_operation("kerykeion_aspects")
     def calculate_kerykeion_aspects(
         self, subject: Any
     ) -> List[Dict[str, Any]]:
@@ -850,6 +908,7 @@ class KerykeionService:
             logger.error(f"KERYKEION_SERVICE_SVG_ERROR: {e}")
             return None
 
+    @monitor_operation("kerykeion_compatibility")
     def calculate_compatibility_detailed(
         self, person1_data: Dict[str, Any], person2_data: Dict[str, Any]
     ) -> Dict[str, Any]:
