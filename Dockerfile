@@ -38,7 +38,8 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PATH="/opt/venv/bin:$PATH"
+    PATH="/opt/venv/bin:$PATH" \
+    CONTAINER_ENV=true
 
 # Install only runtime dependencies (no build tools)
 RUN apt-get update && apt-get install -y \
@@ -69,7 +70,9 @@ COPY app/ ./app/
 RUN mkdir -p /app/swisseph /app/logs /app/tmp && \
     chmod 755 /app/swisseph /app/logs /app/tmp && \
     chown -R astroloh:astroloh /app && \
-    chown -R astroloh:astroloh /opt/venv
+    chown -R astroloh:astroloh /opt/venv && \
+    # Ensure the astroloh user can write to the logs directory
+    chmod 777 /app/logs
 
 # Switch to non-root user
 USER astroloh

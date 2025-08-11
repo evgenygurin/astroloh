@@ -26,6 +26,7 @@ services:
       - "8000:8000"
     environment:
       - DEBUG=true
+      - CONTAINER_ENV=true
       - DATABASE_URL=postgresql+asyncpg://astroloh_user:astroloh_password@db:5432/astroloh_db
     depends_on:
       - db

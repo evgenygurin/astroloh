@@ -25,6 +25,9 @@ RUN groupadd -r astroloh && useradd -r -g astroloh -s /bin/bash -m astroloh
 # Установка рабочей директории
 WORKDIR /app
 
+# Установка переменных окружения
+ENV CONTAINER_ENV=true
+
 # Копирование файлов зависимостей
 COPY pyproject.toml ./
 COPY README.md ./
@@ -39,7 +42,9 @@ COPY . .
 RUN mkdir -p /app/swisseph /app/logs /app/tmp && \
     chmod 755 /app/swisseph /app/logs /app/tmp && \
     chown -R astroloh:astroloh /app && \
-    chown -R astroloh:astroloh /app/.venv
+    chown -R astroloh:astroloh /app/.venv && \
+    # Ensure the astroloh user can write to the logs directory
+    chmod 777 /app/logs
 
 # Переключение на непривилегированного пользователя
 USER astroloh

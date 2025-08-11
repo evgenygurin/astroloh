@@ -20,7 +20,31 @@ def setup_logging() -> None:
     """
     # Создаем директорию для логов если не существует
     log_file_path = Path(settings.LOG_FILE_PATH)
-    log_file_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Если путь относительный, делаем его абсолютным относительно /app
+    if not log_file_path.is_absolute():
+        log_file_path = Path("/app") / log_file_path
+    
+    print(f"Setting up logging with path: {log_file_path}")
+    print(f"Current working directory: {Path.cwd()}")
+    print(f"Log file parent directory: {log_file_path.parent}")
+    
+    # Создаем директорию с обработкой ошибок
+    try:
+        log_file_path.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Successfully created/verified directory: {log_file_path.parent}")
+    except PermissionError as e:
+        print(f"Permission error creating directory {log_file_path.parent}: {e}")
+        # Если нет прав на создание директории, используем /tmp
+        log_file_path = Path("/tmp") / "astroloh.log"
+        try:
+            log_file_path.parent.mkdir(parents=True, exist_ok=True)
+            print(f"Using fallback log path: {log_file_path}")
+        except PermissionError as e2:
+            print(f"Permission error with fallback path: {e2}")
+            # Если и /tmp недоступен, отключаем файловое логирование
+            print("WARNING: Cannot create log directory, disabling file logging")
+            settings.LOG_TO_FILE = False
 
     # Получаем уровень логирования
     log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
@@ -53,7 +77,7 @@ def setup_logging() -> None:
     # Файловый хэндлер с ротацией (если включено)
     if settings.LOG_TO_FILE:
         file_handler = logging.handlers.RotatingFileHandler(
-            filename=settings.LOG_FILE_PATH,
+            filename=str(log_file_path),
             maxBytes=settings.LOG_MAX_SIZE
             * 1024
             * 1024,  # Конвертируем MB в байты

@@ -2,6 +2,7 @@
 Конфигурация приложения.
 """
 
+import os
 import secrets
 from typing import List, Optional
 
@@ -64,6 +65,15 @@ class Settings(BaseSettings):
     LOG_FILE_PATH: str = "logs/astroloh.log"
     LOG_MAX_SIZE: int = 10  # MB
     LOG_BACKUP_COUNT: int = 5
+    
+    # Check if we're in a container environment and adjust logging accordingly
+    @model_validator(mode="before")
+    @classmethod
+    def validate_logging_settings(cls, values):
+        # If we're in a container or CI environment, prefer console logging
+        if os.getenv("CONTAINER_ENV") == "true" or os.getenv("CI") == "true":
+            values.setdefault("LOG_TO_FILE", False)
+        return values
 
     # Production deployment settings
     ENABLE_DEPLOYMENT_MONITORING: bool = True
