@@ -14,11 +14,11 @@ services:
     networks:
       - astroloh-network
 
-  # Backend service с полной поддержкой Kerykeion (по умолчанию)
+  # Backend service без Kerykeion (минимальная версия)
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.kerykeion
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -29,8 +29,8 @@ services:
       - YANDEX_CATALOG_ID=${YANDEX_CATALOG_ID}
       - SECRET_KEY=${SECRET_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - KERYKEION_ENABLED=true
-      - SWISSEPH_ENABLED=true
+      - KERYKEION_ENABLED=false
+      - SWISSEPH_ENABLED=false
     depends_on:
       db:
         condition: service_healthy

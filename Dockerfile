@@ -54,25 +54,25 @@ RUN apt-get update && apt-get install -y \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 COPY --from=builder /app/.venv /opt/venv
 
-# Create non-root user with specific UID/GID for security
-# RUN groupadd --gid 1001 astroloh && \
-#     useradd --uid 1001 --gid 1001 --create-home --shell /bin/bash astroloh
+# Create non-root user and group for security
+RUN groupadd -r astroloh && useradd -r -g astroloh -s /bin/bash -m astroloh
 
-# Create application directory with proper permissions
+# Create application directory
 WORKDIR /app
-RUN chown -R astroloh:astroloh /app /opt/venv
 
-# Switch to non-root user early for security
-USER astroloh
+# Copy application code
+COPY alembic.ini ./
+COPY migrations/ ./migrations/
+COPY app/ ./app/
 
-# Copy application code with proper ownership
-COPY --chown=astroloh:astroloh alembic.ini ./
-COPY --chown=astroloh:astroloh migrations/ ./migrations/
-COPY --chown=astroloh:astroloh app/ ./app/
-
-# Create required directories
+# Create required directories and set ownership
 RUN mkdir -p /app/swisseph /app/logs /app/tmp && \
-    chmod 755 /app/swisseph /app/logs /app/tmp
+    chmod 755 /app/swisseph /app/logs /app/tmp && \
+    chown -R astroloh:astroloh /app && \
+    chown -R astroloh:astroloh /opt/venv
+
+# Switch to non-root user
+USER astroloh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

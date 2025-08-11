@@ -12,13 +12,15 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libswe-dev \
     git \
-    passwd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/cache/apt/*
 
 # Установка uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+# Создание непривилегированного пользователя и группы для безопасности
+RUN groupadd -r astroloh && useradd -r -g astroloh -s /bin/bash -m astroloh
 
 # Установка рабочей директории
 WORKDIR /app
@@ -33,17 +35,14 @@ RUN uv venv && uv pip install -e ".[full,dev]"
 # Копирование кода приложения
 COPY . .
 
-# Создание необходимых директорий
+# Создание необходимых директорий и установка владельца
 RUN mkdir -p /app/swisseph /app/logs /app/tmp && \
-    chmod 755 /app/swisseph /app/logs /app/tmp
+    chmod 755 /app/swisseph /app/logs /app/tmp && \
+    chown -R astroloh:astroloh /app && \
+    chown -R astroloh:astroloh /app/.venv
 
-# Создание пользователя пропущено для избежания зависания
-# RUN groupadd -r --gid 999 astroloh && \
-#     useradd --no-log-init -r --uid 999 --gid 999 --create-home --shell /bin/bash astroloh && \
-#     chown -R astroloh:astroloh /app
-
-# Переключение на пользователя пропущено
-# USER astroloh
+# Переключение на непривилегированного пользователя
+USER astroloh
 
 # Проверка здоровья
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
