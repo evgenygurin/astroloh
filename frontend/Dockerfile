@@ -1,13 +1,19 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:18 AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
 
+# Improve npm reliability and show full errors in CI
+ENV NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_FUND=false \
+    NPM_CONFIG_LOGLEVEL=info \
+    npm_config_update_notifier=false
+
 # Install dependencies
-RUN npm ci --silent
+RUN npm ci --no-audit --no-fund
 
 # Copy source code
 COPY . .
