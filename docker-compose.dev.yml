@@ -1,6 +1,6 @@
 services:
-  # Frontend development service with hot reload
-  frontend-dev:
+  # Frontend service (development)
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
@@ -11,29 +11,41 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-    depends_on:
-      - backend
+      - CHOKIDAR_USEPOLLING=true
     networks:
       - astroloh-network
-    command: npm run dev -- --host 0.0.0.0
 
-  # Backend service
+  # Backend service с полной поддержкой Kerykeion
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.kerykeion
     ports:
       - "8000:8000"
     environment:
       - DEBUG=true
       - DATABASE_URL=postgresql+asyncpg://astroloh_user:astroloh_password@db:5432/astroloh_db
+      - YANDEX_API_KEY=${YANDEX_API_KEY:-}
+      - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID:-}
+      - YANDEX_CATALOG_ID=${YANDEX_CATALOG_ID:-}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-your-encryption-key-here}
+      - KERYKEION_ENABLED=true
+      - SWISSEPH_ENABLED=true
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./app:/app/app
-      - ./migrations:/app/migrations
-      - ./alembic.ini:/app/alembic.ini
-    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - astroloh-network
 
@@ -46,13 +58,38 @@ services:
       POSTGRES_DB: astroloh_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_database.sql:/docker-entrypoint-initdb.d/01_init_database.sql:ro
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U astroloh_user -d astroloh_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     networks:
       - astroloh-network
 
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - astroloh-network
+    command: redis-server --appendonly yes
+
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   astroloh-network:

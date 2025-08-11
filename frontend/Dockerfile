@@ -1,13 +1,18 @@
 # Build stage
 FROM node:18-alpine AS builder
 
+# Install necessary build tools
+RUN apk add --no-cache git
+
 WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci --silent
+# Clear npm cache and install dependencies with better error handling
+RUN npm cache clean --force && \
+    npm ci --silent --no-audit --no-fund || \
+    (echo "npm ci failed, trying npm install..." && npm install --silent --no-audit --no-fund)
 
 # Copy source code
 COPY . .

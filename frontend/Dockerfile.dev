@@ -1,19 +1,24 @@
-# Development Dockerfile for frontend
+# Development stage
 FROM node:18-alpine
 
-WORKDIR /app
-
-# Install dependencies for better development experience
+# Install necessary build tools
 RUN apk add --no-cache git
+
+WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci
+# Clear npm cache and install dependencies with better error handling
+RUN npm cache clean --force && \
+    npm ci --silent --no-audit --no-fund || \
+    (echo "npm ci failed, trying npm install..." && npm install --silent --no-audit --no-fund)
+
+# Copy source code
+COPY . .
 
 # Expose port
 EXPOSE 3000
 
 # Start development server
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
