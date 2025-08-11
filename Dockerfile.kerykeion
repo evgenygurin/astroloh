@@ -20,7 +20,9 @@ RUN apt-get update && apt-get install -y \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Создание непривилегированного пользователя и группы для безопасности
-RUN groupadd -r astroloh && useradd -r -g astroloh -s /bin/bash -m astroloh
+RUN groupadd astroloh && \
+    useradd -g astroloh -s /bin/bash astroloh && \
+    id astroloh
 
 # Установка рабочей директории
 WORKDIR /app
