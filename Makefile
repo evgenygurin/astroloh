@@ -105,6 +105,8 @@ help:
 	@echo "    make kerykeion-logs     - 📋 Логи сервиса с Kerykeion"
 	@echo "    make kerykeion-shell    - 🐚 Shell в контейнере с Kerykeion"
 	@echo "    make kerykeion-check    - 🔍 Проверка работы Kerykeion"
+	@echo "    make minimal-up         - 🚀 Запуск без Kerykeion (минимальная версия)"
+	@echo "    make minimal-down       - ⏹️ Остановка минимальной версии"
 	@echo "-------------------------------------------------------------------"
 
 # ------------------------------------------------------------------------------
@@ -323,9 +325,9 @@ run:
 # ------------------------------------------------------------------------------
 
 docker-build:
-	@echo "$(BLUE)🏗️  Сборка Docker образов...$(RESET)"
+	@echo "$(BLUE)🏗️ Сборка Docker образов с Kerykeion...$(RESET)"
 	@docker-compose build
-	@echo "$(GREEN)✅ Образы собраны$(RESET)"
+	@echo "$(GREEN)✅ Образы собраны с поддержкой Kerykeion$(RESET)"
 
 docker-rebuild:
 	@echo "$(BLUE)🔄 Пересборка Docker образов без кэша...$(RESET)"
@@ -333,12 +335,13 @@ docker-rebuild:
 	@echo "$(GREEN)✅ Образы пересобраны$(RESET)"
 
 docker-up:
-	@echo "$(BLUE)🚀 Запуск production окружения в Docker...$(RESET)"
+	@echo "$(BLUE)🚀 Запуск production окружения в Docker с Kerykeion...$(RESET)"
 	@docker-compose up -d
 	@echo "$(GREEN)✅ Сервисы запущены:$(RESET)"
 	@echo "  - Frontend: http://localhost"
 	@echo "  - Backend API: http://localhost:8000"
 	@echo "  - API Docs: http://localhost:8000/docs"
+	@echo "  - Kerykeion: ✅ Включен"
 	@docker-compose ps
 
 docker-dev:
@@ -448,7 +451,7 @@ debug:
 # Kerykeion команды для работы с профессиональной астрологией
 # ------------------------------------------------------------------------------
 
-.PHONY: kerykeion-build kerykeion-up kerykeion-down kerykeion-test kerykeion-logs kerykeion-shell kerykeion-check
+.PHONY: kerykeion-build kerykeion-up kerykeion-down kerykeion-test kerykeion-logs kerykeion-shell kerykeion-check minimal-up minimal-down
 
 kerykeion-build:
 	@echo "$(BLUE)🏗️ Сборка Docker образа с Kerykeion...$(RESET)"
@@ -480,6 +483,19 @@ kerykeion-shell:
 
 kerykeion-check:
 	@echo "$(BLUE)🔍 Проверка работы Kerykeion...$(RESET)"
-	@docker run --rm astroloh-kerykeion python -c "import kerykeion; print('✅ Kerykeion доступен')"
-	@docker run --rm astroloh-kerykeion python -c "import swisseph as swe; print('✅ Swiss Ephemeris доступен')"
-	@docker run --rm astroloh-kerykeion python -c "from app.services.astrology_calculator import AstrologyCalculator; calc = AstrologyCalculator(); print('✅ AstrologyCalculator работает с бэкендами:', calc._get_available_backends())"
+	@python3 check_kerykeion.py
+
+minimal-up:
+	@echo "$(BLUE)🚀 Запуск минимальной версии без Kerykeion...$(RESET)"
+	@docker-compose -f docker-compose.minimal.yml up -d
+	@echo "$(GREEN)✅ Минимальная версия запущена:$(RESET)"
+	@echo "  - Frontend: http://localhost"
+	@echo "  - Backend API: http://localhost:8000"
+	@echo "  - API Docs: http://localhost:8000/docs"
+	@echo "  - Kerykeion: ❌ Отключен"
+	@docker-compose -f docker-compose.minimal.yml ps
+
+minimal-down:
+	@echo "$(BLUE)⏹️ Остановка минимальной версии...$(RESET)"
+	@docker-compose -f docker-compose.minimal.yml down
+	@echo "$(GREEN)✅ Минимальная версия остановлена$(RESET)"

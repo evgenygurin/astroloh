@@ -54,21 +54,13 @@ RUN apt-get update && apt-get install -y \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 COPY --from=builder /app/.venv /opt/venv
 
-# Create non-root user with specific UID/GID for security
-# RUN groupadd --gid 1001 astroloh && \
-#     useradd --uid 1001 --gid 1001 --create-home --shell /bin/bash astroloh
-
-# Create application directory with proper permissions
+# Create application directory
 WORKDIR /app
-RUN chown -R astroloh:astroloh /app /opt/venv
 
-# Switch to non-root user early for security
-USER astroloh
-
-# Copy application code with proper ownership
-COPY --chown=astroloh:astroloh alembic.ini ./
-COPY --chown=astroloh:astroloh migrations/ ./migrations/
-COPY --chown=astroloh:astroloh app/ ./app/
+# Copy application code
+COPY alembic.ini ./
+COPY migrations/ ./migrations/
+COPY app/ ./app/
 
 # Create required directories
 RUN mkdir -p /app/swisseph /app/logs /app/tmp && \

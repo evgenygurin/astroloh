@@ -1,83 +1,71 @@
-# 🐳 Astroloh с Kerykeion в Docker
-
-Этот документ описывает, как запустить Astroloh с полной поддержкой Kerykeion в Docker окружении.
+# Astroloh с Kerykeion - Docker инструкции
 
 ## 🚀 Быстрый старт
 
-### 1. Сборка и запуск
-
+### По умолчанию (с Kerykeion)
 ```bash
-# Собрать образ с Kerykeion
-make -f Makefile.kerykeion build
+# Запуск с полной поддержкой Kerykeion (рекомендуется)
+make docker-up
 
-# Запустить сервисы
-make -f Makefile.kerykeion up
-
-# Проверить статус
-make -f Makefile.kerykeion status
+# Или напрямую
+docker-compose up -d
 ```
 
-### 2. Проверка работы Kerykeion
-
+### Минимальная версия (без Kerykeion)
 ```bash
-# Полная проверка всех компонентов
-make -f Makefile.kerykeion full-check
+# Запуск без Kerykeion для быстрого тестирования
+make minimal-up
 
-# Или отдельные проверки:
-make -f Makefile.kerykeion check-kerykeion
-make -f Makefile.kerykeion check-swisseph
-make -f Makefile.kerykeion check-backends
-```
-
-### 3. Просмотр логов
-
-```bash
-make -f Makefile.kerykeion logs
+# Или напрямую
+docker-compose -f docker-compose.minimal.yml up -d
 ```
 
 ## 📋 Доступные команды
 
 ### Основные команды
+```bash
+# Сборка образов
+make docker-build
 
-| Команда | Описание |
-|---------|----------|
-| `make -f Makefile.kerykeion help` | Показать справку |
-| `make -f Makefile.kerykeion build` | Собрать Docker образ |
-| `make -f Makefile.kerykeion up` | Запустить сервисы |
-| `make -f Makefile.kerykeion down` | Остановить сервисы |
-| `make -f Makefile.kerykeion logs` | Показать логи |
-| `make -f Makefile.kerykeion status` | Статус сервисов |
+# Запуск сервисов
+make docker-up          # С Kerykeion (по умолчанию)
+make minimal-up         # Без Kerykeion
 
-### Команды для разработки
+# Остановка сервисов
+make docker-down
+make minimal-down
 
-| Команда | Описание |
-|---------|----------|
-| `make -f Makefile.kerykeion dev` | Запуск в режиме разработки |
-| `make -f Makefile.kerykeion test` | Запустить тесты |
-| `make -f Makefile.kerykeion test-shell` | Открыть shell в контейнере |
-| `make -f Makefile.kerykeion migrate` | Запустить миграции БД |
+# Просмотр логов
+make docker-logs
+```
 
-### Команды проверки
+### Kerykeion команды
+```bash
+# Проверка работы Kerykeion
+make kerykeion-check
 
-| Команда | Описание |
-|---------|----------|
-| `make -f Makefile.kerykeion check-kerykeion` | Проверить Kerykeion |
-| `make -f Makefile.kerykeion check-swisseph` | Проверить Swiss Ephemeris |
-| `make -f Makefile.kerykeion check-backends` | Проверить доступные бэкенды |
-| `make -f Makefile.kerykeion full-check` | Полная проверка |
+# Сборка образа с Kerykeion
+make kerykeion-build
+
+# Запуск только Kerykeion сервисов
+make kerykeion-up
+make kerykeion-down
+
+# Тестирование в Docker
+make kerykeion-test
+
+# Shell в контейнере
+make kerykeion-shell
+```
 
 ## 🔧 Конфигурация
 
 ### Переменные окружения
-
 Создайте файл `.env` в корне проекта:
 
 ```env
-# База данных
-DATABASE_URL=postgresql+asyncpg://astroloh_user:astroloh_password@db:5432/astroloh_db
-
-# Yandex API
-YANDEX_API_KEY=your_yandex_api_key
+# Яндекс API
+YANDEX_API_KEY=your_api_key
 YANDEX_FOLDER_ID=your_folder_id
 YANDEX_CATALOG_ID=your_catalog_id
 
@@ -85,144 +73,151 @@ YANDEX_CATALOG_ID=your_catalog_id
 SECRET_KEY=your_secret_key
 ENCRYPTION_KEY=your_encryption_key
 
-# Kerykeion
-KERYKEION_ENABLED=true
-SWISSEPH_ENABLED=true
+# Ngrok (опционально)
+NGROK_AUTHTOKEN=your_ngrok_token
 ```
 
-### Структура файлов
+### Включение/отключение Kerykeion
+- **По умолчанию**: Kerykeion включен в основном `docker-compose.yml`
+- **Минимальная версия**: Kerykeion отключен в `docker-compose.minimal.yml`
 
-```text
-astroloh/
-├── Dockerfile.kerykeion          # Dockerfile с Kerykeion
-├── docker-compose.kerykeion.yml  # Docker Compose для Kerykeion
-├── Makefile.kerykeion            # Makefile для управления
-├── test_kerykeion_docker.py      # Тесты Kerykeion
-└── DOCKER_KERYKEION_README.md    # Этот файл
-```
+## 🐛 Устранение проблем
 
-## 🧪 Тестирование
-
-### Автоматические тесты
-
+### Проблема: "No module named 'kerykeion'"
 ```bash
-# Запустить все тесты
-make -f Makefile.kerykeion test
+# Пересоберите образ
+make docker-rebuild
+
+# Или проверьте установку
+make kerykeion-check
 ```
 
-### Ручное тестирование
-
+### Проблема: Зависание при сборке
 ```bash
-# Открыть shell в контейнере
-make -f Makefile.kerykeion test-shell
+# Очистите Docker кэш
+docker system prune -a
 
-# Внутри контейнера:
-python test_kerykeion_docker.py
+# Пересоберите без кэша
+make docker-rebuild
 ```
 
-## 🔍 Диагностика
-
-### Проверка доступности сервисов
-
+### Проблема: Недостаточно места на диске
 ```bash
-# Проверить здоровье
-make -f Makefile.kerykeion health
+# Очистите неиспользуемые образы
+docker image prune -a
 
-# Проверить логи
-make -f Makefile.kerykeion logs
+# Очистите все Docker данные
+docker system prune -a --volumes
 ```
 
-### Проверка зависимостей
+## 📊 Проверка работоспособности
 
+### Проверка Kerykeion
 ```bash
-# Проверить установленные пакеты
-docker-compose -f docker-compose.kerykeion.yml exec backend-kerykeion pip list | grep -E "(kerykeion|swisseph|skyfield|astropy)"
+# Локальная проверка
+python check_kerykeion.py
+
+# Проверка в Docker
+make kerykeion-check
 ```
 
-## 🐛 Устранение неполадок
-
-### Проблема: Ошибка компиляции pyswisseph
-
-**Решение:** Убедитесь, что используются правильные системные зависимости:
-
-```dockerfile
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    pkg-config \
-    libffi-dev \
-    libc6-dev \
-    libsqlite3-dev \
-    libswe-dev
-```
-
-### Проблема: Kerykeion не импортируется
-
-**Решение:** Проверьте установку зависимостей:
-
+### Проверка API
 ```bash
-make -f Makefile.kerykeion install-deps
+# Проверка здоровья
+curl http://localhost:8000/health
+
+# Проверка документации
+open http://localhost:8000/docs
 ```
 
-### Проблема: База данных не подключается
+## 🔄 Миграция между версиями
 
-**Решение:** Проверьте переменные окружения и миграции:
-
+### Переход с Kerykeion на минимальную версию
 ```bash
-make -f Makefile.kerykeion migrate
+# Остановите текущие сервисы
+make docker-down
+
+# Запустите минимальную версию
+make minimal-up
 ```
 
-## 📊 Мониторинг
-
-### Логи приложения
-
+### Переход с минимальной на полную версию
 ```bash
-# Логи в реальном времени
-make -f Makefile.kerykeion logs
+# Остановите минимальную версию
+make minimal-down
 
-# Логи с фильтрацией
-docker-compose -f docker-compose.kerykeion.yml logs -f backend-kerykeion | grep -i kerykeion
+# Запустите полную версию
+make docker-up
 ```
 
-### Метрики производительности
+## 📝 Логи и отладка
 
+### Просмотр логов
 ```bash
-# Использование ресурсов
-docker stats
+# Все сервисы
+make docker-logs
+
+# Только backend
+docker-compose logs -f backend
+
+# Только Kerykeion сервисы
+make kerykeion-logs
+```
+
+### Отладка в контейнере
+```bash
+# Shell в backend контейнере
+docker-compose exec backend /bin/bash
+
+# Shell в Kerykeion контейнере
+make kerykeion-shell
+```
+
+## 🏗️ Архитектура
+
+### Сервисы с Kerykeion
+- `backend` - FastAPI приложение с полной поддержкой астрологии
+- `frontend` - Веб-интерфейс
+- `db` - PostgreSQL база данных
+- `redis` - Кэширование и сессии
+- `ngrok-backend` - Туннель для backend API
+- `ngrok-frontend` - Туннель для frontend
+
+### Зависимости Kerykeion
+- `kerykeion>=4.26.0` - Основная астрологическая библиотека
+- `pyswisseph==2.10.3.2` - Swiss Ephemeris для точных расчетов
+- `skyfield==1.49` - Астрономические расчеты
+- `astropy==6.0.0` - Профессиональная астрономия
+
+## 🚀 Production развертывание
+
+### Рекомендуемая конфигурация
+```bash
+# Сборка production образов
+make docker-build
+
+# Запуск production сервисов
+make docker-up
+
+# Проверка работоспособности
+make kerykeion-check
+```
+
+### Мониторинг
+```bash
+# Проверка статуса сервисов
+docker-compose ps
 
 # Проверка здоровья
 curl http://localhost:8000/health
-```
 
-## 🔄 Обновление
-
-### Обновление зависимостей
-
-```bash
-# Пересобрать образ
-make -f Makefile.kerykeion build-dev
-
-# Перезапустить сервисы
-make -f Makefile.kerykeion restart
-```
-
-### Очистка
-
-```bash
-# Очистить все Docker ресурсы
-make -f Makefile.kerykeion clean
+# Просмотр логов
+make docker-logs
 ```
 
 ## 📚 Дополнительные ресурсы
 
-- [Kerykeion Documentation](https://github.com/g-b-r/kerykeion)
+- [Kerykeion документация](https://github.com/g-b-r/kerykeion)
 - [Swiss Ephemeris](https://www.astro.com/swisseph/)
-- [Docker Documentation](https://docs.docker.com/)
-
-## 🤝 Поддержка
-
-При возникновении проблем:
-
-1. Проверьте логи: `make -f Makefile.kerykeion logs`
-2. Запустите диагностику: `make -f Makefile.kerykeion full-check`
-3. Проверьте статус сервисов: `make -f Makefile.kerykeion status`
+- [FastAPI документация](https://fastapi.tiangolo.com/)
+- [Docker Compose документация](https://docs.docker.com/compose/)
