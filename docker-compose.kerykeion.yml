@@ -1,0 +1,80 @@
+services:
+  # Backend service с полной поддержкой Kerykeion
+  backend-kerykeion:
+    build:
+      context: .
+      dockerfile: Dockerfile.kerykeion
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://astroloh_user:astroloh_password@db:5432/astroloh_db
+      - YANDEX_API_KEY=${YANDEX_API_KEY}
+      - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID}
+      - YANDEX_CATALOG_ID=${YANDEX_CATALOG_ID}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - KERYKEION_ENABLED=true
+      - SWISSEPH_ENABLED=true
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - astroloh-network
+
+  # Database service
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: astroloh_user
+      POSTGRES_PASSWORD: astroloh_password
+      POSTGRES_DB: astroloh_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_database.sql:/docker-entrypoint-initdb.d/01_init_database.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U astroloh_user -d astroloh_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - astroloh-network
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - astroloh-network
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  astroloh-network:
+    driver: bridge

@@ -96,6 +96,15 @@ help:
 	@echo "    make docker-build  - Сборка Docker образов"
 	@echo "    make docker-rebuild - Пересборка образов без кэша"
 	@echo "    make docker-logs   - Просмотр логов сервисов"
+	@echo ""
+	@echo "  $(YELLOW)Kerykeion команды:$(RESET)"
+	@echo "    make kerykeion-build    - 🏗️ Сборка Docker образа с Kerykeion"
+	@echo "    make kerykeion-up       - 🚀 Запуск сервисов с Kerykeion"
+	@echo "    make kerykeion-down     - ⏹️ Остановка сервисов с Kerykeion"
+	@echo "    make kerykeion-test     - 🧪 Тестирование Kerykeion в Docker"
+	@echo "    make kerykeion-logs     - 📋 Логи сервиса с Kerykeion"
+	@echo "    make kerykeion-shell    - 🐚 Shell в контейнере с Kerykeion"
+	@echo "    make kerykeion-check    - 🔍 Проверка работы Kerykeion"
 	@echo "-------------------------------------------------------------------"
 
 # ------------------------------------------------------------------------------
@@ -434,3 +443,43 @@ debug:
 	@[ -f pyproject.toml ] && echo "$(GREEN)pyproject.toml найден$(RESET)" || echo "$(RED)pyproject.toml отсутствует$(RESET)"
 	@[ -f uv.lock ] && echo "$(GREEN)uv.lock найден$(RESET)" || echo "$(YELLOW)uv.lock отсутствует$(RESET)"
 	@echo "$(GREEN)✅ Диагностика завершена$(RESET)"
+
+# ------------------------------------------------------------------------------
+# Kerykeion команды для работы с профессиональной астрологией
+# ------------------------------------------------------------------------------
+
+.PHONY: kerykeion-build kerykeion-up kerykeion-down kerykeion-test kerykeion-logs kerykeion-shell kerykeion-check
+
+kerykeion-build:
+	@echo "$(BLUE)🏗️ Сборка Docker образа с Kerykeion...$(RESET)"
+	@docker build -f Dockerfile.kerykeion -t astroloh-kerykeion --load .
+	@echo "$(GREEN)✅ Образ с Kerykeion собран$(RESET)"
+
+kerykeion-up:
+	@echo "$(BLUE)🚀 Запуск сервисов с Kerykeion...$(RESET)"
+	@docker-compose -f docker-compose.kerykeion.yml up -d
+	@echo "$(GREEN)✅ Сервисы с Kerykeion запущены$(RESET)"
+	@docker-compose -f docker-compose.kerykeion.yml ps
+
+kerykeion-down:
+	@echo "$(BLUE)⏹️ Остановка сервисов с Kerykeion...$(RESET)"
+	@docker-compose -f docker-compose.kerykeion.yml down
+	@echo "$(GREEN)✅ Сервисы с Kerykeion остановлены$(RESET)"
+
+kerykeion-test:
+	@echo "$(BLUE)🧪 Тестирование Kerykeion в Docker...$(RESET)"
+	@docker-compose -f docker-compose.kerykeion.yml exec backend-kerykeion python test_kerykeion_docker.py
+
+kerykeion-logs:
+	@echo "$(BLUE)📋 Логи сервиса с Kerykeion...$(RESET)"
+	@docker-compose -f docker-compose.kerykeion.yml logs -f backend-kerykeion
+
+kerykeion-shell:
+	@echo "$(BLUE)🐚 Открытие shell в контейнере с Kerykeion...$(RESET)"
+	@docker-compose -f docker-compose.kerykeion.yml exec backend-kerykeion /bin/bash
+
+kerykeion-check:
+	@echo "$(BLUE)🔍 Проверка работы Kerykeion...$(RESET)"
+	@docker run --rm astroloh-kerykeion python -c "import kerykeion; print('✅ Kerykeion доступен')"
+	@docker run --rm astroloh-kerykeion python -c "import swisseph as swe; print('✅ Swiss Ephemeris доступен')"
+	@docker run --rm astroloh-kerykeion python -c "from app.services.astrology_calculator import AstrologyCalculator; calc = AstrologyCalculator(); print('✅ AstrologyCalculator работает с бэкендами:', calc._get_available_backends())"

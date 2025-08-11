@@ -21,7 +21,7 @@ try:
     KERYKEION_AVAILABLE = True
     logging.info("Kerykeion library available for advanced calculations")
 except ImportError as e:
-    logging.warning(f"Kerykeion not fully available: {e}")
+    logging.info(f"Kerykeion not available (expected on macOS): {e}")
     KERYKEION_AVAILABLE = False
     AstrologicalSubject = None
 

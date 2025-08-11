@@ -43,7 +43,6 @@ dependencies = [
     "sentry-sdk[fastapi]==2.34.1",
     # Переменные окружения
     "python-dotenv==1.0.0",
-    "swisseph>=0.0.0.dev1",
     # Rate limiting
     "slowapi==0.1.9",
     # Кэширование
@@ -55,10 +54,13 @@ dependencies = [
     # Google Assistant integration
     "google-cloud-dialogflow==2.28.0",
     "greenlet>=3.2.3",
+    "skyfield>=1.49",
+    "astropy>=6.0.0",
 ]
 
 [project.optional-dependencies]
 # Полный набор астрологических библиотек (рекомендуется для Linux/Windows)
+# Полный набор астрологических библиотек (для Linux/Docker)
 full = [
     "kerykeion>=4.26.0",
     "pyswisseph==2.10.3.2",
@@ -68,7 +70,6 @@ full = [
 
 # Альтернативы для macOS (без компиляции C)
 macos = [
-    "kerykeion>=4.26.0",
     "skyfield==1.49",
     "astropy==6.0.0"
 ]
@@ -80,7 +81,6 @@ minimal = [
 
 # Профессиональная астрономия (высокая точность)
 professional = [
-    "kerykeion>=4.26.0",
     "astropy==6.0.0",
     "skyfield==1.49"
 ]
