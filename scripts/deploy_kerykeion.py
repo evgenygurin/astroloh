@@ -12,6 +12,7 @@ Options:
     --auto-advance  Automatically advance through phases without manual confirmation
     --rollback      Execute emergency rollback of all features
     --status        Show current deployment status
+    --validate      Validate Kerykeion installation and configuration
 """
 
 import argparse
@@ -45,6 +46,112 @@ class DeploymentOrchestrator:
         if dry_run:
             logger.warning("DRY RUN MODE: No actual changes will be made")
 
+    async def validate_kerykeion_installation(self) -> Dict[str, Any]:
+        """Validate Kerykeion installation and configuration."""
+        print("🔍 VALIDATING KERYKEION INSTALLATION")
+        print("=" * 50)
+
+        validation_results = {
+            "kerykeion_available": False,
+            "swisseph_available": False,
+            "dependencies_ok": False,
+            "test_calculation_ok": False,
+            "errors": [],
+            "warnings": []
+        }
+
+        try:
+            # Test Kerykeion import
+            print("📦 Testing Kerykeion import...")
+            try:
+                from kerykeion import AstrologicalSubject, KerykeionChartSVG
+                from kerykeion import Report as NatalChart
+                validation_results["kerykeion_available"] = True
+                print("✅ Kerykeion import successful")
+            except ImportError as e:
+                validation_results["errors"].append(f"Kerykeion import failed: {e}")
+                print(f"❌ Kerykeion import failed: {e}")
+
+            # Test Swiss Ephemeris
+            print("📦 Testing Swiss Ephemeris...")
+            try:
+                import swisseph
+                validation_results["swisseph_available"] = True
+                print("✅ Swiss Ephemeris import successful")
+            except ImportError as e:
+                validation_results["warnings"].append(f"Swiss Ephemeris import failed: {e}")
+                print(f"⚠️  Swiss Ephemeris import failed: {e}")
+
+            # Test basic calculation
+            if validation_results["kerykeion_available"]:
+                print("🧮 Testing basic Kerykeion calculation...")
+                try:
+                    from datetime import datetime
+                    import pytz
+                    
+                    # Create a test subject
+                    test_subject = AstrologicalSubject(
+                        name="Test User",
+                        year=1990,
+                        month=1,
+                        day=1,
+                        hour=12,
+                        minute=0,
+                        lat=55.7558,
+                        lng=37.6176,
+                        tz_str="Europe/Moscow",
+                        city="Moscow",
+                        nation="Russia"
+                    )
+                    
+                    # Test basic properties
+                    if hasattr(test_subject, 'sun') and test_subject.sun:
+                        validation_results["test_calculation_ok"] = True
+                        print("✅ Basic Kerykeion calculation successful")
+                    else:
+                        validation_results["errors"].append("Basic Kerykeion calculation failed")
+                        print("❌ Basic Kerykeion calculation failed")
+                        
+                except Exception as e:
+                    validation_results["errors"].append(f"Kerykeion calculation test failed: {e}")
+                    print(f"❌ Kerykeion calculation test failed: {e}")
+
+            # Check dependencies
+            validation_results["dependencies_ok"] = (
+                validation_results["kerykeion_available"] and 
+                validation_results["swisseph_available"]
+            )
+
+            # Overall validation result
+            validation_results["overall_success"] = (
+                validation_results["kerykeion_available"] and 
+                validation_results["test_calculation_ok"]
+            )
+
+            # Print summary
+            print("\n📊 VALIDATION SUMMARY:")
+            print(f"   Kerykeion Available: {'✅' if validation_results['kerykeion_available'] else '❌'}")
+            print(f"   Swiss Ephemeris: {'✅' if validation_results['swisseph_available'] else '⚠️'}")
+            print(f"   Test Calculation: {'✅' if validation_results['test_calculation_ok'] else '❌'}")
+            print(f"   Overall Status: {'✅ PASSED' if validation_results['overall_success'] else '❌ FAILED'}")
+
+            if validation_results["errors"]:
+                print("\n❌ ERRORS:")
+                for error in validation_results["errors"]:
+                    print(f"   - {error}")
+
+            if validation_results["warnings"]:
+                print("\n⚠️  WARNINGS:")
+                for warning in validation_results["warnings"]:
+                    print(f"   - {warning}")
+
+            return validation_results
+
+        except Exception as e:
+            logger.error(f"KERYKEION_VALIDATION_ERROR: {e}")
+            validation_results["errors"].append(f"Validation process failed: {e}")
+            return validation_results
+
     async def execute_deployment(
         self, start_phase: str = None
     ) -> Dict[str, Any]:
@@ -52,6 +159,24 @@ class DeploymentOrchestrator:
         logger.info("🚀 STARTING KERYKEION PRODUCTION DEPLOYMENT")
 
         try:
+            # Validate Kerykeion installation first
+            print("🔍 Pre-deployment Kerykeion validation...")
+            validation_result = await self.validate_kerykeion_installation()
+            
+            if not validation_result["overall_success"]:
+                print("❌ Kerykeion validation failed. Cannot proceed with deployment.")
+                if validation_result["errors"]:
+                    print("Errors found:")
+                    for error in validation_result["errors"]:
+                        print(f"  - {error}")
+                
+                if not self._confirm_action("Continue deployment anyway? (NOT RECOMMENDED)"):
+                    return {
+                        "success": False,
+                        "message": "Deployment cancelled due to Kerykeion validation failure",
+                        "validation_result": validation_result
+                    }
+
             # Initialize deployment systems
             print("📋 Initializing deployment systems...")
             init_result = (
@@ -332,6 +457,9 @@ async def main():
     parser.add_argument(
         "--features", nargs="+", help="Specific features to rollback"
     )
+    parser.add_argument(
+        "--validate", action="store_true", help="Validate Kerykeion installation and configuration"
+    )
 
     args = parser.parse_args()
 
@@ -354,6 +482,10 @@ async def main():
         elif args.rollback:
             result = await orchestrator.execute_rollback(args.features)
             sys.exit(0 if result.get("success") else 1)
+
+        elif args.validate:
+            validation_result = await orchestrator.validate_kerykeion_installation()
+            sys.exit(0 if validation_result["overall_success"] else 1)
 
         else:
             # Execute deployment

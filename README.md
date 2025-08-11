@@ -110,6 +110,27 @@
 
 ## Быстрый старт
 
+### 🚀 Kerykeion Deployment (ОБЯЗАТЕЛЬНО)
+
+Kerykeion является критически важным компонентом для профессиональных астрологических расчетов. Перед запуском проекта обязательно выполните:
+
+```bash
+# 1. Проверка и установка Kerykeion
+python scripts/setup_kerykeion.py --validate
+
+# 2. Если Kerykeion не установлен, выполните установку
+python scripts/setup_kerykeion.py --docker  # для Docker
+python scripts/setup_kerykeion.py           # для локальной среды
+
+# 3. Тестирование функциональности
+python scripts/test_kerykeion.py
+
+# 4. Развертывание с валидацией
+python scripts/deploy_kerykeion.py --validate
+```
+
+**Важно**: Без Kerykeion система будет работать только с базовыми функциями. Для полной функциональности Kerykeion обязателен!
+
 ### С Docker
 
 1. Склонируйте репозиторий:
