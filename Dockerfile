@@ -54,6 +54,9 @@ RUN apt-get update && apt-get install -y \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 COPY --from=builder /app/.venv /opt/venv
 
+# Create non-root user and group for security
+RUN groupadd -r astroloh && useradd -r -g astroloh -s /bin/bash -m astroloh
+
 # Create application directory
 WORKDIR /app
 
@@ -62,9 +65,14 @@ COPY alembic.ini ./
 COPY migrations/ ./migrations/
 COPY app/ ./app/
 
-# Create required directories
+# Create required directories and set ownership
 RUN mkdir -p /app/swisseph /app/logs /app/tmp && \
-    chmod 755 /app/swisseph /app/logs /app/tmp
+    chmod 755 /app/swisseph /app/logs /app/tmp && \
+    chown -R astroloh:astroloh /app && \
+    chown -R astroloh:astroloh /opt/venv
+
+# Switch to non-root user
+USER astroloh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

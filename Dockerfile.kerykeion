@@ -19,6 +19,9 @@ RUN apt-get update && apt-get install -y \
 # Установка uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
+# Создание непривилегированного пользователя и группы для безопасности
+RUN groupadd -r astroloh && useradd -r -g astroloh -s /bin/bash -m astroloh
+
 # Установка рабочей директории
 WORKDIR /app
 
@@ -32,9 +35,14 @@ RUN uv venv && uv pip install -e ".[full,dev]"
 # Копирование кода приложения
 COPY . .
 
-# Создание необходимых директорий
+# Создание необходимых директорий и установка владельца
 RUN mkdir -p /app/swisseph /app/logs /app/tmp && \
-    chmod 755 /app/swisseph /app/logs /app/tmp
+    chmod 755 /app/swisseph /app/logs /app/tmp && \
+    chown -R astroloh:astroloh /app && \
+    chown -R astroloh:astroloh /app/.venv
+
+# Переключение на непривилегированного пользователя
+USER astroloh
 
 # Проверка здоровья
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
