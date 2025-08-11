@@ -1,9 +1,9 @@
 services:
-  # Backend service с полной поддержкой Kerykeion
+  # Backend service с упрощенным Dockerfile
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.kerykeion
+      dockerfile: Dockerfile.test
       args:
         BUILDKIT_INLINE_CACHE: 1
     ports:
@@ -11,13 +11,10 @@ services:
     environment:
       - DEBUG=true
       - DATABASE_URL=postgresql+asyncpg://astroloh_user:astroloh_password@db:5432/astroloh_db
-      - YANDEX_API_KEY=${YANDEX_API_KEY:-}
-      - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID:-}
-      - YANDEX_CATALOG_ID=${YANDEX_CATALOG_ID:-}
-      - SECRET_KEY=${SECRET_KEY:-default_secret_key}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-default_encryption_key}
-      - KERYKEION_ENABLED=true
-      - SWISSEPH_ENABLED=true
+      - SECRET_KEY=test_secret_key
+      - ENCRYPTION_KEY=test_encryption_key
+      - KERYKEION_ENABLED=false
+      - SWISSEPH_ENABLED=false
     depends_on:
       db:
         condition: service_healthy

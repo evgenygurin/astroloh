@@ -1,0 +1,45 @@
+# Упрощенный Dockerfile для тестирования
+FROM python:3.12-slim
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    pkg-config \
+    libffi-dev \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+# Создание пользователя
+RUN groupadd -r astroloh && useradd -r -g astroloh -s /bin/bash -m astroloh
+
+# Установка рабочей директории
+WORKDIR /app
+
+# Копирование файлов зависимостей
+COPY pyproject.toml ./
+COPY README.md ./
+
+# Установка Python зависимостей (только основные)
+RUN uv venv && uv pip install -e ".[dev]"
+
+# Копирование кода приложения
+COPY . .
+
+# Создание директорий (упрощенная версия)
+RUN mkdir -p /app/logs /app/tmp && \
+    chmod 755 /app/logs /app/tmp && \
+    chown -R astroloh:astroloh /app
+
+# Переключение на пользователя
+USER astroloh
+
+# Открытие порта
+EXPOSE 8000
+
+# Команда запуска
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
