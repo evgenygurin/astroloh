@@ -27,21 +27,22 @@ RUN groupadd astroloh && \
 # Установка рабочей директории
 WORKDIR /app
 
+# Создание необходимых директорий заранее
+RUN mkdir -p /app/swisseph /app/logs /app/tmp && \
+    chmod 755 /app/swisseph /app/logs /app/tmp
+
 # Копирование файлов зависимостей
-COPY pyproject.toml ./
-COPY README.md ./
+COPY --chown=astroloh:astroloh pyproject.toml ./
+COPY --chown=astroloh:astroloh README.md ./
 
 # Установка Python зависимостей с полным набором астрологических библиотек
 RUN uv venv && uv pip install -e ".[full,dev]"
 
 # Копирование кода приложения
-COPY . .
+COPY --chown=astroloh:astroloh . .
 
-# Создание необходимых директорий и установка владельца
-RUN mkdir -p /app/swisseph /app/logs /app/tmp && \
-    chmod 755 /app/swisseph /app/logs /app/tmp && \
-    chown -R astroloh:astroloh /app && \
-    chown -R astroloh:astroloh /app/.venv
+# Установка владельца для виртуального окружения
+RUN chown -R astroloh:astroloh /app/.venv
 
 # Переключение на непривилегированного пользователя
 USER astroloh
