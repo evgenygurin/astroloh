@@ -1,142 +1,474 @@
-# Astroloh Repository Rules
+# Astroloh - Cursor AI Rules
 
-Astroloh is a professional astrological voice skill for Yandex Alice built with FastAPI, PostgreSQL, and Kerykeion 4.x for advanced astronomical calculations.
+Professional astrological voice skill for Yandex Alice built with FastAPI, PostgreSQL, and Kerykeion 4.x.
 
-## Enforcing Code Quality and Formatting
+## 🎯 Quick Reference
 
-"Run black app/ tests/ && isort app/ tests/ before every commit."
-"All functions must have type hints - mypy enforcement is enabled."
-"Never add code comments unless explicitly requested by the user."
-"Use async/await for all I/O operations - this is a FastAPI async application."
+**Project Type:** Python 3.11 + FastAPI + PostgreSQL + Redis + Yandex Alice Voice Interface  
+**Main Docs:** Read `CLAUDE.md` for complete guidelines, `AGENTS.md` for specialized agent skills  
+**Test Coverage:** Minimum 80% required  
+**Code Style:** Black + isort + flake8 + mypy (enforced)
 
-## Critical Time Handling Rules
+## ⚡ Critical Rules (MUST FOLLOW)
 
-"NEVER import datetime directly except in app/utils/astro_time_utils.py"
-"Always use: from app.utils.astro_time_utils import utcnow, now, current_timestamp"
-"Replace datetime.now() with utcnow() and datetime.utcnow() with utcnow()"
-"Use db_timestamp_default() for SQLAlchemy default timestamps, never datetime.now()"
+### Time Handling (MOST IMPORTANT)
 
-## Alice Voice Interface Constraints
+```python
+# ❌ NEVER DO THIS
+from datetime import datetime
+now = datetime.now()
+utcnow = datetime.utcnow()
 
-"Horoscope responses must be maximum 800 characters for Alice TTS."
-"Compatibility responses are limited to 600 characters maximum."
-"Never include more than 5 buttons in Alice responses - this breaks the interface."
-"All responses must complete within 5 seconds for Alice voice interface."
+# ✅ ALWAYS DO THIS
+from app.utils.astro_time_utils import utcnow, now, db_timestamp_default
+current_time = utcnow()
+local_time = now(timezone="Europe/Moscow")
 
-## Security and Data Protection
+# ✅ For SQLAlchemy models
+created_at = Column(DateTime, default=db_timestamp_default())
+```
 
-"Never log API keys, secrets, or personal astrological data in any format."
-"All user datetime inputs must go through parse_birth_datetime() for security validation."
-"Use encryption utilities for storing personal birth data - GDPR compliance required."
-"JWT tokens must have proper expiration handling."
+**Why:** Centralized time handling ensures timezone accuracy, security validation, and proper astronomical calculations.
 
-## Testing Requirements
+### Code Quality (MANDATORY)
 
-"Maintain minimum 80% test coverage - use pytest --cov=app to verify."
-"Run pytest -m unit for unit tests, pytest -m integration for integration tests."
-"Mock all external services (Yandex GPT, astronomical backends) in tests."
-"Validate Alice response constraints (length, buttons) in integration tests."
+```bash
+# Run before EVERY commit:
+black app/ tests/ && isort app/ tests/ && flake8 app/ tests/ && mypy app/ && pytest --cov=app
+```
 
-## Astronomical Calculation Patterns
+### Alice Voice Constraints
 
-"Primary backend: Kerykeion 4.x with graceful fallbacks to Swiss Ephemeris → Skyfield → Built-in."
-"Always implement fallback mechanisms - users should never see calculation failures."
-"Use Redis caching: natal charts (30 days TTL), transits (1 hour TTL)."
-"Monitor calculation performance and cache hit rates."
+- Horoscope responses: **MAX 800 characters**
+- Compatibility responses: **MAX 600 characters**
+- Buttons per response: **MAX 5 buttons**
+- Response time: **MAX 5 seconds**
 
-## Russian Localization Requirements
+### Security (CRITICAL)
 
-"Support all 6 Russian grammatical cases for zodiac signs."
-"Include TTS optimization with proper stress marks for Alice voice."
-"Handle speech recognition errors in voice preprocessing."
-"Use Russian astrological terminology, not direct translations."
+```python
+# ✅ Always validate user datetime inputs
+from app.utils.astro_time_utils import astro_time
 
-## Pre-commit Commands (MANDATORY)
+try:
+    birth_dt = astro_time.parse_birth_datetime(
+        date_input=user_date,
+        time_input=user_time,
+        timezone_input=user_tz,
+        coordinates=coords  # For timezone detection
+    )
+except InvalidDateTimeError as e:
+    return {"error": "Invalid date/time input"}
 
-"Before any commit, run these commands in order:
+# ❌ NEVER log sensitive data
+# Don't log: API keys, birth data, secrets, tokens
+```
 
-1. black app/ tests/
-2. isort app/ tests/
-3. flake8 app/ tests/
-4. mypy app/
-5. pytest --cov=app"
+## 📁 Project Structure
 
-## Environment and Deployment
+```text
+astroloh/
+├── app/
+│   ├── api/                    # FastAPI routers (Yandex Alice integration)
+│   ├── core/                   # Config, database, dependencies
+│   ├── models/                 # SQLAlchemy models + Pydantic schemas
+│   ├── services/              # Business logic (where magic happens)
+│   │   ├── kerykeion_service.py        # Professional astrology backend
+│   │   ├── russian_astrology_adapter.py # Russian localization
+│   │   ├── ai_horoscope_service.py     # Yandex GPT integration
+│   │   ├── astro_cache_service.py      # Redis caching
+│   │   └── ...
+│   ├── utils/                  # Shared utilities
+│   │   └── astro_time_utils.py         # 🚨 CENTRAL TIME HANDLING
+│   └── main.py                # FastAPI app entry point
+├── tests/                      # Pytest tests (unit + integration)
+├── CLAUDE.md                   # 📚 COMPLETE PROJECT DOCS (READ THIS!)
+├── AGENTS.md                   # 🤖 Specialized agent configurations
+└── .cursorrules               # This file (quick reference)
+```
 
-"Use docker-compose up --build for development - includes PostgreSQL and Redis."
-"Full container restart required when changing environment variables."
-"Critical env vars: DATABASE_URL, YANDEX_API_KEY, YANDEX_FOLDER_ID, SECRET_KEY"
-"Run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 for local development."
+## 🔧 Common Tasks
 
-## Service Integration Patterns
+### Adding New Feature
 
-"Check kerykeion_service.is_available() before using advanced astrology features."
-"Implement graceful degradation: if Kerykeion fails, fallback to basic calculations."
-"Use performance_monitor.start_operation() for critical calculations."
-"Include service prefixes in log messages: KERYKEION_SERVICE_, AI_CONSULTATION_"
+```bash
+# 1. Create feature branch
+git checkout -b feature/your-feature-name
 
-## Response Time Targets
+# 2. Implement with proper patterns
+# - Use multi-backend pattern for astrology calculations
+# - Implement Redis caching (see astro_cache_service.py)
+# - Add Russian localization (see russian_astrology_adapter.py)
 
-"Cached requests: <500ms, Complex calculations: <2s, Alice interface: <5s maximum."
-"Use background pre-computation for popular astrological data."
-"Monitor and alert on slow operations >2000ms."
+# 3. Write tests (80% coverage minimum)
+pytest tests/test_your_feature.py --cov=app.services.your_feature --cov-report=term-missing
 
-## Common Anti-Patterns to Avoid
+# 4. Format and lint
+black app/ tests/ && isort app/ tests/ && flake8 app/ tests/ && mypy app/
 
-"Never use: from datetime import datetime; use astro_time_utils instead."
-"Never log user birth data or API keys in any format."
-"Don't create SQLAlchemy defaults with lambda: datetime.now() - use db_timestamp_default()."
-"Avoid direct astronomical calculations - use the multi-backend service pattern."
+# 5. Run all tests
+pytest --cov=app --cov-report=html
 
-## File Structure Guidelines
+# 6. Commit with conventional commits
+git commit -m "feat: add your feature description"
+```
 
-"Read app/utils/astro_time_utils.py first - central time handling system."
-"app/services/kerykeion_service.py contains professional astrology backend."
-"app/api/yandex_dialogs.py handles Alice voice interface integration."
-"CLAUDE.md has complete project documentation and context."
+### Debugging Issues
 
-## Commit Guidelines
+```bash
+# Check logs with service prefix
+grep "KERYKEION_SERVICE_" logs/app.log
+grep "AI_CONSULTATION_" logs/app.log
 
-"Never commit code without explicit user request."
-"Format: 'type: description' (feat, fix, refactor, docs, test, chore)"
-"Test locally before committing - no broken builds allowed."
+# Run specific test category
+pytest -m unit              # Unit tests only
+pytest -m integration       # Integration tests only
 
-## Performance Monitoring
+# Check cache status
+redis-cli INFO keyspace
+redis-cli KEYS "natal_chart:*"
 
-"Track cache hit rates, response times, and backend selection."
-"Use correlation IDs for request tracking across services."
-"Monitor Redis memory usage and Yandex GPT API success rates."
+# Test Alice webhook locally
+curl -X POST http://localhost:8000/api/v1/yandex/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"request": {"command": "дай гороскоп для льва"}, "session": {"user_id": "test", "session_id": "test"}, "version": "1.0"}'
+```
 
-## Agent Permissions and Workflow
+## 🤖 Using Specialized Agents
 
-"Agent should create PRs only when explicitly requested by the user."
-"Linear issue self-assignment is enabled - agent can assign issues to itself when working."
-"Rules are automatically detected from .cursorrules file in repository root."
-"Agent should move Linear issues to 'Started' state when beginning work."
+For complex tasks, use specialized agents defined in `AGENTS.md`:
 
-## Model Configuration Preferences
+```text
+@astrology-backend - Astronomical calculations, Kerykeion integration
+@russian-localization - Russian language, grammatical cases, TTS
+@alice-voice - Yandex Alice integration, intent recognition
+@time-timezone - Time handling, timezone management
+@ai-consultation - Yandex GPT integration, AI interpretations
+@performance-cache - Redis caching, performance optimization
+@testing-qa - Test implementation, coverage analysis
+@database-migrations - PostgreSQL, Alembic migrations
+@security-gdpr - Security, GDPR compliance, data encryption
+```
 
-"Use Anthropic Claude models for optimal performance on this Python/FastAPI project."
-"Google Gemini is available as alternative - good for code generation and analysis."
-"Complex astronomical calculations may benefit from Claude's reasoning capabilities."
-"Russian language processing works well with both Claude and Gemini multilingual support."
-"Cost-effectiveness is important - prefer efficient models for routine operations."
+**Example:**
 
-## Repository-Specific Agent Behavior
+```text
+@astrology-backend @time-timezone Implement birth chart calculation with proper timezone handling
+```
 
-"Agent has full access to all project files including sensitive configuration."
-"Environment variables should be handled carefully - never expose in logs or commits."
-"Agent can run all development commands (black, pytest, docker-compose) as needed."
-"Network access available for external API testing (Yandex GPT, astronomical services)."
+## 🏗️ Architectural Patterns
 
-## Working with AI Agents
+### Multi-Backend Fallback
 
-"Use @claude for code implementation, debugging, and Russian language tasks."
-"Use @gemini for codebase research, analysis, and information processing."
-"Use @codegen in Slack/Linear for repository-wide changes and issue resolution."
-"Tag agents in Slack threads to maintain conversation context."
-"Be specific: 'Add type hints to this function', 'Fix failing tests in test_astrology.py'."
-"For Russian tasks: 'Generate Russian horoscope text with proper grammatical cases'."
-"For complex debugging: 'Analyze this multi-backend fallback issue step by step'."
-"Always specify test requirements: 'Add tests with 80% coverage for this service'."
-"See ORGANIZATION_AGENT_RULES.md for complete agent usage guidelines."
+```python
+# Always implement graceful fallback
+if kerykeion_service.is_available():
+    result = kerykeion_service.calculate_natal_chart(...)
+elif swiss_ephemeris_service.is_available():
+    result = swiss_ephemeris_service.calculate_natal_chart(...)
+else:
+    result = basic_calculator.calculate_natal_chart(...)
+```
+
+### Redis Caching Pattern
+
+```python
+from app.services.astro_cache_service import cache_service
+
+# Cache with appropriate TTL
+@cache_service.cache_result(ttl_seconds=30*24*60*60)  # 30 days for natal charts
+async def calculate_natal_chart(birth_data: dict) -> dict:
+    # Expensive calculation here
+    return chart_data
+```
+
+### Async I/O Operations
+
+```python
+# ✅ Always use async for I/O
+async def get_horoscope(sign: str) -> str:
+    async with httpx.AsyncClient() as client:
+        response = await client.post(yandex_gpt_url, json=payload)
+        return response.json()
+
+# ❌ Don't block event loop
+def get_horoscope_sync(sign: str) -> str:  # Wrong!
+    response = requests.post(url)  # Blocking call
+    return response.text
+```
+
+### Performance Monitoring
+
+```python
+from app.services.performance_monitor import performance_monitor
+
+op_id = performance_monitor.start_operation("ServiceName", "operation_name")
+try:
+    result = await perform_expensive_calculation()
+    performance_monitor.end_operation(op_id, success=True)
+    return result
+except Exception as e:
+    performance_monitor.end_operation(op_id, success=False, error_message=str(e))
+    raise
+```
+
+## 🌍 Russian Localization
+
+### Grammatical Cases (All 6 Required)
+
+```python
+# Use russian_astrology_adapter for proper declensions
+from app.services.russian_astrology_adapter import russian_adapter
+
+# Automatically handles all cases
+text = russian_adapter.format_horoscope(
+    sign="leo",          # Will use proper case based on context
+    period="daily",
+    content=horoscope_text
+)
+
+# Support: именительный, родительный, дательный, винительный, творительный, предложный
+```
+
+### TTS Optimization
+
+```python
+# Add stress marks for Yandex Alice TTS
+text_with_stress = russian_adapter.add_tts_stress_marks(text)
+
+# Optimize for voice reading (pauses, pronunciation)
+optimized = russian_adapter.optimize_for_tts(text)
+```
+
+## 🧪 Testing Requirements
+
+### Test Structure
+
+```python
+import pytest
+from unittest.mock import AsyncMock, patch
+
+@pytest.mark.asyncio
+async def test_natal_chart_calculation():
+    # Arrange
+    birth_data = {
+        "date": "1990-08-15",
+        "time": "14:30",
+        "timezone": "Europe/Moscow",
+        "latitude": 55.7558,
+        "longitude": 37.6176
+    }
+    
+    # Act
+    result = await kerykeion_service.calculate_natal_chart(birth_data)
+    
+    # Assert
+    assert result["sun_sign"] == "Leo"
+    assert "planets" in result
+    assert len(result["planets"]) >= 10
+
+@pytest.mark.unit
+def test_time_parsing():
+    # Unit test with marker
+    result = astro_time.parse_birth_datetime("15.08.1990", "14:30", "москва")
+    assert result.timezone_name == "Europe/Moscow"
+```
+
+### Mocking External Services
+
+```python
+@patch('app.services.yandex_gpt_service.YandexGPTClient')
+async def test_ai_consultation(mock_gpt):
+    mock_gpt.return_value.generate.return_value = "Mocked horoscope text"
+    
+    result = await ai_service.generate_horoscope("leo")
+    assert "Mocked horoscope text" in result
+```
+
+### Coverage Requirements
+
+```bash
+# Must achieve 80% minimum
+pytest --cov=app --cov-report=term-missing --cov-fail-under=80
+```
+
+## 🚀 Performance Targets
+
+- **Cached requests:** <500ms
+- **Complex calculations:** <2s
+- **Period forecasts:** <5s
+- **Alice interface:** <5s (hard limit)
+
+### Optimization Checklist
+
+- [ ] Redis caching implemented
+- [ ] Async/await for I/O operations
+- [ ] Background pre-computation for popular data
+- [ ] Database query optimization (indexes)
+- [ ] Proper connection pooling
+- [ ] Memory-efficient data structures
+
+## 🔐 Security Checklist
+
+- [ ] All datetime inputs validated through `parse_birth_datetime()`
+- [ ] Personal data encrypted before storage
+- [ ] No sensitive data in logs (API keys, birth data, secrets)
+- [ ] JWT tokens with proper expiration
+- [ ] GDPR compliance utilities used
+- [ ] Input sanitization (XSS, SQL injection prevention)
+- [ ] Rate limiting on API endpoints
+
+## 🐛 Common Pitfalls
+
+### ❌ Anti-Patterns to Avoid
+
+```python
+# 1. Direct datetime usage
+from datetime import datetime  # ❌ Wrong!
+
+# 2. Blocking I/O in async functions
+def sync_function_in_async_context():  # ❌ Wrong!
+    time.sleep(1)  # Blocks event loop
+
+# 3. Missing error handling
+result = kerykeion_service.calculate()  # ❌ What if it fails?
+
+# 4. Logging sensitive data
+logger.info(f"User birth data: {birth_date}")  # ❌ GDPR violation!
+
+# 5. Ignoring Alice constraints
+horoscope = generate_long_text(2000)  # ❌ Exceeds 800 char limit
+
+# 6. SQLAlchemy timestamp anti-pattern
+created_at = Column(DateTime, default=lambda: datetime.now())  # ❌ Wrong!
+```
+
+### ✅ Correct Patterns
+
+```python
+# 1. Centralized time handling
+from app.utils.astro_time_utils import utcnow
+
+# 2. Async I/O
+async def fetch_data():
+    async with httpx.AsyncClient() as client:
+        return await client.get(url)
+
+# 3. Proper error handling with fallback
+try:
+    result = await primary_service.calculate()
+except Exception as e:
+    logger.warning(f"Primary failed: {e}, using fallback")
+    result = await fallback_service.calculate()
+
+# 4. Secure logging
+logger.info("Processing natal chart request", extra={"user_id": hashed_id})
+
+# 5. Respecting Alice constraints
+horoscope = generate_horoscope(max_length=800)
+assert len(horoscope) <= 800
+
+# 6. Proper SQLAlchemy timestamps
+from app.utils.astro_time_utils import db_timestamp_default
+created_at = Column(DateTime, default=db_timestamp_default())
+```
+
+## 📚 Essential Documentation
+
+**Must read before coding:**
+
+1. `CLAUDE.md` - Complete project documentation (38KB of guidelines)
+2. `AGENTS.md` - Specialized agent skills and usage
+3. `README.md` - Project overview and quick start
+4. `app/utils/astro_time_utils.py` - Time handling implementation
+5. `app/services/kerykeion_service.py` - Astrology backend reference
+
+**API Documentation:**
+
+- FastAPI docs: `http://localhost:8000/docs`
+- Yandex Dialogs API: https://yandex.ru/dev/dialogs/
+- Kerykeion docs: https://github.com/g-battaglia/kerykeion
+
+## 🔄 Git Workflow
+
+### Commit Message Format
+
+```bash
+# Use conventional commits
+git commit -m "feat: add planetary hours calculation"
+git commit -m "fix: resolve timezone issue in natal chart"
+git commit -m "refactor: improve caching strategy"
+git commit -m "docs: update API documentation"
+git commit -m "test: add integration tests for synastry"
+git commit -m "chore: update dependencies"
+```
+
+### Branch Naming
+
+```bash
+feature/planetary-hours
+fix/timezone-conversion
+refactor/cache-optimization
+docs/api-documentation
+```
+
+## 🎯 Quick Commands Cheatsheet
+
+```bash
+# Development
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Docker
+docker-compose up --build
+docker-compose down && docker-compose up  # Full restart for env vars
+
+# Testing
+pytest                                    # All tests
+pytest -m unit                           # Unit tests only
+pytest -m integration                    # Integration tests only
+pytest --cov=app --cov-report=html      # Coverage report
+
+# Code Quality
+black app/ tests/                        # Format code
+isort app/ tests/                        # Sort imports
+flake8 app/ tests/                       # Lint
+mypy app/                                # Type checking
+
+# Redis
+redis-cli KEYS "natal_chart:*"          # Check cached charts
+redis-cli FLUSHDB                        # Clear cache (careful!)
+redis-cli INFO memory                    # Memory usage
+
+# Database
+alembic revision --autogenerate -m "message"  # Create migration
+alembic upgrade head                          # Apply migrations
+alembic downgrade -1                          # Rollback one migration
+```
+
+## 💡 Tips for Cursor AI
+
+1. **Context awareness:** Always check `CLAUDE.md` for project-specific patterns
+2. **Agent specialization:** Use `@agent-name` from `AGENTS.md` for domain-specific tasks
+3. **Test-driven:** Write tests first, then implementation (80% coverage target)
+4. **Async by default:** All I/O operations should be async
+5. **Russian localization:** Always consider grammatical cases and TTS optimization
+6. **Alice constraints:** Remember character limits and button restrictions
+7. **Time handling:** NEVER use `datetime` directly, use `astro_time_utils`
+8. **Security first:** Validate inputs, encrypt personal data, no logging secrets
+9. **Performance:** Implement caching, monitor metrics, optimize queries
+10. **Fallback mechanisms:** Always have backup plans for external services
+
+## 🆘 Getting Help
+
+- **Project questions:** Check `CLAUDE.md` (comprehensive documentation)
+- **Agent usage:** See `AGENTS.md` for specialized agent skills
+- **Architecture patterns:** Look at existing services in `app/services/`
+- **Testing examples:** Review `tests/` directory for patterns
+- **API reference:** http://localhost:8000/docs (FastAPI auto-generated)
+
+---
+
+**Last updated:** 2024-12-03  
+**Version:** 2.0.0 (Enhanced with Claude Code and Cursor AI best practices)
+
+For complete documentation, always refer to `CLAUDE.md` and `AGENTS.md`.
